@@ -1,0 +1,18 @@
+{
+  "type": "Training / Conference", 
+  "documentUrl": "رابط الشهادة",
+  
+  "extracted_info": {
+    "title": "اسم الدورة أو المؤتمر",
+    "organization": "الجهة المنظمة (مثلاً FLDC)",
+    "date": "Timestamp",
+    "scope": "International / Local",
+    "participation_type": "Speaker / Attendee / Paper Presenter"
+  },
+
+  "verification": {
+    "is_mandatory": true,
+    "points_awarded": 6.0,
+    "isVerified": true
+  }
+}

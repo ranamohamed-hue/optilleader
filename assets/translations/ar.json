@@ -1,0 +1,101 @@
+{
+  "auth": {
+    "login": {
+      "title": "تسجيل الدخول",
+      "subtitle": "مرحباً بك مجدداً في OptiLeader",
+      "button": "دخول",
+      "forgot": "نسيت كلمة المرور؟",
+      "no_account": "ليس لديك حساب؟ ",
+      "signup": "سجل الآن"
+    },
+    "register": {
+      "title": "تسجيل جديد",
+      "step1": "التحقق من البيانات",
+      "step2": "إنشاء كلمة المرور",
+      "submit": "إنشاء الحساب"
+    },
+    "fields": {
+      "full_name": "الاسم بالكامل",
+      "email": "البريد الجامعي",
+      "national_id": "الرقم القومي",
+      "employee_id": "الرقم الوظيفي",
+      "password": "كلمة المرور",
+      "confirm_password": "تأكيد كلمة المرور"
+    },
+    "validation": {
+      "required": "هذا الحقل مطلوب",
+      "invalid_email": "يرجى إدخال بريد جامعي صحيح",
+      "national_id_length": "الرقم القومي يجب أن يكون 14 رقم",
+      "password_short": "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
+      "password_mismatch": "كلمة المرور غير متطابقة"
+    },
+    "messages": {
+      "verifying": "جاري التحقق من البيانات...",
+      "success": "تم إنشاء الحساب بنجاح"
+    }
+  },
+
+  "dashboard": {
+    "welcome": "مرحباً",
+    "new_requests": "طلبات جديدة",
+    "in_arbitration": "قيد التحكيم",
+    "create_new": "إنشاء جديد",
+    "logout": "تسجيل الخروج",
+    "announcements_summary": "ملخص الإعلانات",
+    "system_status": "حالة النظام"
+  },
+
+  "announcements": {
+    "title": "الإعلانات",
+    "subtitle": "إدارة تحديثات ومستجدات المدرسة",
+    "add_new": "نشر إعلان جديد",
+    "edit": "تعديل الإعلان",
+    "delete": "حذف الإعلان",
+    "details": "تفاصيل الإعلان",
+    "form_title": "عنوان الإعلان",
+    "form_desc": "وصف الإعلان",
+    "form_image": "صورة الإعلان",
+    "applicants": "متقدم",
+    "deadline": "آخر موعد للتقديم",
+    "posted_at": "تاريخ النشر",
+    "no_data": "لا توجد إعلانات حالياً",
+    "upload_image": "رفع صورة",
+    "status_active": "نشط",
+    "status_closed": "مغلق",
+    "status_pending": "قيد الانتظار",
+    "delete_confirm": "هل أنت متأكد من حذف هذا الإعلان؟",
+    "success_add": "تم نشر الإعلان بنجاح",
+    "success_delete": "تم حذف الإعلان بنجاح"
+  },
+
+  "settings": {
+    "title": "إعدادات الإدارة",
+    "personal_data": "البيانات الشخصية",
+    "preferences": "التفضيلات",
+    "language": "اللغة",
+    "save": "حفظ التغييرات",
+    "address": "العنوان",
+    "phone1": "الهاتف 1",
+    "phone2": "الهاتف 2",
+    "change_photo": "تغيير الصورة",
+    "app_identity": "هوية التطبيق",
+    "dark_mode": "الوضع الليلي"
+  },
+
+  "common": {
+    "loading": "جاري التحميل...",
+    "retry": "إعادة المحاولة",
+    "cancel": "إلغاء",
+    "next": "التالي",
+    "back": "رجوع",
+    "confirm": "تأكيد",
+    "search": "بحث..."
+  },
+
+  "errors": {
+    "network": "مشكلة في الاتصال بالإنترنت",
+    "server": "خطأ في الخادم",
+    "unknown": "حدث خطأ غير متوقع",
+    "empty_fields": "يرجى ملء جميع الحقول المطلوبة"
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "auth": {
+    "login": {
+      "title": "Login",
+      "subtitle": "Welcome back to OptiLeader",
+      "button": "Sign In",
+      "forgot": "Forgot Password?",
+      "no_account": "Don't have an account? ",
+      "signup": "Sign Up"
+    },
+    "register": {
+      "title": "Register",
+      "step1": "Verify Data",
+      "step2": "Create Password",
+      "submit": "Create Account"
+    },
+    "fields": {
+      "full_name": "Full Name",
+      "email": "University Email",
+      "national_id": "National ID",
+      "employee_id": "Employee ID",
+      "password": "Password",
+      "confirm_password": "Confirm Password"
+    },
+    "validation": {
+      "required": "This field is required",
+      "invalid_email": "Please enter a valid university email",
+      "national_id_length": "Must be 14 digits",
+      "password_short": "Password must be at least 6 characters",
+      "password_mismatch": "Passwords do not match"
+    },
+    "messages": {
+      "verifying": "Verifying data...",
+      "success": "Account created successfully"
+    }
+  },
+
+  "dashboard": {
+    "welcome": "Welcome",
+    "new_requests": "New Requests",
+    "in_arbitration": "In Arbitration",
+    "create_new": "Create New",
+    "logout": "Logout",
+    "announcements_summary": "Announcements Summary",
+    "system_status": "System Status"
+  },
+
+  "announcements": {
+    "title": "Announcements",
+    "subtitle": "Manage school updates & news",
+    "add_new": "Post New Announcement",
+    "edit": "Edit Announcement",
+    "delete": "Delete Announcement",
+    "details": "Announcement Details",
+    "form_title": "Announcement Title",
+    "form_desc": "Announcement Description",
+    "form_image": "Announcement Image",
+    "applicants": "Applicants",
+    "deadline": "Deadline",
+    "posted_at": "Posted on",
+    "no_data": "No announcements available",
+    "upload_image": "Upload Image",
+    "status_active": "Active",
+    "status_closed": "Closed",
+    "status_pending": "Pending",
+    "delete_confirm": "Are you sure you want to delete this announcement?",
+    "success_add": "Announcement posted successfully",
+    "success_delete": "Announcement deleted successfully"
+  },
+
+  "settings": {
+    "title": "Admin Settings",
+    "personal_data": "Personal Data",
+    "preferences": "Preferences",
+    "language": "Language",
+    "save": "Save Changes",
+    "address": "Address",
+    "phone1": "Phone 1",
+    "phone2": "Phone 2",
+    "change_photo": "Change Photo",
+    "app_identity": "App Identity",
+    "dark_mode": "Dark Mode"
+  },
+
+  "common": {
+    "loading": "Loading...",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "next": "Next",
+    "back": "Back",
+    "confirm": "Confirm",
+    "search": "Search..."
+  },
+
+  "errors": {
+    "network": "No internet connection",
+    "server": "Server error",
+    "unknown": "Something went wrong",
+    "empty_fields": "Please fill all required fields"
+  }
+}

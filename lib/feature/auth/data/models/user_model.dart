@@ -1,0 +1,122 @@
+import 'package:equatable/equatable.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+enum UserRole { admin, user, judge }
+
+class UserModel extends Equatable {
+  final String uid;
+  final String username;
+  final String universityEmail;
+  final String nationalId;
+  final String employeeId;
+  final UserRole role;
+  final bool isFirstLogin;
+  final bool isRegistered;
+
+  const UserModel({
+    required this.uid,
+    required this.username,
+    required this.universityEmail,
+    required this.nationalId,
+    required this.employeeId,
+    required this.role,
+    this.isFirstLogin = true,
+    this.isRegistered = false,
+  });
+
+  /// 🔥 Firestore → Model
+  factory UserModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+
+    return UserModel(
+      uid: doc.id,
+
+      username: data['username'] ??
+          data['display_name']?['en'] ??
+          data['display_name']?['ar'] ??
+          'بدون اسم',
+
+      universityEmail: data['university_email'] ?? '',
+      nationalId: data['national_id'] ?? '',
+      employeeId: data['employee_id'] ?? '',
+
+      role: _mapRole(data['role']),
+
+      isFirstLogin: data['isFirstLogin'] ?? true,
+      isRegistered: data['isRegistered'] ?? false,
+    );
+  }
+
+  /// 🔥 تحويل String → Enum
+  static UserRole _mapRole(String? role) {
+    switch (role) {
+      case 'admin':
+        return UserRole.admin;
+      case 'judge':
+        return UserRole.judge;
+      default:
+        return UserRole.user;
+    }
+  }
+
+  /// 🔥 تحويل Enum → String
+  String get roleString {
+    switch (role) {
+      case UserRole.admin:
+        return 'admin';
+      case UserRole.judge:
+        return 'judge';
+      case UserRole.user:
+        return 'user';
+    }
+  }
+
+  /// 🔥 Model → Firestore
+  Map<String, dynamic> toMap() {
+    return {
+      'uid': uid,
+      'username': username,
+      'university_email': universityEmail,
+      'national_id': nationalId,
+      'employee_id': employeeId,
+      'role': roleString,
+      'isFirstLogin': isFirstLogin,
+      'isRegistered': isRegistered,
+    };
+  }
+
+  /// 🔥 Copy
+  UserModel copyWith({
+    String? uid,
+    String? username,
+    String? universityEmail,
+    String? nationalId,
+    String? employeeId,
+    UserRole? role,
+    bool? isFirstLogin,
+    bool? isRegistered,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      username: username ?? this.username,
+      universityEmail: universityEmail ?? this.universityEmail,
+      nationalId: nationalId ?? this.nationalId,
+      employeeId: employeeId ?? this.employeeId,
+      role: role ?? this.role,
+      isFirstLogin: isFirstLogin ?? this.isFirstLogin,
+      isRegistered: isRegistered ?? this.isRegistered,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        uid,
+        username,
+        universityEmail,
+        nationalId,
+        employeeId,
+        role,
+        isFirstLogin,
+        isRegistered,
+      ];
+}
