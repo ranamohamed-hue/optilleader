@@ -42,7 +42,6 @@ class AnnouncementModel {
           : DateTime.now(),
     );
   }
-  // 2. تحويل الـ Object إلى Map عشان نرفعه لـ Firebase
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -55,7 +54,6 @@ class AnnouncementModel {
     };
   }
 
-  // 3. دالة مساعدة لجلب لون الحالة (عشان متكتبهاش يدوي في كل صفحة)
   Color getStatusColor() {
     switch (status) {
       case 'Active':
@@ -68,7 +66,6 @@ class AnnouncementModel {
         return Colors.grey;
     }
   }
-  // --- دالة الـ copyWith المحدثة بناءً على الموديل بتاعك ---
   AnnouncementModel copyWith({
     String? id,
     String? title,

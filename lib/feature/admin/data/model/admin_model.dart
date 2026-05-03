@@ -44,7 +44,7 @@ class AdminModel extends Equatable {
     }
   }
 
-  /// 🔥 لو احتجت تستخدمه كنص
+  ///  لو احتجت تستخدمه كنص
   String get roleString {
     switch (role) {
       case UserRole.admin:

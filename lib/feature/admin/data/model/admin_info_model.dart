@@ -33,7 +33,6 @@ class AdminInfoModel extends Equatable {
     );
   }
 
-  /// ================= GETTERS =================
 
   String get displayNameAr => displayName['ar'] ?? '';
   String get displayNameEn => displayName['en'] ?? '';
@@ -47,7 +46,6 @@ class AdminInfoModel extends Equatable {
   String get phone1 => phone['phone1'] ?? '';
   String get phone2 => phone['phone2'] ?? '';
 
-  /// 🔥 dynamic حسب اللغة
   String getDisplayName(String locale) => displayName[locale] ?? '';
   String getJobTitle(String locale) => jobTitle[locale] ?? '';
   String getAddress(String locale) => address[locale] ?? '';
