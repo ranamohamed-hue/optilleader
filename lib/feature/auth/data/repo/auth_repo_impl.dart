@@ -10,9 +10,7 @@ class AuthRepoImpl implements AuthRepo {
 
   AuthRepoImpl({required this.auth, required this.firestore});
 
-  /// =========================
-  /// 🔐 LOGIN
-  /// =========================
+  // LOGIN
   @override
   Future<Either<String, UserModel>> login({
     required String email,
@@ -29,7 +27,6 @@ class AuthRepoImpl implements AuthRepo {
         return const Left("فشل تسجيل الدخول");
       }
 
-      /// 🔥 هنا التحسين
       final doc = await firestore.collection('users').doc(user.uid).get();
 
       if (!doc.exists) {
@@ -46,23 +43,33 @@ class AuthRepoImpl implements AuthRepo {
     }
   }
 
-  /// =========================
-  /// 🆕 SIGN UP
-  /// =========================
+  // SIGN UP
   @override
   Future<Either<String, UserModel>> signUp({
     required UserModel userModel,
     required String password,
   }) async {
     try {
+      // 1. إنشاء الحساب في Firebase Authentication
       final credential = await auth.createUserWithEmailAndPassword(
         email: userModel.universityEmail.trim(),
         password: password.trim(),
       );
-
       final uid = credential.user!.uid;
 
-      /// 🔥 نكتب مباشرة بالـ uid
+      // 2. البحث عن الدوكيمنت القديم (صاحب الـ ID العشوائي)
+      final preExistingDoc = await firestore
+          .collection('users')
+          .where('employee_id', isEqualTo: userModel.employeeId)
+          .get();
+
+      // 3. حذف الدوكيمنت القديم لو موجود
+      if (preExistingDoc.docs.isNotEmpty) {
+        for (var doc in preExistingDoc.docs) {
+          await firestore.collection('users').doc(doc.id).delete();
+        }
+      }
+
       await firestore
           .collection('users')
           .doc(uid)
@@ -76,9 +83,7 @@ class AuthRepoImpl implements AuthRepo {
     }
   }
 
-  /// =========================
-  /// 🔁 FIRST LOGIN
-  /// =========================
+  // FIRST LOGIN
   @override
   Future<Either<String, String>> completeFirstLogin({
     required String newPassword,
@@ -102,9 +107,7 @@ class AuthRepoImpl implements AuthRepo {
     }
   }
 
-  /// =========================
-  /// 📩 RESET PASSWORD
-  /// =========================
+  // RESET PASSWORD
   @override
   Future<Either<String, String>> sendPasswordResetEmail({
     required String email,
@@ -117,9 +120,7 @@ class AuthRepoImpl implements AuthRepo {
     }
   }
 
-  /// =========================
-  /// 🚪 LOGOUT
-  /// =========================
+  // LOGOUT
   @override
   Future<Either<String, void>> logout() async {
     try {
@@ -130,9 +131,7 @@ class AuthRepoImpl implements AuthRepo {
     }
   }
 
-  /// =========================
-  /// 🔍 VERIFY USER (لو محتاجه)
-  /// =========================
+  // VERIFY USER (لو محتاجه)
   @override
   Future<Either<String, UserModel>> verifyUser({
     required String email,

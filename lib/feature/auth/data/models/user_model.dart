@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum UserRole { admin, user, judge }
+enum UserRole { admin, user, judge, database_admin }
 
 class UserModel extends Equatable {
   final String uid;
@@ -31,7 +31,8 @@ class UserModel extends Equatable {
     return UserModel(
       uid: doc.id,
 
-      username: data['username'] ??
+      username:
+          data['username'] ??
           data['display_name']?['en'] ??
           data['display_name']?['ar'] ??
           'بدون اسم',
@@ -50,6 +51,8 @@ class UserModel extends Equatable {
   /// 🔥 تحويل String → Enum
   static UserRole _mapRole(String? role) {
     switch (role) {
+      case 'database_admin':
+        return UserRole.database_admin;
       case 'admin':
         return UserRole.admin;
       case 'judge':
@@ -62,6 +65,8 @@ class UserModel extends Equatable {
   /// 🔥 تحويل Enum → String
   String get roleString {
     switch (role) {
+      case UserRole.database_admin:
+        return 'database_admin';
       case UserRole.admin:
         return 'admin';
       case UserRole.judge:
@@ -110,13 +115,13 @@ class UserModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        uid,
-        username,
-        universityEmail,
-        nationalId,
-        employeeId,
-        role,
-        isFirstLogin,
-        isRegistered,
-      ];
+    uid,
+    username,
+    universityEmail,
+    nationalId,
+    employeeId,
+    role,
+    isFirstLogin,
+    isRegistered,
+  ];
 }

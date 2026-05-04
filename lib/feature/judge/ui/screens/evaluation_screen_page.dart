@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:optialeader/core/routing/routes.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart'; 
 
 class EvaluationScreen extends StatelessWidget {
   const EvaluationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // سحب إعدادات الثيم الموحدة لضمان التناسق
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -15,51 +17,35 @@ class EvaluationScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: colorScheme.primary,
         elevation: 0,
-        toolbarHeight: 80,
+        toolbarHeight: 80.h,
         automaticallyImplyLeading: false,
-        titleSpacing: 0, // استغلال العرض الكامل
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Row(
-            children: [
-              // 1. زر العودة (يسار)
-              IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-
-              // مساحة مرنة لتوسيط النص
-              const Spacer(),
-
-              // 2. عنوان الصفحة مع Expanded لمنع الـ Overflow
-              Expanded(
-                flex: 4,
-                child: Text(
-                  'تقييم المتقدم',
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-              ),
-
-              // مساحة موازنة لزر العودة لضمان التوسيط الدقيق
-              const Spacer(),
-              const SizedBox(width: 48),
-            ],
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            size: 20.sp,
+            color: Colors.white,
+          ),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(Routes.judge);
+            }
+          },
+        ),
+        title: Text(
+          'تقييم المتقدم',
+          style: textTheme.titleMedium?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18.sp,
+            fontFamily: 'Tajawal',
           ),
         ),
-        // الخط الذهبي الرفيع
+        centerTitle: true,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(2),
-          child: Container(color: colorScheme.secondary, height: 2),
+          preferredSize: Size.fromHeight(2.h),
+          child: Container(color: colorScheme.secondary, height: 2.h),
         ),
       ),
       body: SingleChildScrollView(
@@ -67,56 +53,7 @@ class EvaluationScreen extends StatelessWidget {
         child: Column(
           children: [
             // 1. كارت تعريف المتقدم
-            Container(
-              margin: const EdgeInsets.all(20),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(
-                  color: colorScheme.secondary.withOpacity(0.3),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 35, // تصغير بسيط لتوفير مساحة عمودية
-                    backgroundColor: colorScheme.secondary.withOpacity(0.1),
-                    child: Icon(
-                      Icons.person,
-                      size: 45,
-                      color: colorScheme.secondary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'د. أحمد منصور',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                  const Text(
-                    'قسم علوم الحاسب - كلية الهندسة',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildApplicantCard(colorScheme),
 
             // 2. أقسام التقييم
             _buildEvaluationSection(
@@ -130,156 +67,246 @@ class EvaluationScreen extends StatelessWidget {
               '10 / 15',
             ),
 
-            _buildCollapsedSection(
+            _buildExpandableSection(
               context,
               '2. الكفاءة العلمية والمهنية (الدرجة القصوى: 40)',
             ),
-            _buildCollapsedSection(
+            _buildExpandableSection(
               context,
               '3. مهارات التواصل والعرض (الدرجة القصوى: 25)',
             ),
-            _buildCollapsedSection(
+            _buildExpandableSection(
               context,
               '4. القيادة وتطوير الإدارة (الدرجة القصوى: 20)',
             ),
 
             // 3. المجموع الكلي
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-              child: Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
+            _buildTotalScore(colorScheme),
+
+            // 4. الملاحظات
+            _buildNotesField(colorScheme),
+
+            // 5. الأزرار
+            _buildActionButtons(context, colorScheme),
+            SizedBox(height: 30.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildApplicantCard(ColorScheme colorScheme) {
+    return Container(
+      margin: EdgeInsets.all(20.w),
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10.r,
+            offset: Offset(0, 4.h),
+          ),
+        ],
+        border: Border.all(color: colorScheme.secondary.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 35.r,
+            backgroundColor: colorScheme.secondary.withOpacity(0.1),
+            child: Icon(
+              Icons.person,
+              size: 45.sp,
+              color: colorScheme.secondary,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          Text(
+            'د. أحمد منصور',
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.primary,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+          Text(
+            'قسم علوم الحاسب - كلية الهندسة',
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: Colors.grey,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpandableSection(BuildContext context, String title) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 5.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15.r),
+        border: Border.all(color: colorScheme.secondary.withOpacity(0.2)),
+      ),
+      child: ExpansionTile(
+        title: Text(
+          title,
+          textAlign: TextAlign.right,
+          style: TextStyle(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Tajawal',
+          ),
+        ),
+        trailing: Icon(Icons.keyboard_arrow_down, size: 24.sp),
+        children: [
+          Padding(
+            padding: EdgeInsets.all(15.w),
+            child: Text(
+              "محتوى التقييم يظهر هنا...",
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 12.sp),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTotalScore(ColorScheme colorScheme) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.h),
+      child: Container(
+        padding: EdgeInsets.all(15.w),
+        decoration: BoxDecoration(
+          color: colorScheme.primary,
+          borderRadius: BorderRadius.circular(15.r),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: colorScheme.secondary,
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Text(
+                '10 / 100',
+                style: TextStyle(
                   color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 15,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.secondary,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '10 / 100',
-                        style: TextStyle(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                    const Text(
-                      'المجموع الكلي :',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
-                  ],
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.sp,
                 ),
               ),
             ),
-
-            // 4. ملاحظات إضافية
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'ملاحظات وتوصيات إضافية',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    maxLines: 3,
-                    textAlign: TextAlign.right,
-                    decoration: InputDecoration(
-                      hintText: 'اكتب ملاحظاتك هنا...',
-                      hintStyle: const TextStyle(fontSize: 13),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.all(12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(
-                          color: colorScheme.secondary.withOpacity(0.3),
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(
-                          color: colorScheme.secondary.withOpacity(0.3),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // 5. أزرار التحكم
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2E7D32),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'اعتماد التقييم',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: colorScheme.primary),
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'حفظ كمسودة',
-                        style: TextStyle(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+            Text(
+              'المجموع الكلي :',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16.sp,
+                color: Colors.white,
+                fontFamily: 'Tajawal',
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildNotesField(ColorScheme colorScheme) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            'ملاحظات وتوصيات إضافية',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.primary,
+              fontSize: 14.sp,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+          SizedBox(height: 10.h),
+          TextField(
+            maxLines: 3,
+            textAlign: TextAlign.right,
+            style: TextStyle(fontSize: 13.sp),
+            decoration: InputDecoration(
+              hintText: 'اكتب ملاحظاتك هنا...',
+              hintStyle: TextStyle(fontSize: 12.sp),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15.r),
+                borderSide: BorderSide(
+                  color: colorScheme.secondary.withOpacity(0.3),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context, ColorScheme colorScheme) {
+    return Padding(
+      padding: EdgeInsets.all(20.w),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2E7D32),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                padding: EdgeInsets.symmetric(vertical: 15.h),
+              ),
+              child: Text(
+                'اعتماد التقييم',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14.sp,
+                  fontFamily: 'Tajawal',
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () {},
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: colorScheme.primary),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                padding: EdgeInsets.symmetric(vertical: 15.h),
+              ),
+              child: Text(
+                'حفظ كمسودة',
+                style: TextStyle(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14.sp,
+                  fontFamily: 'Tajawal',
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -292,23 +319,20 @@ class EvaluationScreen extends StatelessWidget {
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         border: Border.all(color: colorScheme.secondary.withOpacity(0.2)),
       ),
       child: Column(
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
               color: colorScheme.primary.withOpacity(0.05),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
             ),
             child: Text(
               title,
@@ -316,19 +340,18 @@ class EvaluationScreen extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: colorScheme.primary,
-                fontSize: 13,
+                fontSize: 13.sp,
                 fontFamily: 'Tajawal',
               ),
             ),
           ),
           ...criteria,
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
               color: Colors.grey.shade50,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(20.r),
               ),
             ),
             child: Row(
@@ -339,13 +362,14 @@ class EvaluationScreen extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.primary,
+                    fontSize: 14.sp,
                   ),
                 ),
-                const Text(
+                Text(
                   'المجموع الفرعي :',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                    fontSize: 13.sp,
                     fontFamily: 'Tajawal',
                   ),
                 ),
@@ -363,25 +387,25 @@ class EvaluationScreen extends StatelessWidget {
     String currentScore,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 10.h),
       child: Row(
         children: [
           Container(
-            width: 45,
-            height: 35,
+            width: 45.w,
+            height: 35.h,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(8.r),
               border: Border.all(color: Colors.grey.shade300),
             ),
             child: Center(
               child: Text(
                 currentScore,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp),
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -389,17 +413,16 @@ class EvaluationScreen extends StatelessWidget {
                 Text(
                   label,
                   textAlign: TextAlign.right,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.bold,
                     fontFamily: 'Tajawal',
                   ),
                 ),
                 Text(
                   'الدرجة القصوى: $maxScore',
-                  style: const TextStyle(
-                    fontSize: 10,
+                  style: TextStyle(
+                    fontSize: 10.sp,
                     color: Colors.grey,
                     fontFamily: 'Tajawal',
                   ),
@@ -408,42 +431,6 @@ class EvaluationScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCollapsedSection(BuildContext context, String title) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Expanded(
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: colorScheme.secondary.withOpacity(0.2)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 20),
-            const Spacer(),
-            Expanded(
-              child: Text(
-                title,
-                textAlign: TextAlign.right,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  //////////////////////////////////////////////////////
-                  fontSize: 10,
-                  color: Colors.black87,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:optialeader/core/routing/routes.dart';
 
 class CareerInfoPage extends StatelessWidget {
   const CareerInfoPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // --- استخدام إعدادات الثيم الموحدة ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -13,13 +16,20 @@ class CareerInfoPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: colorScheme.primary,
-        elevation: 0,
-        toolbarHeight: 85,
-        automaticallyImplyLeading: false, // تحكم يدوي بالهيدر
+        toolbarHeight: 90.h,
+        automaticallyImplyLeading: false,
+         leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(Routes.user);
+                }
+              },
+            ),
         title: Row(
           children: [
-            // 2. صورة البروفيل مع الإطار الذهبي
             Container(
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
@@ -27,53 +37,57 @@ class CareerInfoPage extends StatelessWidget {
                 border: Border.all(color: colorScheme.secondary, width: 1.5),
               ),
               child: CircleAvatar(
-                radius: 22,
+                radius: 22.r,
                 backgroundColor: colorScheme.secondary.withOpacity(0.2),
                 child: const Icon(Icons.person, color: Colors.white, size: 20),
               ),
             ),
 
-            const SizedBox(width: 12),
+            SizedBox(width: 12.w),
 
-            // 3. نصوص العنوان (الاسم والصفحة)
+            // 2. نصوص العنوان
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Career Information',
+                  'career.title'.tr(),
                   style: textTheme.titleSmall?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const Text(
+                Text(
                   'Dr. Mohamed Adel',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  style: textTheme.bodySmall?.copyWith(color: Colors.white70),
                 ),
               ],
             ),
-          
+
             const Spacer(),
 
-            // زر التعديل (أيقونة ذهبية بستايل ملكي)
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: colorScheme.secondary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: colorScheme.secondary.withOpacity(0.5),
+            InkWell(
+              onTap: () {},
+              child: Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: colorScheme.secondary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(
+                    color: colorScheme.secondary.withOpacity(0.5),
+                  ),
+                ),
+                child: Icon(
+                  Icons.edit_note_rounded,
+                  color: colorScheme.secondary,
+                  size: 22.sp,
                 ),
               ),
-              child: Icon(
-                Icons.edit_note_rounded,
-                color: colorScheme.secondary,
-                size: 22,
-              ),
             ),
-              SizedBox(width: 15),
-            // 1. زر العودة للخلف (يسار)
+
+            SizedBox(width: 10.w),
+
+            // 4. زر العودة
             IconButton(
               icon: const Icon(
                 Icons.arrow_back_ios_new,
@@ -85,71 +99,70 @@ class CareerInfoPage extends StatelessWidget {
           ],
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4),
-          child: Container(color: colorScheme.secondary, height: 2),
+          preferredSize: Size.fromHeight(4.h),
+          child: Container(color: colorScheme.secondary, height: 2.h),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(20.w),
         child: Column(
           children: [
             // قسم المؤهلات العلمية
             _buildSectionHeader(
               context,
               Icons.school_outlined,
-              'Academic Credentials',
+              'career.sections.credentials'.tr(),
             ),
             _buildCredentialCard(
               context,
-              'Degree: Ph.D.',
-              'Specialization: Computer Engineering',
-              'Institution: Cairo University',
-              'Date: 15/06/2015',
+              'career.degrees.phd'.tr(),
+              'career.specs.computer_eng'.tr(),
+              'Cairo University',
+              '15/06/2015',
             ),
             _buildCredentialCard(
               context,
-              'Degree: M.Sc.',
-              'Specialization: Software Engineering',
-              'Institution: Cairo University',
-              'Date: 02/09/2010',
+              'career.degrees.msc'.tr(),
+              'career.specs.software_eng'.tr(),
+              'Cairo University',
+              '02/09/2010',
             ),
             _buildCredentialCard(
               context,
-              'Degree: B.Sc.',
-              'Specialization: Computer Science',
-              'Institution: Cairo University',
-              'Date: 10/07/2007',
+              'career.degrees.bsc'.tr(),
+              'career.specs.computer_science'.tr(),
+              'Cairo University',
+              '10/07/2007',
               isLast: true,
             ),
 
-            const SizedBox(height: 25),
+            SizedBox(height: 25.h),
 
             // قسم المسار الوظيفي
             _buildSectionHeader(
               context,
               Icons.history_edu_rounded,
-              'Career Path',
+              'career.sections.path'.tr(),
             ),
             _buildCareerPathCard(context),
 
-            const SizedBox(height: 25),
+            SizedBox(height: 25.h),
 
             // قسم بيانات العمل الحالية
             _buildSectionHeader(
               context,
               Icons.badge_outlined,
-              'Current Employment',
+              'career.sections.current_employment'.tr(),
             ),
             _buildCurrentInfoCard(context),
 
-            const SizedBox(height: 30),
+            SizedBox(height: 30.h),
           ],
         ),
       ),
     );
   }
 
-  // --- شريط عنوان الأقسام ---
   Widget _buildSectionHeader(
     BuildContext context,
     IconData icon,
@@ -157,16 +170,16 @@ class CareerInfoPage extends StatelessWidget {
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 15.w),
       decoration: BoxDecoration(
-        color: colorScheme.primary,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-        border: Border.all(color: colorScheme.secondary.withOpacity(0.5)),
+        color: colorScheme.primary, // Navy
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15.r)),
+        border: Border.all(color: colorScheme.secondary.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: colorScheme.secondary, size: 22),
-          const SizedBox(width: 10),
+          Icon(icon, color: colorScheme.secondary, size: 22.sp),
+          SizedBox(width: 10.w),
           Text(
             title,
             style: const TextStyle(
@@ -180,7 +193,6 @@ class CareerInfoPage extends StatelessWidget {
     );
   }
 
-  // --- كارت المؤهلات ---
   Widget _buildCredentialCard(
     BuildContext context,
     String degree,
@@ -189,15 +201,16 @@ class CareerInfoPage extends StatelessWidget {
     String date, {
     bool isLast = false,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
         borderRadius: isLast
-            ? const BorderRadius.vertical(bottom: Radius.circular(15))
+            ? BorderRadius.vertical(bottom: Radius.circular(15.r))
             : BorderRadius.zero,
       ),
       child: Column(
@@ -205,35 +218,35 @@ class CareerInfoPage extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.check_circle, color: colorScheme.secondary, size: 16),
-              const SizedBox(width: 8),
+              Icon(
+                Icons.check_circle,
+                color: colorScheme.secondary,
+                size: 16.sp,
+              ),
+              SizedBox(width: 8.w),
               Text(
                 degree,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.primary,
-                  fontSize: 14,
+                  fontSize: 14.sp,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 8.h),
           Padding(
-            padding: const EdgeInsets.only(left: 24),
+            padding: EdgeInsets.only(left: 24.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  spec,
-                  style: const TextStyle(fontSize: 13, color: Colors.black87),
-                ),
-                Text(
-                  inst,
-                  style: const TextStyle(fontSize: 13, color: Colors.black54),
-                ),
+                Text(spec, style: theme.textTheme.bodyMedium),
+                Text(inst, style: theme.textTheme.bodySmall),
                 Text(
                   date,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.grey,
+                  ),
                 ),
               ],
             ),
@@ -243,47 +256,44 @@ class CareerInfoPage extends StatelessWidget {
     );
   }
 
-  // --- كارت المسار الوظيفي ---
   Widget _buildCareerPathCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15)),
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(15.r)),
         border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Current: Senior Lecturer since 28/04/2018',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 8),
           Text(
-            'Experience: 6 Years',
+            'career.current_role'.tr(args: ['28/04/2018']),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            'career.experience'.tr(args: ['6']),
             style: TextStyle(
               color: colorScheme.secondary,
               fontWeight: FontWeight.w600,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Divider(color: colorScheme.primary.withOpacity(0.1)),
+          Divider(height: 30.h, color: colorScheme.primary.withOpacity(0.1)),
+          Text(
+            'career.previous_positions'.tr(),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
-          const Text(
-            'Previous Positions:',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          ),
-          const SizedBox(height: 5),
-          _buildHistoryItem(context, 'Lecturer', '01/03/2011 – 31/08/2015'),
+          SizedBox(height: 10.h),
           _buildHistoryItem(
             context,
-            'Teaching Assistant',
-            '15/07/2007 – 28/02/2011',
+            'career.roles.lecturer'.tr(),
+            '2011 – 2015',
           ),
+          _buildHistoryItem(context, 'career.roles.ta'.tr(), '2007 – 2011'),
         ],
       ),
     );
@@ -292,7 +302,7 @@ class CareerInfoPage extends StatelessWidget {
   Widget _buildHistoryItem(BuildContext context, String title, String period) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: 4.h),
       child: Row(
         children: [
           Icon(Icons.arrow_right, color: colorScheme.secondary),
@@ -309,38 +319,37 @@ class CareerInfoPage extends StatelessWidget {
     );
   }
 
-  // --- كارت معلومات العمل الحالية ---
   Widget _buildCurrentInfoCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15)),
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(15.r)),
         border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildInfoRow(
             context,
             Icons.account_balance_rounded,
-            'Dept:',
-            'Faculty of Engineering, Computer Engineering',
+            'career.labels.dept'.tr(),
+            'Faculty of Engineering',
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 12.h),
           _buildInfoRow(
             context,
             Icons.assignment_ind_rounded,
-            'Type:',
-            'Permanent Employment',
+            'career.labels.type'.tr(),
+            'career.employment_type.permanent'.tr(),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 12.h),
           _buildInfoRow(
             context,
             Icons.calendar_today_rounded,
-            'Hire Date:',
+            'career.labels.hire_date'.tr(),
             '15/07/2007',
           ),
         ],
@@ -358,13 +367,13 @@ class CareerInfoPage extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: colorScheme.primary, size: 18),
-        const SizedBox(width: 8),
+        Icon(icon, color: colorScheme.primary, size: 18.sp),
+        SizedBox(width: 8.w),
         Text(
           label,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
         ),
-        const SizedBox(width: 5),
+        SizedBox(width: 5.w),
         Expanded(
           child: Text(
             value,

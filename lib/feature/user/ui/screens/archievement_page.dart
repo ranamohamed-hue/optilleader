@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:optialeader/core/routing/routes.dart';
 
 class AchievementsLogPage extends StatelessWidget {
   const AchievementsLogPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // --- سحب إعدادات الثيم لضمان التناسق ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -13,21 +16,22 @@ class AchievementsLogPage extends StatelessWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
-        // استخدام لون الخلفية من الثيم
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: colorScheme.primary,
-          elevation: 0,
-          toolbarHeight: 80,
-          automaticallyImplyLeading:
-              false, // إلغاء الزر الافتراضي للتحكم اليدوي
+          toolbarHeight: 80.h,
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(Routes.user);
+              }
+            },
+          ),
           title: Row(
             children: [
-            
-
-              const SizedBox(width: 5),
-
-              // 2. صورة البروفيل بإطار ذهبي
               Container(
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
@@ -35,7 +39,7 @@ class AchievementsLogPage extends StatelessWidget {
                   border: Border.all(color: colorScheme.secondary, width: 1.5),
                 ),
                 child: CircleAvatar(
-                  radius: 20,
+                  radius: 20.r,
                   backgroundColor: colorScheme.secondary.withOpacity(0.2),
                   child: const Icon(
                     Icons.person,
@@ -45,33 +49,24 @@ class AchievementsLogPage extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(width: 12),
+              SizedBox(width: 12.w),
 
-              // 3. عنوان الصفحة
               Text(
-                'Achievements Log',
-                style: textTheme.titleMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                'achievements.title'.tr(),
+                style: theme.appBarTheme.titleTextStyle,
               ),
 
               const Spacer(),
 
-              // أيقونة الكأس (ذهبية)
               Icon(Icons.emoji_events, color: colorScheme.secondary),
-                // 1. زر العودة للخلف في أقصى اليسار
-                SizedBox(width: 15,),
+
+              SizedBox(width: 10.w),
+
               IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                icon: const Icon(Icons.arrow_back_ios_new, size: 20),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
-            
           ),
           bottom: TabBar(
             isScrollable: true,
@@ -79,33 +74,29 @@ class AchievementsLogPage extends StatelessWidget {
             indicatorWeight: 3,
             labelColor: colorScheme.secondary,
             unselectedLabelColor: Colors.white70,
-            labelStyle: const TextStyle(
+            labelStyle: textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 14,
             ),
-            tabs: const [
-              Tab(text: "Research"),
-              Tab(text: "Conferences"),
-              Tab(text: "Activities"),
-              Tab(text: "Courses"),
+            tabs: [
+              Tab(text: "achievements.tabs.research".tr()),
+              Tab(text: "achievements.tabs.conferences".tr()),
+              Tab(text: "achievements.tabs.activities".tr()),
+              Tab(text: "achievements.tabs.courses".tr()),
             ],
           ),
         ),
         body: TabBarView(
           children: [
             _buildAchievementsList(context),
-            const Center(child: Text("Conferences Content")),
-            const Center(child: Text("Other Activities")),
-            const Center(child: Text("Courses List")),
+            Center(child: Text("achievements.tabs.conferences".tr())),
+            Center(child: Text("achievements.tabs.activities".tr())),
+            Center(child: Text("achievements.tabs.courses".tr())),
           ],
         ),
 
-        // الزر العائم (مرتبط بالثيم)
         floatingActionButton: FloatingActionButton(
           onPressed: () {},
-          backgroundColor: colorScheme.secondary,
-          elevation: 4,
-          child: Icon(Icons.add, size: 30, color: colorScheme.primary),
+          child: const Icon(Icons.add, size: 30),
         ),
       ),
     );
@@ -113,14 +104,15 @@ class AchievementsLogPage extends StatelessWidget {
 
   Widget _buildAchievementsList(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.w),
       children: [
         _buildAchievementCard(
           context,
           title: "Machine Learning for Network Security",
           date: "15 March 2024",
-          status: "Accepted",
+          status: "achievements.status.accepted".tr(),
           statusColor: Colors.green.shade700,
           icon: Icons.check_circle_outline,
         ),
@@ -128,7 +120,7 @@ class AchievementsLogPage extends StatelessWidget {
           context,
           title: "Blockchain Applications in IoT",
           date: "10 Dec 2023",
-          status: "Under Review",
+          status: "achievements.status.under_review".tr(),
           statusColor: Colors.orange.shade800,
           icon: Icons.hourglass_empty_rounded,
         ),
@@ -136,28 +128,30 @@ class AchievementsLogPage extends StatelessWidget {
           context,
           title: "Cloud Computing in Higher Education",
           date: "02 Aug 2023",
-          status: "Rejected",
+          status: "achievements.status.rejected".tr(),
           statusColor: Colors.red.shade700,
           icon: Icons.cancel_outlined,
         ),
-        const SizedBox(height: 25),
 
-        // قسم المقترحات
+        SizedBox(height: 25.h),
+
+        // قسم المقترحات البحثية
         Row(
           children: [
             Icon(Icons.analytics_outlined, color: colorScheme.primary),
-            const SizedBox(width: 8),
+            SizedBox(width: 8.w),
             Text(
-              "Research Proposals",
+              "achievements.sections.proposals".tr(),
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18.sp,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.primary,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 15),
+        SizedBox(height: 15.h),
+
         _buildSimpleCard(
           context,
           "Advanced Methodology in Crisis Management...",
@@ -178,107 +172,103 @@ class AchievementsLogPage extends StatelessWidget {
     required Color statusColor,
     required IconData icon,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-              color: colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    size: 14,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    date,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                  ),
-                ],
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      // استخدام ثيم الكارد الموحد
+      margin: EdgeInsets.only(bottom: 15.h),
+      elevation: theme.cardTheme.elevation,
+      shape: theme.cardTheme.shape,
+      color: theme.cardTheme.color,
+      child: Padding(
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: statusColor.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
+            ),
+            SizedBox(height: 12.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
                   children: [
-                    Icon(icon, size: 14, color: statusColor),
-                    const SizedBox(width: 5),
-                    Text(
-                      status,
-                      style: TextStyle(
-                        color: statusColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: colorScheme.onSurface.withOpacity(0.5),
                     ),
+                    SizedBox(width: 5.w),
+                    Text(date, style: theme.textTheme.bodySmall),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ],
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 5.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(
+                      color: statusColor.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(icon, size: 14, color: statusColor),
+                      SizedBox(width: 5.w),
+                      Text(
+                        status,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildSimpleCard(BuildContext context, String text) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(15),
-      margin: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.all(15.w),
+      margin: EdgeInsets.only(bottom: 10.h),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: colorScheme.primary.withOpacity(0.05)),
+        color: colorScheme.surface.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(15.r),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
       ),
       child: Row(
         children: [
           Icon(Icons.lightbulb_outline, color: colorScheme.secondary, size: 18),
-          const SizedBox(width: 12),
+          SizedBox(width: 12.w),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
-                fontSize: 13,
-                color: colorScheme.primary,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontSize: 13.sp,
+                color: colorScheme.onSurface,
                 height: 1.4,
               ),
             ),

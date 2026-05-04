@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart'; // ✅ مهم جداً للانتقالات الجديدة
+import 'package:go_router/go_router.dart';
+import 'package:easy_localization/easy_localization.dart'; // إضافة سطر استيراد الترجمة
 
-import 'package:optialeader/feature/admin/logic/admin_cubit.dart';
-import 'package:optialeader/feature/admin/logic/admin_state.dart';
+import 'package:optialeader/feature/database_admin/data/models/admin_profile_model.dart';
+import 'package:optialeader/feature/database_admin/logic/admin_data/admin_data_cubit.dart';
+import 'package:optialeader/feature/database_admin/logic/admin_data/admin_data_state.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -16,48 +18,40 @@ class DashboardScreen extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    return BlocListener<AdminCubit, AdminState>(
+    return BlocListener<AdminDataCubit, AdminDataState>(
       listener: (context, state) {
-        if (state is AdminSuccess && state.message != null) {
+        if (state is AdminError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message!)),
+            SnackBar(
+              content: Text(state.error),
+              backgroundColor: Colors.redAccent,
+            ),
           );
         }
       },
-      child: BlocBuilder<AdminCubit, AdminState>(
-        builder: (context, state) {
-          if (state is AdminLoading) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: BlocBuilder<AdminDataCubit, AdminDataState>(
+          builder: (context, state) {
+            // 1. حالة التحميل
+            if (state is AdminLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (state is AdminError) {
-            return Scaffold(
-              body: Center(
-                child: Text(state.error, style: textTheme.bodyLarge),
-              ),
-            );
-          }
+            // 2. حالة نجاح جلب البيانات (AdminLoaded)
+            if (state is AdminLoaded && state.admin != null) {
+              final admin = state.admin!;
 
-          if (state is AdminSuccess) {
-            final admin = state.admin;
-
-            return Scaffold(
-              backgroundColor: theme.scaffoldBackgroundColor,
-              body: SafeArea(
+              return SafeArea(
                 child: Column(
                   children: [
-                    /// 🔵 Header 
                     _buildHeader(colorScheme, textTheme, admin),
 
-                    /// 🟢 Content
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.w),
                         child: Row(
                           children: [
-                            /// 🔵 Dashboard Cards (الجزء المخصص للكروت)
                             Expanded(
                               child: SingleChildScrollView(
                                 padding: EdgeInsets.symmetric(vertical: 20.h),
@@ -65,32 +59,40 @@ class DashboardScreen extends StatelessWidget {
                                   children: [
                                     _buildDetailedCard(
                                       context,
-                                      title: 'طلبات جديدة',
-                                      value: '15',
+                                      title: 'dashboard.new_requests'
+                                          .tr(), // ربط مفتاح الترجمة
+                                      value:
+                                          '15', // القيمة عادة تأتي من API ولكن وضعنا مفتاح للعنوان
                                       icon: Icons.note_add_rounded,
-                                      bgColor: theme.cardTheme.color!,
-                                      // ✅ الانتقال لصفحة الطلبات
-                                      onTap: () => context.push('/admin/orders-list'),
+                                      bgColor:
+                                          theme.cardTheme.color ?? Colors.white,
+                                      onTap: () =>
+                                          context.push('/admin/orders-list'),
                                     ),
                                     SizedBox(height: 15.h),
                                     _buildDetailedCard(
                                       context,
-                                      title: 'قيد التحكيم',
+                                      title: 'dashboard.under_review'
+                                          .tr(), // ربط مفتاح الترجمة
                                       value: '08',
                                       icon: Icons.gavel_rounded,
-                                      bgColor: colorScheme.secondary.withOpacity(0.2),
-                                      // ✅ الانتقال لنفس الصفحة (أو صفحة مخصصة للتحكيم لاحقاً)
-                                      onTap: () => context.push('/admin/orders-list'),
+                                      bgColor: colorScheme.secondary
+                                          .withOpacity(0.2),
+                                      onTap: () =>
+                                          context.push('/admin/orders-list'),
                                     ),
                                     SizedBox(height: 15.h),
                                     _buildDetailedCard(
                                       context,
-                                      title: 'إضافة إعلان',
+                                      title: 'dashboard.add_announcement'
+                                          .tr(), // ربط مفتاح الترجمة
                                       value: '+',
                                       icon: Icons.campaign_rounded,
-                                      bgColor: colorScheme.primary.withOpacity(0.1),
-                                      // ✅ الانتقال لصفحة الإعلانات
-                                      onTap: () => context.push('/admin/announcements'),
+                                      bgColor: colorScheme.primary.withOpacity(
+                                        0.1,
+                                      ),
+                                      onTap: () =>
+                                          context.push('/admin/announcements'),
                                     ),
                                   ],
                                 ),
@@ -99,7 +101,6 @@ class DashboardScreen extends StatelessWidget {
 
                             SizedBox(width: 15.w),
 
-                            /// 🔵 Sidebar Navigation (الشريط الجانبي)
                             _buildSidebar(context, colorScheme),
                           ],
                         ),
@@ -107,17 +108,37 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+              );
+            }
+
+            // 3. حالة الخطأ أو البداية
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("dashboard.no_data".tr()), // ربط مفتاح الترجمة
+                  SizedBox(height: 10.h),
+                  ElevatedButton(
+                    onPressed: () {
+                      // context.read<AdminDataCubit>().getAdminProfile(currentUid);
+                    },
+                    child: Text("dashboard.retry".tr()), // ربط مفتاح الترجمة
+                  ),
+                ],
               ),
             );
-          }
-          return const Scaffold();
-        },
+          },
+        ),
       ),
     );
   }
 
-  /// 🛠️ بناء الـ Header
-  Widget _buildHeader(ColorScheme colorScheme, TextTheme textTheme, var admin) {
+  /// بناء الـ Header
+  Widget _buildHeader(
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    AdminProfileModel admin,
+  ) {
     return Container(
       padding: EdgeInsets.all(25.w),
       decoration: BoxDecoration(
@@ -142,24 +163,31 @@ class DashboardScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Welcome, ${admin.username}',
-                style: textTheme.titleLarge?.copyWith(color: colorScheme.onPrimary),
+                'dashboard.welcome'.tr(
+                  args: [admin.nameAr],
+                ), // استخدام الترجمة مع تمرير الاسم كمتغير
+                style: textTheme.titleLarge?.copyWith(
+                  color: colorScheme.onPrimary,
+                ),
               ),
               Text(
-                admin.info.jobTitleAr.isNotEmpty ? admin.info.jobTitleAr : "إداري النظام",
+                admin.jobAr.isNotEmpty
+                    ? admin.jobAr
+                    : "dashboard.system_admin"
+                          .tr(), // ربط المسمى الوظيفي الافتراضي
                 style: textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onPrimary.withOpacity(0.8),
                 ),
               ),
             ],
           ),
-          _buildAvatar(colorScheme, admin.info.profileImage),
+          _buildAvatar(colorScheme, admin.profileImage),
         ],
       ),
     );
   }
 
-  /// 🛠️ بناء الـ Avatar
+  /// بناء الـ Avatar
   Widget _buildAvatar(ColorScheme colorScheme, String imageUrl) {
     return Container(
       decoration: BoxDecoration(
@@ -176,7 +204,8 @@ class DashboardScreen extends StatelessWidget {
                   fit: BoxFit.cover,
                   width: 56.r,
                   height: 56.r,
-                  placeholder: (_, __) => const CircularProgressIndicator(),
+                  placeholder: (_, __) =>
+                      const CircularProgressIndicator(strokeWidth: 2),
                   errorWidget: (_, __, ___) => const Icon(Icons.person),
                 )
               : const Icon(Icons.person),
@@ -185,7 +214,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  /// 🛠️ بناء الـ Sidebar مع الانتقالات الجديدة
+  /// بناء الـ Sidebar
   Widget _buildSidebar(BuildContext context, ColorScheme colorScheme) {
     return Container(
       width: 60.w,
@@ -199,20 +228,16 @@ class DashboardScreen extends StatelessWidget {
         children: [
           _sideBarIcon(
             Icons.person_outline,
-            () => context.push('/admin/admin_setting'), // ✅ تحديث المسار
+            () => context.push('/admin/admin_setting'),
           ),
           _sideBarIcon(
             Icons.search_rounded,
-            () => context.push('/admin/user_search'), // ✅ تحديث المسار
+            () => context.push('/admin/user_search'),
           ),
           _sideBarIcon(Icons.notifications_none, () {}),
-          _sideBarIcon(
-            Icons.logout, 
-            () {
-              // هنا تقدري تنادي ميثود تسجيل الخروج من الـ Cubit
-            }, 
-            color: Colors.redAccent
-          ),
+          _sideBarIcon(Icons.logout, () {
+            // منطق تسجيل الخروج
+          }, color: Colors.redAccent),
         ],
       ),
     );
@@ -226,19 +251,19 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  /// 🛠️ بناء الـ Card المطور مع خاصية الـ Click
+  /// بناء الـ Card المطور
   Widget _buildDetailedCard(
     BuildContext context, {
     required String title,
     required String value,
     required IconData icon,
     required Color bgColor,
-    required VoidCallback onTap, // ✅ ضفنا الـ onTap كباراميتر أساسي
+    required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
 
     return GestureDetector(
-      onTap: onTap, // ✅ تفعيل الضغطة
+      onTap: onTap,
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.all(20.w),
@@ -246,7 +271,12 @@ class DashboardScreen extends StatelessWidget {
           color: bgColor,
           borderRadius: BorderRadius.circular(25.r),
           boxShadow: theme.brightness == Brightness.light
-              ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                  ),
+                ]
               : null,
         ),
         child: Column(

@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
-import 'package:optialeader/feature/admin/data/repo/announcement_repos/announcement_repo.dart';
 import 'package:optialeader/feature/admin/data/repo/announcement_repos/announcement_repo_impl.dart';
 
 import 'announcement_state.dart';

@@ -1,101 +1,411 @@
 {
-  "auth": {
-    "login": {
-      "title": "تسجيل الدخول",
-      "subtitle": "مرحباً بك مجدداً في OptiLeader",
-      "button": "دخول",
-      "forgot": "نسيت كلمة المرور؟",
-      "no_account": "ليس لديك حساب؟ ",
-      "signup": "سجل الآن"
+  "login": {
+    "title": "تسجيل الدخول",
+    "welcome": "مرحباً بك مجدداً",
+    "subtitle": "سجل دخولك للمتابعة",
+    "email_label": "البريد الإلكتروني الجامعي",
+    "password_label": "كلمة المرور",
+    "forgot_password": "نسيت كلمة المرور؟",
+    "login_button": "دخول",
+    "no_account": "ليس لديك حساب؟",
+    "signup_link": "إنشاء حساب",
+    "validation": {
+      "email_required": "يرجى إدخال البريد الإلكتروني",
+      "invalid_email": "صيغة البريد الإلكتروني غير صحيحة",
+      "password_required": "يرجى إدخال كلمة المرور",
+      "auth_failed": "البريد الإلكتروني أو كلمة المرور غير صحيحة"
+    }
+  },
+  "change_password": {
+    "title": "تغيير كلمة المرور",
+    "header": "تعيين كلمة مرور جديدة",
+    "description": "هذا الإجراء مطلوب عند تسجيل دخولك الأول لتأمين حسابك",
+    "new_password_label": "كلمة المرور الجديدة",
+    "confirm_password_label": "تأكيد كلمة المرور الجديدة",
+    "submit_button": "تأكيد",
+    "mismatch_error": "كلمة المرور غير متطابقة",
+    "validation": {
+      "required": "هذا الحقل مطلوب",
+      "short_password": "كلمة المرور قصيرة جداً"
+    }
+  },
+  "common": {
+    "app_name": "أوبتي ليدر",
+    "error_occurred": "حدث خطأ ما",
+    "retry": "إعادة المحاولة",
+    "no_data": "لا توجد بيانات حالياً",
+    "cancel": "إلغاء"
+  },
+  "dashboard": {
+    "welcome": "مرحباً، {}",
+    "system_overview": "نظرة عامة على النظام",
+    "default_job": "إداري النظام",
+    "doctors": "الدكاترة",
+    "judges": "المحكمين",
+    "admins": "الإداريين",
+    "manage_data": "إدارة البيانات الجديدة",
+    "add_doctor": "إضافة عضو هيئة تدريس",
+    "add_admin": "إضافة مسؤول إداري",
+    "add_judge": "إضافة محكم علمي",
+    "error": "خطأ",
+    "cards": {
+      "new_requests": "طلبات جديدة",
+      "under_review": "قيد التحكيم",
+      "add_announcement": "إضافة إعلان"
     },
-    "register": {
-      "title": "تسجيل جديد",
-      "step1": "التحقق من البيانات",
-      "step2": "إنشاء كلمة المرور",
-      "submit": "إنشاء الحساب"
+    "tooltips": {
+      "profile": "الملف الشخصي",
+      "search": "بحث",
+      "notifications": "التنبيهات",
+      "logout": "تسجيل الخروج"
+    }
+  },
+  "employee_review": {
+    "app_bar_title": "مراجعة ملف الموظف والاعتماد",
+    "info_card": {
+      "birth_date": "تاريخ الميلاد:",
+      "join_date": "تاريخ الالتحاق:"
+    },
+    "sections": {
+      "job_status": "الموقف الوظيفي والترقيات",
+      "teaching_load": "العبء التدريسي والمقررات",
+      "attachments": "المرفقات الإدارية",
+      "teaching_footer": "تم مراجعة العبء والمقررات المسحوبة",
+      "attachments_footer": "تم مراجعة جميع المرفقات المسحوبة من النظام"
+    },
+    "tables": {
+      "new_title": "المسمى الجديد",
+      "prev_title": "المسمى السابق",
+      "promo_date": "تاريخ الترقية",
+      "hours_count": "عدد الساعات",
+      "course_name": "اسم المقرر"
+    },
+    "judge_selection": {
+      "label": "اختيار المحكم المختص",
+      "placeholder": "اختر المحكم"
+    },
+    "submit_button": "اعتماد وتحويل للمحكم"
+  },
+  "user_search": {
+    "title": "المستخدمون المسجلون",
+    "search_hint": "ابحث عن اسم، بريد، أو رقم وظيفي",
+    "section_title": "خدمات الموظف",
+    "no_users": "لا يوجد مستخدمون حالياً",
+    "loading": "جاري تحميل البيانات...",
+    "employee_id_label": "الرقم الوظيفي: {}",
+    "error_prefix": "حدث خطأ: {}"
+  },
+  "orders": {
+    "title": "إدارة الطلبات",
+    "search_hint": "بحث عن طلب برقم الهوية أو الاسم...",
+    "status_new": "جديد",
+    "status_review": "قيد التحكيم",
+    "status_approved": "معتمد",
+    "report_title": "مراجعة الملف والاعتماد",
+    "employee_id": "الرقم الوظيفي: {} | قسم {}",
+    "sections": {
+      "job_status": "الموقف الوظيفي والترقيات",
+      "disciplinary": "السجل الانضباطي",
+      "teaching": "العبء التدريسي والمقررات",
+      "attachments": "المرفقات الإدارية"
+    },
+    "actions": {
+      "select_judge": "اختيار المحكم الفني المختص للملف",
+      "submit_btn": "اعتماد الملف وتحويله للمحكم"
+    }
+  },
+  "announcement_details": {
+    "edit_button": "تعديل الإعلان",
+    "badge_title": "إعلان",
+    "applicants_label": "عدد المتقدمين",
+    "person_unit": "شخص",
+    "deadline_label": "آخر موعد",
+    "posted_label": "تاريخ النشر"
+  },
+  "announcements": {
+    "title": "الإعلانات",
+    "subtitle": "تابع آخر أخبار وتحديثات المدرسة",
+    "no_data": "لا توجد إعلانات حالياً",
+    "preparing": "جاري تحضير البيانات...",
+    "applicant_unit": "متقدم",
+    "add_button": "إضافة إعلان"
+  },
+  "edit_announcement": {
+    "title": "تعديل الإعلان",
+    "field_title": "عنوان الإعلان",
+    "hint_title": "أدخل العنوان...",
+    "field_desc": "محتوى الإعلان",
+    "hint_desc": "أدخل التفاصيل...",
+    "field_date": "الموعد النهائي",
+    "field_status": "الحالة",
+    "save_button": "حفظ التعديلات",
+    "success_msg": "تم حفظ التعديلات بنجاح"
+  },
+  "statuses": {
+    "active": "نشط",
+    "pending": "قيد الانتظار",
+    "closed": "مغلق"
+  },
+  "add_admin": {
+    "app_bar_title": "إضافة مسؤول إداري جديد",
+    "personal_info_section": "البيانات الشخصية",
+    "job_info_section": "بيانات الوظيفة والعمل",
+    "name_ar": "الاسم بالكامل (عربي)",
+    "name_en": "Full Name (English)",
+    "email": "البريد الإلكتروني الجامعي",
+    "job_ar": "المسمى الوظيفي (عربي)",
+    "job_en": "Job Title (English)",
+    "national_id": "الرقم القومي",
+    "employee_id": "كود الموظف",
+    "submit_button": "اعتماد وإضافة المسؤول",
+    "success_msg": "تم حفظ بيانات المسؤول بنجاح",
+    "valid_name_ar": "برجاء إدخال الاسم بالعربية",
+    "valid_name_en": "Please enter name in English",
+    "valid_email_req": "الإيميل مطلوب",
+    "valid_email_format": "صيغة البريد غير صحيحة",
+    "valid_job_ar": "المسمى الوظيفي مطلوب",
+    "valid_job_en": "Job title required",
+    "valid_id_length": "يجب أن يكون 14 رقم",
+    "valid_emp_id": "الكود مطلوب"
+  },
+  "add_doctor": {
+    "title": "استمارة بيانات الدكتور الشاملة",
+    "personal_section": "بيانات الهوية والوظيفة الحالية",
+    "contact_section": "بيانات التواصل والعنوان",
+    "academic_section": "التاريخ الأكاديمي والوظيفي",
+    "eligibility_section": "مراجعة الأهلية",
+    "name_ar": "الاسم بالكامل (عربي)",
+    "name_en": "الاسم بالكامل (إنجليزي)",
+    "nationality_ar": "الجنسية (عربي)",
+    "nationality_en": "الجنسية (إنجليزي)",
+    "social_status": "الحالة الاجتماعية",
+    "job_ar": "الوظيفة الحالية (عربي)",
+    "job_en": "الوظيفة الحالية (إنجليزي)",
+    "national_id": "الرقم القومي",
+    "employee_id": "الرقم الوظيفي",
+    "birth_date": "تاريخ الميلاد",
+    "email": "البريد الجامعي الرسمي",
+    "phone": "رقم الهاتف الشخصي",
+    "address_ar": "العنوان بالتفصيل (عربي)",
+    "address_en": "العنوان بالتفصيل (إنجليزي)",
+    "academic_add_btn": "إضافة درجة علمية سابقة",
+    "save_btn": "حفظ ملف الدكتور بالكامل",
+    "validation_required": "هذا الحقل مطلوب",
+    "success_msg": "تم حفظ ملف الدكتور بنجاح"
+  },
+  "add_judge": {
+    "title": "إضافة محكم علمي جديد",
+    "personal_section": "البيانات الشخصية",
+    "academic_section": "الخلفية الأكاديمية",
+    "name_ar": "الاسم بالكامل (عربي)",
+    "name_en": "الاسم بالكامل (إنجليزي)",
+    "email": "البريد الإلكتروني",
+    "phone": "رقم الهاتف",
+    "address_ar": "العنوان بالتفصيل (عربي)",
+    "address_en": "العنوان بالتفصيل (إنجليزي)",
+    "university": "الجامعة / المؤسسة",
+    "rank": "الرتبة العلمية (أستاذ، مشارك..)",
+    "spec_ar": "التخصص الدقيق (عربي)",
+    "spec_en": "التخصص الدقيق (إنجليزي)",
+    "save_btn": "اعتماد المحكم في النظام",
+    "success_msg": "تم اعتماد المحكم بنجاح",
+    "error_msg": "خطأ في عملية الحفظ",
+    "val_name_ar": "الاسم مطلوب",
+    "val_name_en": "الاسم بالإنجليزية مطلوب",
+    "val_email": "إيميل غير صحيح",
+    "val_phone": "رقم الهاتف مطلوب",
+    "val_address_ar": "العنوان مطلوب",
+    "val_address_en": "العنوان بالإنجليزي مطلوب",
+    "val_university": "اسم الجامعة مطلوب",
+    "val_rank": "الرتبة العلمية مطلوبة",
+    "val_spec_ar": "التخصص العربي مطلوب",
+    "val_spec_en": "التخصص الإنجليزي مطلوب"
+  },
+  "evaluation": {
+    "title": "تقييم المتقدم",
+    "personal_traits": "1. السمات الشخصية والمظهر (الدرجة القصوى: 15)",
+    "appearance": "المظهر العام والهندام",
+    "confidence": "الثقة بالنفس ومواجهة الجمهور",
+    "behavior": "الاتزان وحسن التصرف",
+    "competence": "2. الكفاءة العلمية والمهنية (الدرجة القصوى: 40)",
+    "communication": "3. مهارات التواصل والعرض (الدرجة القصوى: 25)",
+    "leadership": "4. القيادة وتطوير الإدارة (الدرجة القصوى: 20)",
+    "sub_total": "المجموع الفرعي:",
+    "total_score": "المجموع الكلي:",
+    "notes_label": "ملاحظات وتوصيات إضافية",
+    "notes_hint": "اكتب ملاحظاتك هنا...",
+    "submit_btn": "اعتماد التقييم",
+    "save_draft": "حفظ كمسودة"
+  },
+  "system_stats": {
+    "total_doctors": "إجمالي أعضاء هيئة التدريس",
+    "total_judges": "إجمالي المحكمين الفنيين",
+    "active_announcements": "الإعلانات النشطة حالياً",
+    "pending_files": "ملفات بانتظار الاعتماد"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "language_selection": "لغة التطبيق",
+    "dark_mode": "الوضع الليلي",
+    "notifications_switch": "تفعيل التنبيهات",
+    "help_center": "مركز المساعدة والدعم",
+    "about_app": "عن أوبتي ليدر"
+  },
+  "dialogs": {
+    "confirm_delete_title": "تأكيد الحذف",
+    "confirm_delete_msg": "هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع عن هذا الإجراء.",
+    "confirm_logout": "هل تريد تسجيل الخروج من النظام؟",
+    "save_success": "تم حفظ البيانات بنجاح",
+    "error_occurred": "فشلت العملية، يرجى المحاولة لاحقاً"
+  },
+  "filter": {
+    "title": "تصفية النتائج",
+    "by_department": "حسب القسم",
+    "by_status": "حسب الحالة",
+    "apply_filter": "تطبيق التصفية",
+    "reset": "إعادة ضبط"
+  },
+  "judge_dashboard": {
+    "my_reviews": "ملفات بانتظار تقييمي",
+    "completed_reviews": "ملفات قمت بتحكيمها",
+    "start_evaluation": "بدء عملية التقييم"
+  },
+  "doctor_profile": {
+    "title": "د. سارة محمد",
+    "subtitle": "بيانات الملف الشخصي الأساسية",
+    "sections": {
+      "general": "المعلومات العامة",
+      "social": "البيانات الاجتماعية",
+      "contact": "تفاصيل الاتصال"
     },
     "fields": {
       "full_name": "الاسم بالكامل",
-      "email": "البريد الجامعي",
-      "national_id": "الرقم القومي",
-      "employee_id": "الرقم الوظيفي",
-      "password": "كلمة المرور",
-      "confirm_password": "تأكيد كلمة المرور"
+      "phone": "رقم الهاتف",
+      "gender": "الجنس",
+      "status": "الحالة",
+      "dob": "تاريخ الميلاد",
+      "employer": "جهة العمل الحالية",
+      "marital_status": "الحالة الاجتماعية",
+      "children": "عدد الأطفال",
+      "email": "البريد الإلكتروني",
+      "address": "عنوان السكن"
     },
-    "validation": {
-      "required": "هذا الحقل مطلوب",
-      "invalid_email": "يرجى إدخال بريد جامعي صحيح",
-      "national_id_length": "الرقم القومي يجب أن يكون 14 رقم",
-      "password_short": "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
-      "password_mismatch": "كلمة المرور غير متطابقة"
+    "hints": {
+      "enter_name": "أدخل الاسم بالكامل",
+      "enter_employer": "اسم الشركة أو المؤسسة",
+      "enter_marital": "أعزب، متزوج، إلخ...",
+      "enter_address": "المدينة، الحي، الشارع"
     },
-    "messages": {
-      "verifying": "جاري التحقق من البيانات...",
-      "success": "تم إنشاء الحساب بنجاح"
+    "buttons": {
+      "save": "حفظ الملف الشخصي"
+    }
+  },
+  "achievements": {
+    "title": "سجل الإنجازات",
+    "tabs": {
+      "research": "الأبحاث",
+      "conferences": "المؤتمرات",
+      "activities": "الأنشطة",
+      "courses": "الدورات"
+    },
+    "sections": {
+      "proposals": "مقترحات بحثية"
+    },
+    "status": {
+      "accepted": "مقبول",
+      "under_review": "قيد المراجعة",
+      "rejected": "مرفوض"
+    }
+  },
+  "career": {
+  "title": "المعلومات المهنية",
+  "sections": {
+    "credentials": "المؤهلات العلمية",
+    "path": "المسار الوظيفي",
+    "current_employment": "بيانات العمل الحالية"
+  },
+  "degrees": { "phd": "الدرجة: دكتوراه", "msc": "الدرجة: ماجستير", "bsc": "الدرجة: بكالوريوس" },
+  "specs": { 
+     "computer_eng": "التخصص: هندسة الحاسب", 
+     "software_eng": "التخصص: هندسة البرمجيات",
+     "computer_science": "التخصص: علوم الحاسب"
+  },
+  "current_role": "الحالي: محاضر أول منذ {}",
+  "experience": "الخبرة: {} سنوات",
+  "previous_positions": "المناصب السابقة:",
+  "roles": { "lecturer": "محاضر", "ta": "معيد" },
+  "labels": { "dept": "القسم:", "type": "النوع:", "hire_date": "تاريخ التعيين:" },
+  "employment_type": { "permanent": "تعيين دائم" }
+},
+
+  "dashboard": {
+    "welcome": "مرحباً بك،",
+    "achievements": "الإنجازات",
+    "achievements_desc": "8 أبحاث منشورة\n240+ محاضرة",
+    "academic_data": "بيانات أكاديمية",
+    "academic_desc": "أستاذ مشارك\nقسم الهندسة",
+    "requests_status": "حالة الطلبات",
+    "pending": "قيد الانتظار",
+    "career_path": "المسار الوظيفي",
+    "completed": "اكتمل",
+    "latest_opportunities": "أحدث الفرص",
+    "view_all": "عرض الكل",
+    "opp1_title": "طلب ترقية الربيع",
+    "opp1_desc": "يمكنك الآن التقديم على ترقيات أعضاء هيئة التدريس.",
+    "opp2_title": "تمويل بحثي متاح",
+    "opp2_desc": "تم فتح باب التقديم للحصول على تمويل للمشاريع البحثية الجديدة.",
+    "nav": {
+      "settings": "الإعدادات",
+      "notifications": "التنبيهات",
+      "files": "الملفات",
+      "home": "الرئيسية"
+    }
+  },
+  
+  "archive": {
+    "title": "الأرشيف الرقمي",
+    "tabs": {
+      "research": "الأبحاث",
+      "conferences": "المؤتمرات",
+      "others": "أخرى"
+    },
+    "sort_by_date": "ترتيب حسب التاريخ",
+    "folders": {
+      "certificates": "الشهادات الأكاديمية",
+      "certificates_sub": "٣ ملفات أسبوعية",
+      "id": "الهوية الشخصية",
+      "id_sub": "٤ ملفات أسبوعية",
+      "decisions": "القرارات الإدارية",
+      "decisions_sub": "٥ ملفات ترقية",
+      "misc": "مستندات متنوعة",
+      "misc_sub": "٣ تنبيهات جديدة"
     }
   },
 
-  "dashboard": {
-    "welcome": "مرحباً",
-    "new_requests": "طلبات جديدة",
-    "in_arbitration": "قيد التحكيم",
-    "create_new": "إنشاء جديد",
-    "logout": "تسجيل الخروج",
-    "announcements_summary": "ملخص الإعلانات",
-    "system_status": "حالة النظام"
+  "upload": {
+    "title": "رفع مستند",
+    "subtitle": "ارفع أبحاثك أو شهاداتك العلمية",
+    "click_to_select": "اضغط لاختيار ملف",
+    "file_types": "PDF, DOCX أو JPG (بحد أقصى ١٠ ميجا)",
+    "label_title": "عنوان المستند",
+    "hint_title": "مثال: ورقة بحثية في تعلم الآلة",
+    "label_category": "الفئة",
+    "hint_category": "مثال: بحث، مؤتمر، إلخ.",
+    "label_desc": "الوصف",
+    "hint_desc": "تفاصيل مختصرة عن الملف",
+    "btn_upload": "رفع الآن"
   },
-
-  "announcements": {
-    "title": "الإعلانات",
-    "subtitle": "إدارة تحديثات ومستجدات المدرسة",
-    "add_new": "نشر إعلان جديد",
-    "edit": "تعديل الإعلان",
-    "delete": "حذف الإعلان",
-    "details": "تفاصيل الإعلان",
-    "form_title": "عنوان الإعلان",
-    "form_desc": "وصف الإعلان",
-    "form_image": "صورة الإعلان",
-    "applicants": "متقدم",
-    "deadline": "آخر موعد للتقديم",
-    "posted_at": "تاريخ النشر",
-    "no_data": "لا توجد إعلانات حالياً",
-    "upload_image": "رفع صورة",
-    "status_active": "نشط",
-    "status_closed": "مغلق",
-    "status_pending": "قيد الانتظار",
-    "delete_confirm": "هل أنت متأكد من حذف هذا الإعلان؟",
-    "success_add": "تم نشر الإعلان بنجاح",
-    "success_delete": "تم حذف الإعلان بنجاح"
-  },
-
+  
   "settings": {
-    "title": "إعدادات الإدارة",
-    "personal_data": "البيانات الشخصية",
-    "preferences": "التفضيلات",
-    "language": "اللغة",
-    "save": "حفظ التغييرات",
-    "address": "العنوان",
-    "phone1": "الهاتف 1",
-    "phone2": "الهاتف 2",
-    "change_photo": "تغيير الصورة",
-    "app_identity": "هوية التطبيق",
-    "dark_mode": "الوضع الليلي"
-  },
-
-  "common": {
-    "loading": "جاري التحميل...",
-    "retry": "إعادة المحاولة",
-    "cancel": "إلغاء",
-    "next": "التالي",
-    "back": "رجوع",
-    "confirm": "تأكيد",
-    "search": "بحث..."
-  },
-
-  "errors": {
-    "network": "مشكلة في الاتصال بالإنترنت",
-    "server": "خطأ في الخادم",
-    "unknown": "حدث خطأ غير متوقع",
-    "empty_fields": "يرجى ملء جميع الحقول المطلوبة"
+    "title": "إعدادات البروفايل",
+    "username": "اسم المستخدم",
+    "email": "البريد الإلكتروني",
+    "address": "العنوان الحالي",
+    "phone": "رقم الهاتف",
+    "save": "حفظ التعديلات الملكية",
+    "success": "تم تحديث بياناتك الملكية بنجاح"
   }
+
+
+
 }

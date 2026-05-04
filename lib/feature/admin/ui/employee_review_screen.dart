@@ -1,69 +1,81 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:go_router/go_router.dart';
+import 'package:optialeader/core/routing/routes.dart'; 
 
 class EmployeeReviewScreen extends StatelessWidget {
   const EmployeeReviewScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // سحب الثيم الموحد
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      // الخلفية تقرأ من scaffoldBackgroundColor في الثيم
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('مراجعة ملف الموظف والاعتماد'),
+        title: Text(
+          'review.app_bar_title'.tr(),
+          style: TextStyle(fontSize: 16.sp),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Navigator.pop(context),
+  icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
+  onPressed: () {
+    if (context.canPop()) {
+      context.pop(); 
+    } else {
+      context.go(Routes.admin); 
+    }
+  },
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(2.0),
-          child: Container(color: colorScheme.secondary, height: 2.0),
+          preferredSize: Size.fromHeight(2.h),
+          child: Container(color: colorScheme.secondary, height: 2.h),
         ),
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            const SizedBox(height: 15),
+            SizedBox(height: 15.h),
 
-            // 1. كارت بيانات الموظف الأساسية (يستخدم CardTheme)
+            // 1. كارت بيانات الموظف الأساسية
             _buildEmployeeInfoCard(context),
 
-            // 2. الموقف الوظيفي (يستخدم DataTableTheme من الثيم)
+            // 2. الموقف الوظيفي والترقيات
             _buildSection(
               context,
-              title: 'الموقف الوظيفي والترقيات',
+              title: 'review.sections.promotions'.tr(),
               isActive: true,
               child: _buildPromotionsTable(context),
             ),
 
-            // 3. العبء التدريسي
+            // 3. العبء التدريسي والمقررات
             _buildSection(
               context,
-              title: 'العبء التدريسي والمقررات',
+              title: 'review.sections.teaching_load'.tr(),
               isActive: true,
               child: _buildTeachingLoadTable(context),
-              footerText: 'تم مراجعة العبء والمقررات المسحوبة',
+              footerText: 'review.footers.load_reviewed'.tr(),
             ),
 
             // 4. المرفقات الإدارية
             _buildSection(
               context,
-              title: 'المرفقات الإدارية',
+              title: 'review.sections.attachments'.tr(),
               isActive: false,
               child: _buildAttachmentsList(context),
-              footerText: 'تم مراجعة جميع المرفقات المسحوبة من النظام',
+              footerText: 'review.footers.docs_reviewed'.tr(),
             ),
 
             // 5. اختيار المحكم المختص
             _buildJudgeSelection(context),
 
-            // 6. زر الاعتماد النهائي (يستخدم ElevatedButtonTheme)
+            // 6. زر الاعتماد النهائي
             _buildSubmitButton(context),
 
-            const SizedBox(height: 40),
+            SizedBox(height: 40.h),
           ],
         ),
       ),
@@ -73,9 +85,9 @@ class EmployeeReviewScreen extends StatelessWidget {
   Widget _buildEmployeeInfoCard(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      margin: EdgeInsets.symmetric(horizontal: 15.w, vertical: 10.h),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20.w),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -83,23 +95,35 @@ class EmployeeReviewScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('د. أحمد منصور', style: theme.textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  _infoRow('15/05/1975', 'تاريخ الميلاد:'),
-                  _infoRow('10/10/2000', 'تاريخ الالتحاق:'),
+                  Text(
+                    'review.employee_name'.tr(),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontSize: 18.sp,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  _infoRow('15/05/1975', 'review.birth_date'.tr()),
+                  _infoRow('10/10/2000', 'review.join_date'.tr()),
                 ],
               ),
             ),
-            const SizedBox(width: 15),
+            SizedBox(width: 15.w),
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: theme.colorScheme.secondary, width: 2),
+                border: Border.all(
+                  color: theme.colorScheme.secondary,
+                  width: 2,
+                ),
               ),
               child: CircleAvatar(
-                radius: 40,
+                radius: 40.r,
                 backgroundColor: theme.colorScheme.surface,
-                child: Icon(Icons.person, size: 50, color: theme.colorScheme.primary),
+                child: Icon(
+                  Icons.person,
+                  size: 50.sp,
+                  color: theme.colorScheme.primary,
+                ),
               ),
             ),
           ],
@@ -112,21 +136,41 @@ class EmployeeReviewScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-        const SizedBox(width: 8),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        Text(
+          value,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp),
+        ),
+        SizedBox(width: 8.w),
+        Text(
+          label,
+          style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+        ),
       ],
     );
   }
 
-  Widget _buildSection(BuildContext context, {required String title, required bool isActive, required Widget child, String? footerText}) {
+  Widget _buildSection(
+    BuildContext context, {
+    required String title,
+    required bool isActive,
+    required Widget child,
+    String? footerText,
+  }) {
     final theme = Theme.of(context);
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      margin: EdgeInsets.symmetric(horizontal: 15.w, vertical: 10.h),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
           ListTile(
-            trailing: Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+            trailing: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13.sp,
+                color: theme.colorScheme.primary,
+              ),
+            ),
             leading: Switch(
               value: isActive,
               onChanged: (v) {},
@@ -137,12 +181,13 @@ class EmployeeReviewScreen extends StatelessWidget {
           if (footerText != null)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.green.shade700,
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+              padding: EdgeInsets.symmetric(vertical: 10.h),
+              decoration: BoxDecoration(color: Colors.green.shade700),
+              child: Text(
+                footerText,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white, fontSize: 11.sp),
               ),
-              child: Text(footerText, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 11)),
             ),
         ],
       ),
@@ -152,39 +197,116 @@ class EmployeeReviewScreen extends StatelessWidget {
   Widget _buildPromotionsTable(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(8.w),
       child: Table(
-        border: TableBorder.all(color: theme.colorScheme.secondary.withOpacity(0.2)),
-        children: const [
-          TableRow(children: [
-            _TableCell('المسمى الجديد', isHeader: true),
-            _TableCell('المسمى السابق', isHeader: true),
-            _TableCell('تاريخ الترقية', isHeader: true),
-          ]),
-          TableRow(children: [_TableCell('أستاذ مشارك'), _TableCell('أستاذ مساعد'), _TableCell('2020')]),
+        border: TableBorder.all(
+          color: theme.colorScheme.secondary.withOpacity(0.2),
+        ),
+        children: [
+          TableRow(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.05),
+            ),
+            children: [
+              _TableCell('review.tables.new_title'.tr(), isHeader: true),
+              _TableCell('review.tables.old_title'.tr(), isHeader: true),
+              _TableCell('review.tables.date'.tr(), isHeader: true),
+            ],
+          ),
+          const TableRow(
+            children: [
+              _TableCell('أستاذ مشارك'),
+              _TableCell('أستاذ مساعد'),
+              _TableCell('2020'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTeachingLoadTable(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.all(10.w),
+      child: Table(
+        border: TableBorder.all(
+          color: theme.colorScheme.secondary.withOpacity(0.2),
+        ),
+        children: [
+          TableRow(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.secondary.withOpacity(0.05),
+            ),
+            children: [
+              _TableCell('review.tables.hours_count'.tr(), isHeader: true),
+              _TableCell('review.tables.course_name'.tr(), isHeader: true),
+            ],
+          ),
+          const TableRow(
+            children: [_TableCell('4'), _TableCell('خوارزميات (CS301)')],
+          ),
+          const TableRow(
+            children: [_TableCell('4'), _TableCell('ذكاء اصطناعي (CS405)')],
+          ),
         ],
       ),
     );
   }
 
   Widget _buildAttachmentsList(BuildContext context) {
-    return Column(
-      children: [
-        ListTile(
-          trailing: const Icon(Icons.picture_as_pdf, color: Colors.red),
-          title: const Text('شهادة التخرج الموثقة.pdf', textAlign: TextAlign.right, style: TextStyle(fontSize: 12)),
-        ),
-      ],
+    return Padding(
+      padding: EdgeInsets.fromLTRB(15.w, 0, 15.w, 15.h),
+      child: Column(
+        children: [
+          _attachmentItem('شهادة التخرج الموثقة (PhD).pdf'),
+          _attachmentItem('إثبات الدرجة الوظيفية الحالية.pdf'),
+        ],
+      ),
+    );
+  }
+
+  Widget _attachmentItem(String name) {
+    return Container(
+      margin: EdgeInsets.only(top: 8.h),
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Text(
+              name,
+              textAlign: TextAlign.right,
+              style: TextStyle(fontSize: 12.sp),
+            ),
+          ),
+          SizedBox(width: 10.w),
+          Icon(
+            Icons.picture_as_pdf,
+            color: const Color(0xFFC62828),
+            size: 22.sp,
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildJudgeSelection(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.all(15),
+      padding: EdgeInsets.all(15.w),
       child: DropdownButtonFormField<String>(
-        decoration: const InputDecoration(labelText: 'اختيار المحكم المختص'),
-        items: const [DropdownMenuItem(value: '1', child: Text('د. سارة محمود'))],
+        decoration: InputDecoration(
+          labelText: 'review.fields.select_judge'.tr(),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+        ),
+        items: const [
+          DropdownMenuItem(value: '1', child: Text('د. سارة محمود')),
+        ],
         onChanged: (v) {},
       ),
     );
@@ -192,14 +314,22 @@ class EmployeeReviewScreen extends StatelessWidget {
 
   Widget _buildSubmitButton(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(15),
+      padding: EdgeInsets.all(15.w),
       child: SizedBox(
         width: double.infinity,
-        height: 55,
+        height: 55.h,
         child: ElevatedButton.icon(
           onPressed: () {},
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
           icon: const Icon(Icons.verified_user),
-          label: const Text('اعتماد وتحويل للمحكم'),
+          label: Text(
+            'review.fields.submit_btn'.tr(),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );
@@ -215,12 +345,12 @@ class _TableCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.all(10.w),
       child: Text(
         text,
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 12.sp,
           fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
           color: isHeader ? theme.colorScheme.primary : null,
         ),
@@ -228,59 +358,3 @@ class _TableCell extends StatelessWidget {
     );
   }
 }
-// 1. دالة جدول العبء التدريسي
-  Widget _buildTeachingLoadTable(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(10),
-      child: Table(
-        // استخدام اللون الذهبي من الثيم للحدود
-        border: TableBorder.all(color: theme.colorScheme.secondary.withOpacity(0.2), width: 1),
-        children: [
-          TableRow(
-            decoration: BoxDecoration(color: theme.colorScheme.secondary.withOpacity(0.05)),
-            children: const [
-              _TableCell('عدد الساعات', isHeader: true),
-              _TableCell('اسم المقرر', isHeader: true),
-            ],
-          ),
-          const TableRow(children: [_TableCell('4'), _TableCell('خوارزميات (CS301)')]),
-          const TableRow(children: [_TableCell('4'), _TableCell('ذكاء اصطناعي (CS405)')]),
-        ],
-      ),
-    );
-  }
-
-  // 2. دالة قائمة المرفقات
-  Widget _buildAttachmentsList(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-      child: Column(
-        children: [
-          _attachmentItem('شهادة التخرج الموثقة (PhD).pdf'),
-          _attachmentItem('إثبات الدرجة الوظيفية الحالية.pdf'),
-        ],
-      ),
-    );
-  }
-
-  // 3. ودجت عنصر المرفق الواحد
-  Widget _attachmentItem(String name) {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(name, style: const TextStyle(fontSize: 12, color: Colors.black87)),
-          const SizedBox(width: 10),
-          const Icon(Icons.picture_as_pdf, color: Color(0xFFC62828), size: 22),
-        ],
-      ),
-    );
-  }

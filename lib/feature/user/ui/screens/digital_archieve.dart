@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:optialeader/core/routing/routes.dart';
 
 class DigitalArchivePage extends StatelessWidget {
   const DigitalArchivePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // --- سحب إعدادات الثيم لضمان التناسق ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -13,45 +16,24 @@ class DigitalArchivePage extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        // استخدام لون الخلفية من الثيم (البيج الملكي)
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           backgroundColor: colorScheme.primary,
           elevation: 0,
-          toolbarHeight: 80,
-          automaticallyImplyLeading: false, // تحكم يدوي بالأزرار
+          toolbarHeight: 80.h,
+          automaticallyImplyLeading: false,
+           leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(Routes.user);
+                }
+              },
+            ),
           title: Row(
             children: [
-              // 2. صورة البروفيل مع الإطار الذهبي
-              Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: colorScheme.secondary, width: 1.5),
-                ),
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: colorScheme.secondary.withOpacity(0.2),
-                  child: const Icon(
-                    Icons.person,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // 3. عنوان الصفحة
-              Text(
-                'Digital Archive',
-                style: textTheme.titleMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(width: 15),
-              // 1. زر العودة للخلف (يسار)
               IconButton(
                 icon: const Icon(
                   Icons.arrow_back_ios_new,
@@ -60,6 +42,17 @@ class DigitalArchivePage extends StatelessWidget {
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
+              SizedBox(width: 8.w),
+              _buildAppBarProfile(colorScheme),
+              SizedBox(width: 12.w),
+              Text(
+                'archive.title'.tr(),
+                style: textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.sp,
+                ),
+              ),
             ],
           ),
           bottom: TabBar(
@@ -67,68 +60,54 @@ class DigitalArchivePage extends StatelessWidget {
             indicatorWeight: 3,
             labelColor: colorScheme.secondary,
             unselectedLabelColor: Colors.white70,
-            tabs: const [
-              Tab(text: "Research"),
-              Tab(text: "Conferences"),
-              Tab(text: "Others"),
+            labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp),
+            tabs: [
+              Tab(text: "archive.tabs.research".tr()),
+              Tab(text: "archive.tabs.conferences".tr()),
+              Tab(text: "archive.tabs.others".tr()),
             ],
           ),
         ),
         body: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: EdgeInsets.all(20.w),
           child: Column(
             children: [
-              // شريط البحث والفرز (مربوط بالألوان الكحلية من الثيم)
-              Row(
-                children: [
-                  Icon(Icons.sort_rounded, color: colorScheme.primary),
-                  const SizedBox(width: 10),
-                  Text(
-                    "Sort by Date",
-                    style: TextStyle(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const Spacer(),
-                  Icon(Icons.search, color: colorScheme.primary),
-                ],
-              ),
-              const SizedBox(height: 20),
+              _buildSearchAndSortBar(colorScheme),
 
-              // شبكة المجلدات
+              SizedBox(height: 20.h),
+
               Expanded(
                 child: GridView.count(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                  childAspectRatio: 0.9,
+                  crossAxisSpacing: 15.w,
+                  mainAxisSpacing: 15.h,
+                  childAspectRatio: 0.85,
                   children: [
                     _buildFolderCard(
                       context,
-                      "Academic Certificates",
-                      "3 weekly files",
+                      "archive.folders.certificates".tr(),
+                      "archive.folders.certificates_sub".tr(),
                       Colors.teal.shade300,
                       3,
                     ),
                     _buildFolderCard(
                       context,
-                      "Identification (ID)",
-                      "4 weekly files",
+                      "archive.folders.id".tr(),
+                      "archive.folders.id_sub".tr(),
                       Colors.amber.shade400,
                       4,
                     ),
                     _buildFolderCard(
                       context,
-                      "Admin Decisions",
-                      "5 promotion files",
+                      "archive.folders.decisions".tr(),
+                      "archive.folders.decisions_sub".tr(),
                       Colors.blue.shade300,
                       5,
                     ),
                     _buildFolderCard(
                       context,
-                      "Misc Documents",
-                      "3 new alerts",
+                      "archive.folders.misc".tr(),
+                      "archive.folders.misc_sub".tr(),
                       Colors.purple.shade300,
                       3,
                       badgeCount: 3,
@@ -139,21 +118,60 @@ class DigitalArchivePage extends StatelessWidget {
             ],
           ),
         ),
-
-        // زر الإضافة العائم في المنتصف
-        floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
         floatingActionButton: FloatingActionButton(
           onPressed: () {},
           backgroundColor: colorScheme.secondary,
           elevation: 4,
-          child: Icon(Icons.add, size: 30, color: colorScheme.primary),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.r),
+          ),
+          child: Icon(Icons.add, size: 28.sp, color: colorScheme.primary),
         ),
-
       ),
     );
   }
 
-  // --- بناء كارت المجلد ---
+  Widget _buildAppBarProfile(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: colorScheme.secondary, width: 1.5),
+      ),
+      child: CircleAvatar(
+        radius: 18.r,
+        backgroundColor: colorScheme.secondary.withOpacity(0.2),
+        child: Icon(Icons.person, color: Colors.white, size: 18.sp),
+      ),
+    );
+  }
+
+  Widget _buildSearchAndSortBar(ColorScheme colorScheme) {
+    return Row(
+      children: [
+        Icon(Icons.sort_rounded, color: colorScheme.primary, size: 22.sp),
+        SizedBox(width: 10.w),
+        Text(
+          "archive.sort_by_date".tr(),
+          style: TextStyle(
+            color: colorScheme.primary,
+            fontWeight: FontWeight.w600,
+            fontSize: 13.sp,
+          ),
+        ),
+        const Spacer(),
+        Container(
+          padding: EdgeInsets.all(8.w),
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withOpacity(0.05),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.search, color: colorScheme.primary, size: 20.sp),
+        ),
+      ],
+    );
+  }
+
   Widget _buildFolderCard(
     BuildContext context,
     String title,
@@ -167,7 +185,7 @@ class DigitalArchivePage extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         border: Border.all(color: colorScheme.primary.withOpacity(0.05)),
         boxShadow: [
           BoxShadow(
@@ -180,32 +198,34 @@ class DigitalArchivePage extends StatelessWidget {
       child: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(16.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
                   child: Icon(
                     Icons.folder_rounded,
-                    size: 70,
+                    size: 65.sp,
                     color: folderColor.withOpacity(0.8),
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
                 Text(
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                    fontSize: 12.sp,
                     color: colorScheme.primary,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Text(
                   subtitle,
-                  style: const TextStyle(color: Colors.grey, fontSize: 10),
+                  style: TextStyle(color: Colors.grey, fontSize: 10.sp),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const Spacer(),
                 Row(
@@ -213,15 +233,15 @@ class DigitalArchivePage extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.description_outlined,
-                      size: 14,
+                      size: 12.sp,
                       color: Colors.grey.shade400,
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4.w),
                     Text(
                       "$filesCount",
                       style: TextStyle(
                         color: Colors.grey.shade600,
-                        fontSize: 11,
+                        fontSize: 10.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -230,22 +250,21 @@ class DigitalArchivePage extends StatelessWidget {
               ],
             ),
           ),
-          // إشعار التنبيه الأحمر (Badge)
           if (badgeCount > 0)
-            Positioned(
-              top: 12,
-              right: 12,
+            PositionedDirectional(
+              top: 10.h,
+              end: 10.w,
               child: Container(
-                padding: const EdgeInsets.all(6),
+                padding: EdgeInsets.all(6.w),
                 decoration: const BoxDecoration(
                   color: Colors.redAccent,
                   shape: BoxShape.circle,
                 ),
                 child: Text(
                   "$badgeCount",
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 10,
+                    fontSize: 9.sp,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -255,6 +274,4 @@ class DigitalArchivePage extends StatelessWidget {
       ),
     );
   }
-
-
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart'; 
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_state.dart';
 import 'package:optialeader/feature/admin/ui/announces/announce_dateail.dart';
@@ -15,16 +16,12 @@ class AnnouncementsPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      // الـ BlocBuilder لمراقبة الـ States اللي بعتيها في الملف
       body: BlocBuilder<AnnouncementCubit, AnnouncementState>(
         builder: (context, state) {
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // 1. الهيدر (الـ SliverAppBar)
               _buildHeader(context, colorScheme, theme),
-
-              // 2. المحتوى المتغير بناءً على حالة الـ Bloc
               ..._buildBodyBasedOnState(state, theme),
             ],
           );
@@ -34,7 +31,6 @@ class AnnouncementsPage extends StatelessWidget {
     );
   }
 
-  // دالة توزيع الحالات (تطابق ملف الـ State بتاعك بالظبط)
   List<Widget> _buildBodyBasedOnState(
     AnnouncementState state,
     ThemeData theme,
@@ -49,7 +45,7 @@ class AnnouncementsPage extends StatelessWidget {
 
     if (state is AnnouncementLoaded) {
       if (state.announcements.isEmpty) {
-        return [_buildEmptyState("لا توجد إعلانات حالياً")];
+        return [_buildEmptyState("announcements.no_data".tr())];
       }
       return [_buildAnnouncementsList(state.announcements)];
     }
@@ -82,15 +78,13 @@ class AnnouncementsPage extends StatelessWidget {
       ];
     }
 
-    // الحالة الابتدائية (Initial)
     return [
-      const SliverFillRemaining(
-        child: Center(child: Text("جاري تحضير البيانات...")),
+      SliverFillRemaining(
+        child: Center(child: Text("announcements.preparing".tr())),
       ),
     ];
   }
 
-  // بناء الهيدر بلمسة "Aman App" الملكية
   Widget _buildHeader(
     BuildContext context,
     ColorScheme colorScheme,
@@ -135,14 +129,14 @@ class AnnouncementsPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "الإعلانات",
+                        "announcements.title".tr(),
                         style: theme.textTheme.headlineSmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        "تابع آخر أخبار وتحديثات المدرسة",
+                        "announcements.subtitle".tr(),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.secondary.withOpacity(0.9),
                         ),
@@ -158,7 +152,6 @@ class AnnouncementsPage extends StatelessWidget {
     );
   }
 
-  // بناء القائمة باستخدام الـ SliverList
   Widget _buildAnnouncementsList(List<AnnouncementModel> announcements) {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
@@ -172,7 +165,6 @@ class AnnouncementsPage extends StatelessWidget {
     );
   }
 
-  // كارت الإعلان الفردي
   Widget _buildAnnouncementCard(
     BuildContext context,
     AnnouncementModel announcement,
@@ -223,8 +215,10 @@ class AnnouncementsPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Icon(
-                      Icons.arrow_forward_ios,
+                    Icon(
+                      context.locale.languageCode == 'ar'
+                          ? Icons.arrow_back_ios
+                          : Icons.arrow_forward_ios,
                       size: 12,
                       color: Colors.grey,
                     ),
@@ -249,7 +243,7 @@ class AnnouncementsPage extends StatelessWidget {
                     Icon(Icons.group_outlined, size: 18, color: statusColor),
                     const SizedBox(width: 6),
                     Text(
-                      "${announcement.applicants} متقدم",
+                      "${announcement.applicants} ${'announcements.applicant_unit'.tr()}",
                       style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -265,7 +259,7 @@ class AnnouncementsPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        announcement.status,
+                        announcement.status.tr().toUpperCase(),
                         style: TextStyle(
                           color: statusColor,
                           fontSize: 11,
@@ -283,7 +277,6 @@ class AnnouncementsPage extends StatelessWidget {
     );
   }
 
-  // ويدجت الحالة الفارغة
   Widget _buildEmptyState(String msg) {
     return SliverFillRemaining(
       child: Center(
@@ -299,7 +292,6 @@ class AnnouncementsPage extends StatelessWidget {
     );
   }
 
-  // ويدجت حالة الخطأ
   Widget _buildErrorState(String message) {
     return SliverFillRemaining(
       child: Padding(
@@ -329,17 +321,17 @@ class AnnouncementsPage extends StatelessWidget {
     );
   }
 
-  // زر الإضافة (FAB)
   Widget _buildFAB(BuildContext context, ColorScheme colorScheme) {
     return FloatingActionButton.extended(
-      onPressed: () {
-        // سيتم الربط بصفحة الإضافة لاحقاً
-      },
+      onPressed: () {},
       backgroundColor: colorScheme.primary,
       icon: Icon(Icons.add_rounded, color: colorScheme.secondary),
-      label: const Text(
-        "إضافة إعلان",
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+      label: Text(
+        "announcements.add_button".tr(),
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
       ),
     );
   }

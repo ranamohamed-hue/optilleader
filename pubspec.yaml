@@ -30,6 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  firebase_app_check: ^0.4.3
   firebase_core: ^4.7.0
   firebase_auth: ^6.4.0
   cloud_firestore: ^6.3.0
@@ -86,7 +87,7 @@ flutter:
   assets:
     - assets/images/logo.jpeg
     - assets/images/logoscreen.jpeg
-    - assets/translations/ # السطر ده بيعرف الفولدر كله مرة واحدة
+    - assets/translations/ 
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

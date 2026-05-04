@@ -1,8 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart'; // يُفضل استخدامها لعمل Cache للصورة
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:easy_localization/easy_localization.dart'; 
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
-// import 'edit_announcement_page.dart'; // تأكدي من استيراد صفحة التعديل
 
 class AnnouncementDetailsPage extends StatelessWidget {
   final AnnouncementModel announcement;
@@ -17,17 +16,17 @@ class AnnouncementDetailsPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      // زر التعديل (FAB)
+      // زر التعديل (FAB) باستخدام الترجمة
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // Navigator.push(context, MaterialPageRoute(builder: (context) => EditAnnouncementPage(announcement: announcement)));
+          // Navigator.push...
         },
         elevation: 4,
         backgroundColor: colorScheme.primary,
         icon: Icon(Icons.edit_note_rounded, color: colorScheme.secondary),
-        label: const Text(
-          "تعديل الإعلان",
-          style: TextStyle(
+        label: Text(
+          "announcement_details.edit_button".tr(), // مفتاح الترجمة
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 14,
@@ -37,11 +36,8 @@ class AnnouncementDetailsPage extends StatelessWidget {
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // --- الهيدر الفخم مع الصورة (SliverAppBar) ---
           SliverAppBar(
-            expandedHeight: announcement.imageUrl != null
-                ? 300.0
-                : 160.0, // تكبير الهيدر لو في صورة
+            expandedHeight: announcement.imageUrl != null ? 300.0 : 160.0,
             pinned: true,
             automaticallyImplyLeading: false,
             backgroundColor: colorScheme.primary,
@@ -53,7 +49,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   color: Colors.white70,
                 ),
                 onPressed: () {
-                  // منطق الحذف هنا
+                  // منطق الحذف
                 },
               ),
               const SizedBox(width: 10),
@@ -66,7 +62,6 @@ class AnnouncementDetailsPage extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // 1. عرض الصورة الخلفية لو موجودة
                   if (announcement.imageUrl != null)
                     CachedNetworkImage(
                       imageUrl: announcement.imageUrl!,
@@ -82,8 +77,6 @@ class AnnouncementDetailsPage extends StatelessWidget {
                         ),
                       ),
                     ),
-
-                  // 2. طبقة تدرج لوني (Gradient Overlay) عشان النص يبان فوق الصورة
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -92,21 +85,18 @@ class AnnouncementDetailsPage extends StatelessWidget {
                         colors: [
                           Colors.black.withOpacity(
                             announcement.imageUrl != null ? 0.3 : 0.0,
-                          ), // تعتيم خفيف فوق
+                          ),
                           colorScheme.primary.withOpacity(
                             announcement.imageUrl != null ? 0.8 : 1.0,
-                          ), // الكحلي تحت
+                          ),
                         ],
                       ),
                     ),
                   ),
-
-                  // 3. المحتوى العلوي (زر الرجوع والبروفايل)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(15, 60, 20, 0),
                     child: Row(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start, // النص والبروفايل فوق
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         IconButton(
                           icon: const Icon(
@@ -117,7 +107,6 @@ class AnnouncementDetailsPage extends StatelessWidget {
                           onPressed: () => Navigator.pop(context),
                         ),
                         const SizedBox(width: 5),
-                        // صورة البروفايل بإطار ذهبي
                         Container(
                           padding: const EdgeInsets.all(2.5),
                           decoration: BoxDecoration(
@@ -143,7 +132,8 @@ class AnnouncementDetailsPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "ANNOUNCEMENT",
+                                "announcement_details.badge_title"
+                                    .tr(), // ANNOUNCEMENT
                                 style: textTheme.titleMedium?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -151,7 +141,8 @@ class AnnouncementDetailsPage extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                "Aman System Management",
+                                "common.app_name"
+                                    .tr(), // Optia Leader / أوبتي ليدر
                                 style: textTheme.bodySmall?.copyWith(
                                   color: colorScheme.secondary.withOpacity(0.9),
                                 ),
@@ -166,8 +157,6 @@ class AnnouncementDetailsPage extends StatelessWidget {
               ),
             ),
           ),
-
-          // --- محتوى التفاصيل السفلي ---
           SliverPadding(
             padding: const EdgeInsets.all(20),
             sliver: SliverList(
@@ -176,7 +165,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   context,
                   announcement: announcement,
                 ),
-                const SizedBox(height: 100), // مساحة للـ FAB
+                const SizedBox(height: 100),
               ]),
             ),
           ),
@@ -193,11 +182,15 @@ class AnnouncementDetailsPage extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final statusColor = announcement.getStatusColor();
 
-    // تنسيق التاريخ
+    // تنسيق التاريخ ليدعم لغة الجهاز الحالية تلقائياً
     final formattedDeadline = DateFormat(
       'EEEE, d MMMM yyyy',
+      context.locale.languageCode,
     ).format(announcement.deadline);
-    final postedDate = DateFormat('d MMM yyyy').format(announcement.createdAt);
+    final postedDate = DateFormat(
+      'd MMM yyyy',
+      context.locale.languageCode,
+    ).format(announcement.createdAt);
 
     return Container(
       decoration: BoxDecoration(
@@ -213,9 +206,11 @@ class AnnouncementDetailsPage extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // أيقونة خلفية جمالية
           Positioned(
-            right: -15,
+            right: context.locale.languageCode == 'ar'
+                ? null
+                : -15, // تعديل مكان الأيقونة حسب اللغة
+            left: context.locale.languageCode == 'ar' ? -15 : null,
             top: -15,
             child: Icon(
               Icons.campaign_rounded,
@@ -228,7 +223,6 @@ class AnnouncementDetailsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Badge الحالة
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -239,7 +233,9 @@ class AnnouncementDetailsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Text(
-                    announcement.status.toUpperCase(),
+                    announcement.status
+                        .tr()
+                        .toUpperCase(), // ترجمة الحالة (جديد، معتمد.. إلخ)
                     style: TextStyle(
                       color: statusColor,
                       fontWeight: FontWeight.bold,
@@ -248,8 +244,6 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 25),
-
-                // العنوان
                 Text(
                   announcement.title,
                   style: theme.textTheme.headlineSmall?.copyWith(
@@ -259,8 +253,6 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
-
-                // الوصف
                 Text(
                   announcement.description,
                   style: theme.textTheme.bodyLarge?.copyWith(
@@ -269,25 +261,22 @@ class AnnouncementDetailsPage extends StatelessWidget {
                     fontSize: 15,
                   ),
                 ),
-
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 30),
                   child: Divider(thickness: 0.8),
                 ),
-
-                // قسم المعلومات (Info Tiles)
                 _buildInfoRow(
                   context,
                   Icons.groups_rounded,
-                  "عدد المتقدمين",
-                  "${announcement.applicants} شخص",
+                  "announcement_details.applicants_label".tr(),
+                  "${announcement.applicants} ${'announcement_details.person_unit'.tr()}",
                   statusColor,
                 ),
                 const SizedBox(height: 20),
                 _buildInfoRow(
                   context,
                   Icons.timer_outlined,
-                  "آخر موعد",
+                  "announcement_details.deadline_label".tr(),
                   formattedDeadline,
                   colorScheme.primary,
                 ),
@@ -295,7 +284,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
                 _buildInfoRow(
                   context,
                   Icons.calendar_today_rounded,
-                  "تاريخ النشر",
+                  "announcement_details.posted_label".tr(),
                   postedDate,
                   Colors.blueGrey,
                 ),

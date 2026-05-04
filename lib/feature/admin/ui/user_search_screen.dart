@@ -1,135 +1,234 @@
-//userSearchScreen
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:go_router/go_router.dart';
+import 'package:optialeader/core/routing/routes.dart'; 
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
+import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
 
-class UserSearchScreen extends StatelessWidget {
+class UserSearchScreen extends StatefulWidget {
   const UserSearchScreen({super.key});
 
   @override
+  State<UserSearchScreen> createState() => _UserSearchScreenState();
+}
+
+class _UserSearchScreenState extends State<UserSearchScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<DoctorDataCubit>().watchAllDoctors();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // سحب الألوان من الثيم الموحد لسهولة التعديل
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      // يستخدم scaffoldBackgroundColor من الثيم
       appBar: AppBar(
-        title: const Text('المستخدمون المسجلون'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () => Navigator.pop(context),
+        title: Text('search.app_bar_title'.tr()),
+          leading: IconButton(
+  icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
+  onPressed: () {
+    if (context.canPop()) {
+      context.pop(); 
+    } else {
+      context.go(Routes.admin); 
+    }
+  },
         ),
-        // خط التحديد الذهبي أسفل الـ AppBar
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(2.0),
-          child: Container(color: colorScheme.secondary, height: 2.0),
+          preferredSize: Size.fromHeight(2.h),
+          child: Container(color: colorScheme.secondary, height: 2.h),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            // --- شريط البحث ---
-            // سيسحب الستايل تلقائياً من inputDecorationTheme في AppTheme
-            TextField(
+      body: Column(
+        children: [
+          // حقل البحث
+          Padding(
+            padding: EdgeInsets.all(20.w),
+            child: TextField(
               textAlign: TextAlign.right,
-              decoration: const InputDecoration(
-                hintText: 'ابحث عن اسم، بريد، أو رقم وظيفي',
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                hintText: 'search.hint'.tr(),
+                prefixIcon: const Icon(Icons.search),
               ),
+              onChanged: (value) {},
             ),
+          ),
 
-            const SizedBox(height: 30),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: _buildSectionHeader(
+              context,
+              'search.employee_services'.tr(),
+            ),
+          ),
 
-            // --- نتيجة البحث (خدمات الموظف) ---
-            _buildSectionHeader(context, 'خدمات الموظف'),
+          // عرض البيانات المربوطة بالكيوبيت
+          Expanded(
+            child: BlocBuilder<DoctorDataCubit, DoctorDataState>(
+              builder: (context, state) {
+                if (state is DoctorLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-            Card(
-              // الـ Card سيسحب ستايله من cardTheme
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    // السطر العلوي: الصورة والمعلومات الأساسية
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'د. أحمد إبراهيم كمال',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'كلية الهندسة',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                            Text(
-                              'الهندسة المدنية',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 15),
-                        // إطار الصورة باللون الذهبي (Secondary)
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: colorScheme.secondary, width: 2),
-                          ),
-                          child: CircleAvatar(
-                            radius: 35,
-                            backgroundColor: colorScheme.surfaceVariant,
-                            child: Icon(Icons.person, color: colorScheme.primary, size: 40),
-                          ),
-                        ),
-                      ],
+                if (state is AllDoctorLoaded) {
+                  final doctors = state.doctors;
+
+                  if (doctors == null || doctors.isEmpty) {
+                    return Center(child: Text('search.no_users'.tr()));
+                  }
+
+                  return ListView.builder(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 10.h,
                     ),
-                    const Divider(height: 25),
+                    itemCount: doctors.length,
+                    itemBuilder: (context, index) {
+                      return _buildDoctorCard(context, doctors[index]);
+                    },
+                  );
+                }
 
-                    // السطر السفلي: البريد الإلكتروني
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                if (state is DoctorError) {
+                  return Center(
+                    child: Text(
+                      'search.error_message'.tr(args: [state.error.toString()]),
+                    ),
+                  );
+                }
+
+                return Center(child: Text('search.loading'.tr()));
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDoctorCard(BuildContext context, DoctorProfileModel doctor) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      margin: EdgeInsets.only(bottom: 16.h),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+      child: InkWell(
+        onTap: () {
+          // context.push('/doctor_details', extra: doctor);
+        },
+        borderRadius: BorderRadius.circular(12.r),
+        child: Padding(
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          'ahmed.kamal@university.edu.sa',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.7),
+                          doctor.nameAr,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.sp,
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Icon(Icons.email_outlined, color: colorScheme.secondary, size: 20),
+                        Text(
+                          doctor.currentJobAr,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 12.sp,
+                          ),
+                        ),
+                        Text(
+                          'search.employee_id_label'.tr(
+                            args: [doctor.employeeId],
+                          ), // ترجمة الرقم الوظيفي
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 11.sp,
+                            color: Colors.grey,
+                          ),
+                        ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(width: 15.w),
+                  _buildProfileImage(colorScheme, doctor.profileImageUrl),
+                ],
               ),
-            ),
-          ],
+              Divider(height: 25.h, thickness: 0.5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    doctor.email,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontSize: 12.sp,
+                      color: colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Icon(
+                    Icons.email_outlined,
+                    color: colorScheme.secondary,
+                    size: 18.sp,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // ودجت لعنوان القسم مرتبطة بالثيم
+  Widget _buildProfileImage(ColorScheme colorScheme, String? imageUrl) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: colorScheme.secondary, width: 2),
+      ),
+      child: CircleAvatar(
+        radius: 30.r,
+        backgroundColor: colorScheme.surfaceVariant,
+        backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
+            ? NetworkImage(imageUrl)
+            : null,
+        child: (imageUrl == null || imageUrl.isEmpty)
+            ? Icon(Icons.person, color: colorScheme.primary, size: 30.sp)
+            : null,
+      ),
+    );
+  }
+
   Widget _buildSectionHeader(BuildContext context, String title) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 12.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Text(
             title,
             style: theme.textTheme.titleLarge?.copyWith(
-              fontSize: 18,
+              fontSize: 16.sp,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 8),
-          Icon(Icons.label_important_outline, color: theme.colorScheme.secondary, size: 22),
+          SizedBox(width: 8.w),
+          Icon(
+            Icons.label_important_outline,
+            color: theme.colorScheme.secondary,
+            size: 20.sp,
+          ),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:optialeader/feature/auth/data/models/user_model.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_state.dart';
@@ -28,9 +29,7 @@ class _SignUpViewState extends State<SignUpView> {
   final confirmPasswordController = TextEditingController();
 
   int _currentStep = 0;
-
   UserModel? verifiedUser;
-
   bool isPasswordHidden = true;
 
   @override
@@ -44,7 +43,6 @@ class _SignUpViewState extends State<SignUpView> {
     super.dispose();
   }
 
-  /// ================= VERIFY =================
   void _verifyUser() {
     if (_formKeyStep1.currentState!.validate()) {
       context.read<AuthCubit>().verifyUser(
@@ -55,12 +53,11 @@ class _SignUpViewState extends State<SignUpView> {
     }
   }
 
-  /// ================= SIGN UP =================
   void _submit() {
     if (verifiedUser == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("لازم يتم التحقق الأول")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("يجب التحقق من البيانات أولاً")),
+      );
       return;
     }
 
@@ -81,9 +78,11 @@ class _SignUpViewState extends State<SignUpView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("auth.registration_title".tr()),
+        title: Text("Create an account".tr()),
         centerTitle: true,
         leading: _currentStep == 1
             ? IconButton(
@@ -101,98 +100,88 @@ class _SignUpViewState extends State<SignUpView> {
                 onPressed: () => Navigator.pop(context),
               ),
       ),
-
-      /// 🔥 BlocConsumer
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
-          /// ✅ VERIFY SUCCESS
           if (state is VerifySuccessState) {
             verifiedUser = state.user;
-
             setState(() => _currentStep = 1);
-
             _pageController.nextPage(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
             );
-          }
-          /// ❌ VERIFY ERROR
-          else if (state is VerifyErrorState) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.error)));
-          }
-          /// ✅ SIGN UP SUCCESS
-          else if (state is SignUpSuccessState) {
+          } else if (state is VerifyErrorState) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+              SnackBar(content: Text(state.error), backgroundColor: Colors.red),
+            );
+          } else if (state is SignUpSuccessState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
                 content: Text("تم إنشاء الحساب بنجاح"),
                 backgroundColor: Colors.green,
               ),
             );
-          }
-          /// ❌ SIGN UP ERROR
-          else if (state is SignUpErrorState) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.error)));
+            Navigator.pop(context); // العودة لصفحة الدخول
+          } else if (state is SignUpErrorState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.error), backgroundColor: Colors.red),
+            );
           }
         },
-
         builder: (context, state) {
           return PageView(
             controller: _pageController,
             physics: const NeverScrollableScrollPhysics(),
-            children: [_buildStep1(state), _buildStep2(state)],
+            children: [_buildStep1(state, theme), _buildStep2(state, theme)],
           );
         },
       ),
     );
   }
 
-  // ================= STEP 1 =================
-  Widget _buildStep1(AuthState state) {
+  /// المرحلة الأولى: التحقق من الهوية
+  Widget _buildStep1(AuthState state, ThemeData theme) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(24.w),
       child: Form(
         key: _formKeyStep1,
         child: Column(
           children: [
-            const SizedBox(height: 30),
-
+            SizedBox(height: 20.h),
             Text(
-              "auth.step_1_title".tr(),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              "Confirm identity".tr(), // "تأكيد الهوية"
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-
-            const SizedBox(height: 30),
-
+            SizedBox(height: 30.h),
             _buildField(
               emailController,
-              "auth.university_email".tr(),
+              "University Email".tr(),
               isEmail: true,
+              icon: Icons.email_outlined,
             ),
-
             _buildField(
               nationalIdController,
-              "auth.national_id".tr(),
+              "national Id".tr(),
               isNumber: true,
+              icon: Icons.badge_outlined,
             ),
-
             _buildField(
               employeeIdController,
-              "auth.employee_id".tr(),
+              "employee id".tr(),
               isNumber: true,
+              icon: Icons.numbers,
             ),
-
-            const SizedBox(height: 30),
-
+            SizedBox(height: 40.h),
             if (state is VerifyLoadingState)
               const CircularProgressIndicator()
             else
               ElevatedButton(
                 onPressed: _verifyUser,
-                child: Text("auth.next".tr()),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 52.h),
+                ),
+                child: Text("Next".tr()), // "التالي"
               ),
           ],
         ),
@@ -200,43 +189,44 @@ class _SignUpViewState extends State<SignUpView> {
     );
   }
 
-  // ================= STEP 2 =================
-  Widget _buildStep2(AuthState state) {
+  /// المرحلة الثانية: تعيين كلمة المرور
+  Widget _buildStep2(AuthState state, ThemeData theme) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(24.w),
       child: Form(
         key: _formKeyStep2,
         child: Column(
           children: [
-            const SizedBox(height: 30),
-
+            SizedBox(height: 20.h),
             Text(
-              "auth.step_2_title".tr(),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              "Set a password".tr(), // "تعيين كلمة المرور"
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-
-            const SizedBox(height: 30),
-
+            SizedBox(height: 30.h),
             _buildField(
               passwordController,
-              "auth.password".tr(),
+              "Enter your password".tr(),
               isPassword: true,
+              icon: Icons.lock_outline,
             ),
-
             _buildField(
               confirmPasswordController,
-              "auth.confirm_password".tr(),
+              "Confirm password".tr(),
               isPassword: true,
+              icon: Icons.lock_reset,
             ),
-
-            const SizedBox(height: 40),
-
+            SizedBox(height: 40.h),
             if (state is SignUpLoadingState)
               const CircularProgressIndicator()
             else
               ElevatedButton(
                 onPressed: _submit,
-                child: Text("auth.submit".tr()),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 52.h),
+                ),
+                child: Text("Complete registration".tr()), // "إتمام التسجيل"
               ),
           ],
         ),
@@ -244,16 +234,16 @@ class _SignUpViewState extends State<SignUpView> {
     );
   }
 
-  // ================= FIELD =================
   Widget _buildField(
     TextEditingController controller,
     String label, {
     bool isPassword = false,
     bool isEmail = false,
     bool isNumber = false,
+    IconData? icon,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
+      padding: EdgeInsets.only(bottom: 20.h),
       child: TextFormField(
         controller: controller,
         obscureText: isPassword ? isPasswordHidden : false,
@@ -262,33 +252,28 @@ class _SignUpViewState extends State<SignUpView> {
             : (isEmail ? TextInputType.emailAddress : TextInputType.text),
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          prefixIcon: icon != null ? Icon(icon) : null,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
                     isPasswordHidden ? Icons.visibility_off : Icons.visibility,
                   ),
-                  onPressed: () {
-                    setState(() {
-                      isPasswordHidden = !isPasswordHidden;
-                    });
-                  },
+                  onPressed: () =>
+                      setState(() => isPasswordHidden = !isPasswordHidden),
                 )
               : null,
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return "auth.validation.required".tr();
+            return "Required".tr();
           }
-
           if (isEmail && !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-            return "auth.validation.invalid_email".tr();
+            return "Invalid_email".tr();
           }
-
           if (isPassword && value.length < 6) {
-            return "auth.validation.password_short".tr();
+            return "Password short".tr();
           }
-
           return null;
         },
       ),
