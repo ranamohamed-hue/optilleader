@@ -1,0 +1,15 @@
+{
+  "upload": {
+    "title": "Upload New Document",
+    "subtitle": "Add file to archive",
+    "click_to_select": "Click to select a file or drag and drop",
+    "file_types": "Supported: PDF, PNG, JPG (Max 10MB)",
+    "label_title": "File Title",
+    "hint_title": "e.g., Master's Degree, National ID",
+    "label_category": "Category",
+    "hint_category": "Select the appropriate folder",
+    "label_desc": "Additional Description (Optional)",
+    "hint_desc": "Write more details about the file here...",
+    "btn_upload": "Save & Send to Archive"
+  }
+}

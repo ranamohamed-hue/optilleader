@@ -1,0 +1,12 @@
+{
+  "settings": {
+    "title": "Settings",
+    "username": "Username",
+    "email": "Email Address",
+    "address": "Address",
+    "phone": "Phone Number",
+    "save": "Save Changes",
+    "success": "Data updated successfully",
+    "error": "An error occurred during update"
+  }
+}

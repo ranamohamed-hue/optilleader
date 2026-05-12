@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:optialeader/core/routing/routes.dart'; 
+import 'package:optialeader/core/routing/routes.dart';
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 
 class DashboardUserPage extends StatelessWidget {
   const DashboardUserPage({super.key});
@@ -14,127 +17,189 @@ class DashboardUserPage extends StatelessWidget {
     final goldAccent = theme.colorScheme.secondary;
     final scaffoldBg = theme.scaffoldBackgroundColor;
 
-    return Scaffold(
-      backgroundColor: scaffoldBg,
-      appBar: AppBar(
-        backgroundColor: primaryNavy,
-        elevation: 10,
-        toolbarHeight: 85.h,
-        automaticallyImplyLeading: false,
-         leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
-              onPressed: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go(Routes.user);
+    return BlocBuilder<DoctorDataCubit, DoctorDataState>(
+      builder: (context, state) {
+        // 1. حالة التحميل
+        if (state is DoctorLoading) {
+          return Scaffold(
+            backgroundColor: scaffoldBg,
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // 2. حالة عرض البيانات (DoctorLoaded)
+        if (state is DoctorLoaded) {
+          final doctor = state.doctor;
+
+          return Scaffold(
+            backgroundColor: scaffoldBg,
+            appBar: AppBar(
+              backgroundColor: primaryNavy,
+              elevation: 0,
+              toolbarHeight: 85.h,
+              automaticallyImplyLeading: false,
+              leading: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios_new,
+                  size: 20.sp,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(Routes.user);
+                  }
+                },
+              ),
+              title: Row(
+                children: [
+                  _buildProfileAvatar(goldAccent, doctor?.profileImage),
+                  SizedBox(width: 12.w),
+                  _buildWelcomeText(
+                    context.locale.languageCode == 'ar'
+                        ? (doctor?.nameAr ?? 'dashboard.doctor_default'.tr())
+                        : (doctor?.nameEn ?? 'dashboard.doctor_default'.tr()),
+                  ),
+                ],
+              ),
+              bottom: PreferredSize(
+                preferredSize: Size.fromHeight(4.h),
+                child: Container(color: goldAccent, height: 3.h),
+              ),
+            ),
+            body: RefreshIndicator(
+              onRefresh: () async {
+                if (doctor?.uid != null) {
+                  await context.read<DoctorDataCubit>().getDoctorProfile(
+                    doctor!.uid!,
+                  );
                 }
               },
-            ),
-        title: Row(
-          children: [
-            _buildProfileAvatar(goldAccent),
-            SizedBox(width: 12.w),
-            _buildWelcomeText('د. أحمد إبراهيم'),
-            const Spacer(),
-            IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios_new,
-                color: Colors.white,
-                size: 20,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                padding: EdgeInsets.all(20.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 15.w,
+                      mainAxisSpacing: 15.h,
+                      childAspectRatio: 1.1,
+                      children: [
+                        _buildStatCard(
+                          'dashboard.achievements'.tr(),
+                          Icons.emoji_events_outlined,
+                          goldAccent,
+                          'dashboard.achievements_msg'.tr(
+                            args: [
+                              (doctor?.academicHistory.length ?? 0).toString(),
+                            ],
+                          ),
+                          primaryNavy,
+                        ),
+                        _buildStatCard(
+                          'dashboard.academic_data'.tr(),
+                          Icons.school_outlined,
+                          goldAccent,
+                          (doctor?.academicHistory != null &&
+                                  doctor!.academicHistory.isNotEmpty)
+                              ? (context.locale.languageCode == 'ar'
+                                    ? (doctor
+                                              .academicHistory
+                                              .first['degree_ar'] ??
+                                          'لا يوجد مؤهل')
+                                    : (doctor
+                                              .academicHistory
+                                              .first['degree_en'] ??
+                                          'No Degree'))
+                              : 'dashboard.no_credentials'.tr(),
+                          primaryNavy,
+                        ),
+                        _buildStatusCard(
+                          'dashboard.requests_status'.tr(),
+                          '3', // يمكن ربطها بـ doctor?.notifications.length
+                          'dashboard.pending'.tr(),
+                          Colors.red.shade50,
+                          Colors.red.shade900,
+                        ),
+                        _buildProgressCard(
+                          'dashboard.career_path'.tr(),
+                          0.75,
+                          primaryNavy,
+                          goldAccent,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 30.h),
+                    _buildSectionTitle(
+                      primaryNavy,
+                      goldAccent,
+                      'dashboard.latest_opportunities'.tr(),
+                    ),
+                    SizedBox(height: 10.h),
+                    _buildOpportunityItem(
+                      'dashboard.opp1_title'.tr(),
+                      'dashboard.opp1_desc'.tr(),
+                      Icons.campaign_outlined,
+                      primaryNavy.withOpacity(0.05),
+                      primaryNavy,
+                      goldAccent,
+                    ),
+                    SizedBox(height: 12.h),
+                    _buildOpportunityItem(
+                      'dashboard.opp2_title'.tr(),
+                      'dashboard.opp2_desc'.tr(),
+                      Icons.analytics_outlined,
+                      primaryNavy.withOpacity(0.05),
+                      primaryNavy,
+                      goldAccent,
+                    ),
+                  ],
+                ),
               ),
-              onPressed: () => Navigator.of(context).pop(),
             ),
-          ],
-        ),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(4.h),
-          child: Container(color: goldAccent, height: 3.h),
-        ),
-      ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 15.w,
-              mainAxisSpacing: 15.h,
-              childAspectRatio: 1.1,
-              children: [
-                _buildStatCard(
-                  'dashboard.achievements'.tr(),
-                  Icons.emoji_events_outlined,
-                  goldAccent,
-                  'dashboard.achievements_desc'.tr(),
-                  primaryNavy,
-                  onTap: () {
-                  },
-                ),
-                _buildStatCard(
-                  'dashboard.academic_data'.tr(),
-                  Icons.school_outlined,
-                  goldAccent,
-                  'dashboard.academic_desc'.tr(),
-                  primaryNavy,
-                  onTap: () {
-                  },
-                ),
-                _buildStatusCard(
-                  'dashboard.requests_status'.tr(),
-                  '3',
-                  'dashboard.pending'.tr(),
-                  Colors.red.shade50,
-                  Colors.red.shade900,
-                ),
-                _buildProgressCard(
-                  'dashboard.career_path'.tr(),
-                  0.75,
-                  primaryNavy,
-                  goldAccent,
-                ),
-              ],
-            ),
+            bottomNavigationBar: _buildBottomNav(primaryNavy, goldAccent),
+          );
+        }
 
-            SizedBox(height: 30.h),
+        // 3. حالة الخطأ
+        if (state is DoctorError) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red, size: 48.sp),
+                  SizedBox(height: 16.h),
+                  Text(
+                    state.error ?? 'error_message'.tr(),
+                    style: TextStyle(color: Colors.red, fontSize: 14.sp),
+                  ),
+                  SizedBox(height: 20.h),
+                  ElevatedButton(
+                    onPressed: () {}, // استدعاء دالة التحميل مرة أخرى هنا
+                    child: Text('retry'.tr()),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
-            _buildSectionTitle(
-              primaryNavy,
-              goldAccent,
-              'dashboard.latest_opportunities'.tr(),
-            ),
-
-            SizedBox(height: 10.h),
-            _buildOpportunityItem(
-              'dashboard.opp1_title'.tr(),
-              'dashboard.opp1_desc'.tr(),
-              Icons.campaign_outlined,
-              primaryNavy.withOpacity(0.05),
-              primaryNavy,
-              goldAccent,
-            ),
-            SizedBox(height: 12.h),
-            _buildOpportunityItem(
-              'dashboard.opp2_title'.tr(),
-              'dashboard.opp2_desc'.tr(),
-              Icons.analytics_outlined, 
-              primaryNavy.withOpacity(0.05),
-              primaryNavy,
-              goldAccent,
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: _buildBottomNav(primaryNavy, goldAccent),
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      },
     );
   }
 
+  // --- المكونات الفرعية (Widgets) ---
 
-  Widget _buildProfileAvatar(Color gold) {
+  Widget _buildProfileAvatar(Color gold, String? imageUrl) {
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
@@ -143,8 +208,13 @@ class DashboardUserPage extends StatelessWidget {
       ),
       child: CircleAvatar(
         radius: 22.r,
-        backgroundColor: Colors.white.withOpacity(0.1),
-        child: Icon(Icons.person, color: gold, size: 26.sp),
+        backgroundColor: Colors.white10,
+        backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
+            ? NetworkImage(imageUrl)
+            : null,
+        child: (imageUrl == null || imageUrl.isEmpty)
+            ? Icon(Icons.person, color: gold, size: 26.sp)
+            : null,
       ),
     );
   }
@@ -215,58 +285,53 @@ class DashboardUserPage extends StatelessWidget {
     IconData icon,
     Color gold,
     String content,
-    Color navy, {
-    VoidCallback? onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(15.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15.r),
-          border: Border.all(color: gold.withOpacity(0.3), width: 1.2),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: gold, size: 18.sp),
-                SizedBox(width: 5.w),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: navy,
-                      fontSize: 12.sp,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+    Color navy,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(15.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15.r),
+        border: Border.all(color: gold.withOpacity(0.3), width: 1.2),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: gold, size: 18.sp),
+              SizedBox(width: 5.w),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: navy,
+                    fontSize: 12.sp,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
-            ),
-            const Spacer(),
-            Text(
-              content,
-              style: TextStyle(
-                color: Colors.grey.shade700,
-                fontSize: 10.sp,
-                height: 1.4,
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+            ],
+          ),
+          const Spacer(),
+          Text(
+            content,
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: 10.sp,
+              height: 1.4,
             ),
-          ],
-        ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
-
 
   Widget _buildStatusCard(
     String title,
@@ -362,7 +427,9 @@ class DashboardUserPage extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            '${(progress * 100).toInt()}% ' + 'dashboard.completed'.tr(),
+            'dashboard.completed_percent'.tr(
+              args: ['${(progress * 100).toInt()}%'],
+            ),
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 11.sp,

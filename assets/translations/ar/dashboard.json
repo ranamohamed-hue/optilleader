@@ -1,0 +1,22 @@
+{
+    "dashboardJudge": {
+        "welcome": "أهلاً بك، {}",
+        "default_job": "محكم معتمد",
+        "system_overview": "نظرة عامة على النظام",
+        "welcome_back": "مرحباً بعودتك",
+        "cards": {
+            "under_review": "طلبات قيد المراجعة"
+        },
+        "tooltips": {
+            "profile": "الرئيسية",
+            "logout": "الإعدادات"
+        }
+    },
+    "orders": {
+        "title": "الطلبات",
+        "status_approved": "طلبات تم قبولها",
+        "report_title": "تقارير المتقدمين الجدد"
+    },
+    "retry": "إعادة الإجراء",
+    "error_occurred": "حدث خطأ ما، يرجى المحاولة لاحقاً"
+}

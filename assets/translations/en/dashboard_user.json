@@ -1,0 +1,25 @@
+{
+  "dashboardUser": {
+    "welcome": "Welcome,",
+    "achievements": "Achievements",
+    "academic_data": "Academic Data",
+    "requests_status": "Requests Status",
+    "pending": "Pending",
+    "career_path": "Career Path",
+    "completed": "Completed",
+    "latest_opportunities": "Latest Opportunities",
+    "view_all": "View All",
+    "opp1_title": "New Research Opportunity",
+    "opp1_desc": "AI Researchers needed for upcoming project",
+    "opp2_title": "Scientific Seminar",
+    "opp2_desc": "Big Data Analysis in Engineering",
+    "nav": {
+      "settings": "Settings",
+      "notifications": "Notifications",
+      "files": "Files",
+      "home": "Home"
+    }
+  },
+  "error_message": "An unexpected error occurred",
+  "retry": "Retry"
+}

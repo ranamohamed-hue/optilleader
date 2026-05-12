@@ -1,0 +1,23 @@
+{
+  "add_admin": {
+    "app_bar_title": "Add New Admin",
+    "success_msg": "Admin data saved successfully",
+    "personal_info_section": "Personal Information",
+    "job_info_section": "Job Information",
+    "name_ar": "Name (Arabic)",
+    "name_en": "Name (English)",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "job_ar": "Job Title (Arabic)",
+    "job_en": "Job Title (English)",
+    "address_ar": "Address (Arabic)",
+    "address_en": "Address (English)",
+    "submit_button": "Save Data",
+    "required": "This field is required",
+    "valid_name_ar": "Please enter name in Arabic",
+    "valid_name_en": "Please enter name in English",
+    "valid_email_format": "Invalid email format",
+    "valid_job_ar": "Please enter job title in Arabic",
+    "valid_job_en": "Please enter job title in English"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "digitalArchive": {
+    "title": "Digital Archive",
+    "tabs": {
+      "research": "Research",
+      "conferences": "Conferences",
+      "others": "Others"
+    },
+    "sort_by_date": "Sort by Date",
+    "folders": {
+      "certificates": "Academic Certificates",
+      "certificates_sub": "Master's, PhD, Courses",
+      "id": "Personal Identity",
+      "id_sub": "National ID, Passport",
+      "decisions": "Admin Decisions",
+      "decisions_sub": "Appointments, Promotions",
+      "misc": "Miscellaneous",
+      "misc_sub": "Appreciation, Other files"
+    }
+  }
+}

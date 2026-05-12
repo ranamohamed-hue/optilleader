@@ -1,0 +1,22 @@
+{
+    "dashboardJudge": {
+        "welcome": "Welcome, {}",
+        "default_job": "Certified Judge",
+        "system_overview": "System Overview",
+        "welcome_back": "Welcome Back",
+        "cards": {
+            "under_review": "Under Review"
+        },
+        "tooltips": {
+            "profile": "Home",
+            "logout": "Settings"
+        }
+    },
+    "orders": {
+        "title": "Orders",
+        "status_approved": "Approved Requests",
+        "report_title": "New Applicants Reports"
+    },
+    "retry": "Retry",
+    "error_occurred": "Something went wrong, please try again"
+}

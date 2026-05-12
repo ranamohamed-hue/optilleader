@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:optialeader/core/routing/routes.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:optialeader/feature/database_admin/logic/judge_data/judge_data_cubit.dart';
+import 'package:optialeader/feature/database_admin/logic/judge_data/judge_data_state.dart';
 
 class MohakemDashboardHome extends StatelessWidget {
   const MohakemDashboardHome({super.key});
@@ -13,202 +15,233 @@ class MohakemDashboardHome extends StatelessWidget {
     final colorPrimary = theme.colorScheme.primary;
     final colorGold = theme.colorScheme.secondary;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new,
-            size: 20.sp,
-            color: Colors.white,
-          ),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            }
-          },
-        ),
-      ),
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: Stack(
-        children: [
-          // الجزء العلوي (Navy Background)
-          Container(
-            height: 180.h, // استخدام screenutil للارتفاع
-            decoration: BoxDecoration(
-              color: colorPrimary,
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(30),
+    return BlocBuilder<JudgeDataCubit, JudgeDataState>(
+      builder: (context, state) {
+        // 1. حالة التحميل
+        if (state is JudgeLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // 2. حالة الخطأ
+        if (state is JudgeError) {
+          return Scaffold(
+            body: Center(
+              child: Text(
+                state.error ?? "Error",
+                style: TextStyle(fontFamily: 'Tajawal', fontSize: 16.sp),
               ),
             ),
-          ),
+          );
+        }
 
-          SafeArea(
-            child: Column(
+        // 3. الحالة الناجحة (تم استخدام else if أو إزالة الشرط لحل Dead Code)
+        if (state is JudgeLoaded) {
+          final judge = state.judge!;
+          final isArabic = context.locale.languageCode == 'ar';
+
+          final displayName = isArabic
+              ? (judge.nameAr.isNotEmpty ? judge.nameAr : "محكم")
+              : (judge.nameEn.isNotEmpty ? judge.nameEn : "Judge");
+
+          // تم التصحيح إلى jobAr و jobEn (بالـ b) لتطابق الموديل
+          final displayJob = isArabic
+              ? (judge.jopAr.isNotEmpty ? judge.jopAr : "محكم معتمد")
+              : (judge.jopEn.isNotEmpty ? judge.jopEn : "Certified Judge");
+
+          return Scaffold(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            body: Column(
               children: [
-                // الهيدر (مع استخدام الترجمة والاسم الديناميكي)
-                _buildHeader(context, colorGold),
-
-                _buildGoldLine(colorGold),
-
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: colorPrimary,
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(30),
+                    ),
+                  ),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Column(
+                      children: [
+                        _buildAppBar(context),
+                        _buildHeader(
+                          context,
+                          colorGold,
+                          displayName,
+                          displayJob,
+                          judge.profileImage,
+                        ),
+                        SizedBox(height: 15.h),
+                        _buildGoldLine(colorGold),
+                        SizedBox(height: 20.h),
+                      ],
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.symmetric(horizontal: 20.w),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 25),
+                        SizedBox(height: 25.h),
                         Text(
-                          'dashboard.system_overview'.tr(), // من ملف JSON
+                          'dashboard.system_overview'.tr(),
                           style: TextStyle(
-                            fontSize: 17,
+                            fontSize: 17.sp,
                             fontWeight: FontWeight.bold,
                             color: colorPrimary,
                             fontFamily: 'Tajawal',
                           ),
                         ),
-                        const SizedBox(height: 15),
-
-                        // كروت الإحصائيات
+                        SizedBox(height: 15.h),
                         Row(
                           children: [
                             Expanded(
                               child: _buildStatCard(
                                 context,
                                 'dashboard.cards.under_review'.tr(),
-                                '24',
+                                "24",
                                 Icons.pending_actions,
                                 true,
                               ),
                             ),
-                            const SizedBox(width: 15),
+                            SizedBox(width: 15.w),
                             Expanded(
                               child: _buildStatCard(
                                 context,
                                 'orders.status_approved'.tr(),
-                                '156',
+                                "156",
                                 Icons.verified,
                                 false,
                               ),
                             ),
                           ],
                         ),
-
-                        const SizedBox(height: 30),
-                        _buildSectionTitle(
-                          colorGold,
-                          colorPrimary,
-                          'announcements.title'.tr(),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildAnnouncementCard(
-                          context,
-                          'الترقية السنوية 2024',
-                          '30 مايو',
-                          '14',
-                        ),
-
-                        const SizedBox(height: 30),
+                        SizedBox(height: 30.h),
                         _buildSectionTitle(
                           colorGold,
                           colorPrimary,
                           'orders.report_title'.tr(),
                         ),
-                        const SizedBox(height: 12),
-
+                        SizedBox(height: 12.h),
                         _buildApplicantItem(
                           context,
                           'سعود صالح القحطاني',
-                          'كلية علوم الحاسب',
+                          displayJob,
                           true,
                         ),
                         _buildApplicantItem(
                           context,
                           'نورة عبد الرحمن',
-                          'قسم الفيزياء التطبيقية',
+                          isArabic
+                              ? 'قسم الفيزياء التطبيقية'
+                              : 'Applied Physics Dept',
                           false,
                         ),
-
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20.h),
                       ],
                     ),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: _buildBottomNav(colorPrimary, colorGold),
+            bottomNavigationBar: _buildBottomNav(colorPrimary, colorGold),
+          );
+        }
+
+        // تم تغيير هذا السطر ليكون الخيار الافتراضي الوحيد المتبقي
+        // لمنع تحذير الـ Dead Code
+        return const Scaffold(body: SizedBox.shrink());
+      },
     );
   }
 
-  // --- Widgets المساعدة ---
-
-  Widget _buildHeader(BuildContext context, Color gold) {
+  // --- Widgets المساعدة تظل كما هي ---
+  Widget _buildAppBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 20),
+      padding: EdgeInsets.symmetric(horizontal: 10.w),
+      child: Row(
+        children: [
+          IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new,
+              size: 20.sp,
+              color: Colors.white,
+            ),
+            onPressed: () => context.canPop() ? context.pop() : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(
+    BuildContext context,
+    Color gold,
+    String name,
+    String job,
+    String? imageUrl,
+  ) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 25.w),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: Colors.white.withOpacity(0.15),
-                child: Icon(Icons.person, color: gold, size: 30),
-              ),
-              const SizedBox(width: 15),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'dashboard.welcome'.tr(
-                      args: ['رنا'],
-                    ), // استخدام المتغير من الـ JSON
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                  Text(
-                    'dashboard.default_job'.tr(),
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          Stack(
-            children: [
-              const Icon(
-                Icons.notifications_none_rounded,
-                color: Colors.white,
-                size: 30,
-              ),
-              Positioned(
-                right: 4,
-                top: 4,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: gold,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.black26, width: 1.5),
+          Expanded(
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 26.r,
+                  backgroundColor: Colors.white.withOpacity(0.15),
+                  backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
+                      ? NetworkImage(imageUrl)
+                      : null,
+                  child: (imageUrl == null || imageUrl.isEmpty)
+                      ? Icon(Icons.person, color: gold, size: 30.sp)
+                      : null,
+                ),
+                SizedBox(width: 15.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'dashboard.welcome'.tr(args: [name]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        job,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11.sp,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.notifications_none_rounded,
+            color: Colors.white,
+            size: 30,
           ),
         ],
       ),
@@ -217,13 +250,12 @@ class MohakemDashboardHome extends StatelessWidget {
 
   Widget _buildGoldLine(Color gold) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 45),
+      margin: EdgeInsets.symmetric(horizontal: 45.w),
       height: 2.5,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [gold.withOpacity(0.1), gold, gold.withOpacity(0.1)],
         ),
-        boxShadow: [BoxShadow(color: gold.withOpacity(0.3), blurRadius: 6)],
       ),
     );
   }
@@ -237,39 +269,24 @@ class MohakemDashboardHome extends StatelessWidget {
   ) {
     final gold = Theme.of(context).colorScheme.secondary;
     final navy = Theme.of(context).colorScheme.primary;
-
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
         color: isGold ? gold : Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(22.r),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15),
         ],
-        border: isGold ? null : Border.all(color: gold.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isGold
-                  ? Colors.white.withOpacity(0.2)
-                  : gold.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: isGold ? Colors.white : gold, size: 24),
-          ),
-          const SizedBox(height: 12),
+          Icon(icon, color: isGold ? Colors.white : gold, size: 24.sp),
+          SizedBox(height: 12.h),
           Text(
             count,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 22.sp,
               fontWeight: FontWeight.bold,
               color: isGold ? Colors.white : navy,
             ),
@@ -277,10 +294,9 @@ class MohakemDashboardHome extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: 11,
-              color: isGold ? Colors.white.withOpacity(0.9) : Colors.grey[600],
-              fontWeight: FontWeight.w600,
+              fontSize: 10.sp,
               fontFamily: 'Tajawal',
+              color: isGold ? Colors.white70 : Colors.grey[600],
             ),
           ),
         ],
@@ -292,18 +308,18 @@ class MohakemDashboardHome extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 5,
-          height: 20,
+          width: 5.w,
+          height: 20.h,
           decoration: BoxDecoration(
             color: gold,
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12.w),
         Text(
           title,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 16.sp,
             fontWeight: FontWeight.bold,
             color: navy,
             fontFamily: 'Tajawal',
@@ -313,83 +329,25 @@ class MohakemDashboardHome extends StatelessWidget {
     );
   }
 
-  Widget _buildAnnouncementCard(
-    BuildContext context,
-    String title,
-    String date,
-    String count,
-  ) {
-    final gold = Theme.of(context).colorScheme.secondary;
-    final navy = Theme.of(context).colorScheme.primary;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: gold.withOpacity(0.15)),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: gold.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(Icons.campaign_rounded, color: gold, size: 28),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: navy,
-            fontSize: 14,
-          ),
-        ),
-        subtitle: Text(
-          '${'announcement_details.deadline_label'.tr()}: $date',
-          style: const TextStyle(fontSize: 11),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              count,
-              style: TextStyle(
-                color: gold,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            Text(
-              'announcements.applicant_unit'.tr(),
-              style: const TextStyle(fontSize: 9, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildApplicantItem(
     BuildContext context,
     String name,
     String info,
     bool needsAction,
   ) {
-    final gold = Theme.of(context).colorScheme.secondary;
     final navy = Theme.of(context).colorScheme.primary;
-
+    final gold = Theme.of(context).colorScheme.secondary;
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18.r),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10),
         ],
       ),
       child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
         leading: CircleAvatar(
           backgroundColor: navy.withOpacity(0.05),
           child: Icon(Icons.person_outline, color: navy),
@@ -398,80 +356,72 @@ class MohakemDashboardHome extends StatelessWidget {
           name,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: navy,
-            fontSize: 14,
+            fontSize: 14.sp,
+            fontFamily: 'Tajawal',
           ),
         ),
-        subtitle: Text(info, style: const TextStyle(fontSize: 12)),
+        subtitle: Text(
+          info,
+          style: TextStyle(fontSize: 12.sp, fontFamily: 'Tajawal'),
+        ),
         trailing: needsAction
             ? ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: gold,
-                  foregroundColor: Colors.white,
                   elevation: 0,
+                  padding: EdgeInsets.symmetric(horizontal: 12.w),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10.r),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
                 ),
                 child: Text(
                   'retry'.tr(),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11.sp,
+                    fontFamily: 'Tajawal',
                   ),
                 ),
               )
             : Icon(
                 Icons.check_circle_rounded,
                 color: Colors.green.shade400,
-                size: 28,
+                size: 24.sp,
               ),
       ),
     );
   }
 
   Widget _buildBottomNav(Color navy, Color gold) {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20),
-        ],
+    return BottomNavigationBar(
+      selectedItemColor: gold,
+      unselectedItemColor: navy.withOpacity(0.4),
+      type: BottomNavigationBarType.fixed,
+      currentIndex: 0,
+      selectedLabelStyle: const TextStyle(fontFamily: 'Tajawal', fontSize: 11),
+      unselectedLabelStyle: const TextStyle(
+        fontFamily: 'Tajawal',
+        fontSize: 11,
       ),
-      child: BottomNavigationBar(
-        selectedItemColor: gold,
-        unselectedItemColor: navy.withOpacity(0.4),
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-          fontFamily: 'Tajawal',
+      items: [
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.grid_view_rounded),
+          label: 'dashboard.tooltips.profile'.tr(),
         ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 11,
-          fontFamily: 'Tajawal',
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.notifications_active_outlined),
+          label: 'التنبيهات',
         ),
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.grid_view_rounded),
-            label: 'dashboard.tooltips.profile'.tr(),
-          ), // استخدمت Profile كمثال
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_active_outlined),
-            label: 'التنبيهات',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.assignment_outlined),
-            label: 'orders.title'.tr(),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.settings_outlined),
-            label: 'dashboard.tooltips.logout'.tr(),
-          ),
-        ],
-      ),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.assignment_outlined),
+          label: 'orders.title'.tr(),
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.settings_outlined),
+          label: 'dashboard.tooltips.logout'.tr(),
+        ),
+      ],
     );
   }
 }

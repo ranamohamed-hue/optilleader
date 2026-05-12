@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:easy_localization/easy_localization.dart'; 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_state.dart';
 import 'package:optialeader/feature/admin/ui/announces/announce_dateail.dart';
@@ -45,7 +45,8 @@ class AnnouncementsPage extends StatelessWidget {
 
     if (state is AnnouncementLoaded) {
       if (state.announcements.isEmpty) {
-        return [_buildEmptyState("announcements.no_data".tr())];
+        // تم الربط مع announce.no_data
+        return [_buildEmptyState("announce.no_data".tr())];
       }
       return [_buildAnnouncementsList(state.announcements)];
     }
@@ -80,7 +81,8 @@ class AnnouncementsPage extends StatelessWidget {
 
     return [
       SliverFillRemaining(
-        child: Center(child: Text("announcements.preparing".tr())),
+        // تم الربط مع announce.preparing
+        child: Center(child: Text("announce.preparing".tr())),
       ),
     ];
   }
@@ -129,14 +131,16 @@ class AnnouncementsPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "announcements.title".tr(),
+                        // تم الربط مع announce.title
+                        "announce.title".tr(),
                         style: theme.textTheme.headlineSmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        "announcements.subtitle".tr(),
+                        // تم الربط مع announce.subtitle
+                        "announce.subtitle".tr(),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.secondary.withOpacity(0.9),
                         ),
@@ -243,7 +247,8 @@ class AnnouncementsPage extends StatelessWidget {
                     Icon(Icons.group_outlined, size: 18, color: statusColor),
                     const SizedBox(width: 6),
                     Text(
-                      "${announcement.applicants} ${'announcements.applicant_unit'.tr()}",
+                      // الربط مع عدد المتقدمين
+                      "${announcement.applicants} ${'announce.applicant_unit'.tr()}",
                       style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -259,7 +264,10 @@ class AnnouncementsPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        announcement.status.tr().toUpperCase(),
+                        // الربط مع حالة الإعلان (active/closed/pending)
+                        "announce.${announcement.status.toLowerCase()}"
+                            .tr()
+                            .toUpperCase(),
                         style: TextStyle(
                           color: statusColor,
                           fontSize: 11,
@@ -327,7 +335,8 @@ class AnnouncementsPage extends StatelessWidget {
       backgroundColor: colorScheme.primary,
       icon: Icon(Icons.add_rounded, color: colorScheme.secondary),
       label: Text(
-        "announcements.add_button".tr(),
+        // تم الربط مع announce.add_button
+        "announce.add_button".tr(),
         style: const TextStyle(
           fontWeight: FontWeight.bold,
           color: Colors.white,

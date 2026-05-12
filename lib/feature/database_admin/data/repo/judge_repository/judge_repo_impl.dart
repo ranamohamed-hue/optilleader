@@ -5,7 +5,7 @@ import 'package:optialeader/feature/database_admin/data/repo/judge_repository/ju
 
 class JudgeRepoImpl extends JudgeRepo {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  CollectionReference get _usersCollection => _firestore.collection('Users');
+  CollectionReference get _usersCollection => _firestore.collection('users');
   @override
   Future<Either<String, Unit>> saveJudgeData(JudgeProfileModel judge) async {
     try {

@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:easy_localization/easy_localization.dart'; 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 
 class AnnouncementDetailsPage extends StatelessWidget {
@@ -16,16 +16,16 @@ class AnnouncementDetailsPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      // زر التعديل (FAB) باستخدام الترجمة
+      // زر التعديل (FAB)
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // Navigator.push...
+          // Navigator.push logic here
         },
         elevation: 4,
         backgroundColor: colorScheme.primary,
         icon: Icon(Icons.edit_note_rounded, color: colorScheme.secondary),
         label: Text(
-          "announcement_details.edit_button".tr(), // مفتاح الترجمة
+          "announce.details.edit_button".tr(),
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -49,7 +49,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   color: Colors.white70,
                 ),
                 onPressed: () {
-                  // منطق الحذف
+                  // حذف الإعلان
                 },
               ),
               const SizedBox(width: 10),
@@ -132,8 +132,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "announcement_details.badge_title"
-                                    .tr(), // ANNOUNCEMENT
+                                "announce.details.badge_title".tr(),
                                 style: textTheme.titleMedium?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -141,8 +140,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                "common.app_name"
-                                    .tr(), // Optia Leader / أوبتي ليدر
+                                "common.app_name".tr(),
                                 style: textTheme.bodySmall?.copyWith(
                                   color: colorScheme.secondary.withOpacity(0.9),
                                 ),
@@ -182,7 +180,6 @@ class AnnouncementDetailsPage extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final statusColor = announcement.getStatusColor();
 
-    // تنسيق التاريخ ليدعم لغة الجهاز الحالية تلقائياً
     final formattedDeadline = DateFormat(
       'EEEE, d MMMM yyyy',
       context.locale.languageCode,
@@ -207,9 +204,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            right: context.locale.languageCode == 'ar'
-                ? null
-                : -15, // تعديل مكان الأيقونة حسب اللغة
+            right: context.locale.languageCode == 'ar' ? null : -15,
             left: context.locale.languageCode == 'ar' ? -15 : null,
             top: -15,
             child: Icon(
@@ -233,9 +228,10 @@ class AnnouncementDetailsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Text(
-                    announcement.status
+                    // نستخدم مفتاح الحالة الديناميكي (active, closed, pending)
+                    "announce.${announcement.status.toLowerCase()}"
                         .tr()
-                        .toUpperCase(), // ترجمة الحالة (جديد، معتمد.. إلخ)
+                        .toUpperCase(),
                     style: TextStyle(
                       color: statusColor,
                       fontWeight: FontWeight.bold,
@@ -268,15 +264,15 @@ class AnnouncementDetailsPage extends StatelessWidget {
                 _buildInfoRow(
                   context,
                   Icons.groups_rounded,
-                  "announcement_details.applicants_label".tr(),
-                  "${announcement.applicants} ${'announcement_details.person_unit'.tr()}",
+                  "announce.details.applicants_label".tr(),
+                  "${announcement.applicants} ${'announce.details.person_unit'.tr()}",
                   statusColor,
                 ),
                 const SizedBox(height: 20),
                 _buildInfoRow(
                   context,
                   Icons.timer_outlined,
-                  "announcement_details.deadline_label".tr(),
+                  "announce.details.deadline_label".tr(),
                   formattedDeadline,
                   colorScheme.primary,
                 ),
@@ -284,7 +280,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
                 _buildInfoRow(
                   context,
                   Icons.calendar_today_rounded,
-                  "announcement_details.posted_label".tr(),
+                  "announce.details.posted_label".tr(),
                   postedDate,
                   Colors.blueGrey,
                 ),

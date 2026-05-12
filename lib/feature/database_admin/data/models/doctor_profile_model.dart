@@ -1,5 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class DoctorProfileModel {
   final String? uid;
+  final String role;
+  final bool isFirstLogin;
+
   // بيانات الهوية
   final String nameAr;
   final String nameEn;
@@ -12,7 +17,8 @@ class DoctorProfileModel {
   final String nationalId;
   final String employeeId;
   final DateTime? birthDate;
-  final String profileImage; // الحقل الجديد
+  final String profileImage;
+
   // بيانات التواصل
   final String email;
   final String phone;
@@ -22,11 +28,12 @@ class DoctorProfileModel {
 
   // البيانات الأكاديمية
   final List<Map<String, dynamic>> academicHistory;
+
   // البيانات الأهلية والإدارية
   final bool disciplinaryClearance;
   final bool hasPermanentPosition;
   final bool isOnVacation;
-  final bool isActive; // <--- المتغير الجديد للتحكم في الحساب
+  final bool isActive;
 
   // الأبحاث وباقي البيانات
   final String? profileImageUrl;
@@ -37,6 +44,8 @@ class DoctorProfileModel {
 
   DoctorProfileModel({
     this.uid,
+    this.role = 'doctor',
+    this.isFirstLogin = true,
     required this.nameAr,
     required this.nameEn,
     required this.nationalityAr,
@@ -58,7 +67,7 @@ class DoctorProfileModel {
     required this.disciplinaryClearance,
     required this.hasPermanentPosition,
     required this.isOnVacation,
-    this.isActive = true, // افتراضياً الحساب نشط عند الإنشاء
+    this.isActive = true,
     this.profileImageUrl = "",
     this.cvUrl = "",
     this.researchPapers = const [],
@@ -69,55 +78,57 @@ class DoctorProfileModel {
   factory DoctorProfileModel.fromJson(Map<String, dynamic> json, String id) {
     return DoctorProfileModel(
       uid: id,
-      nameAr: json['identity']['name_ar'] ?? '',
-      nameEn: json['identity']['name_en'] ?? '',
-      nationalityAr: json['identity']['nationality_ar'] ?? '',
-      nationalityEn: json['identity']['nationality_en'] ?? '',
-      currentJobAr: json['identity']['current_job_ar'] ?? '',
-      currentJobEn: json['identity']['current_job_en'] ?? '',
-      socialStatusAr: json['identity']['social_status_ar'] ?? '',
-      socialStatusEn: json['identity']['social_status_en'] ?? '',
-      nationalId: json['identity']['national_id'] ?? '',
-      employeeId: json['identity']['employee_id'] ?? '',
-      birthDate: json['identity']['birth_date'] != null
-          ? DateTime.parse(json['identity']['birth_date'])
+      role: json['role'] ?? 'doctor',
+      isFirstLogin: json['isFirstLogin'] ?? true,
+      nameAr: json['identity']?['name_ar'] ?? '',
+      nameEn: json['identity']?['name_en'] ?? '',
+      nationalityAr: json['identity']?['nationality_ar'] ?? '',
+      nationalityEn: json['identity']?['nationality_en'] ?? '',
+      currentJobAr: json['identity']?['current_job_ar'] ?? '',
+      currentJobEn: json['identity']?['current_job_en'] ?? '',
+      socialStatusAr: json['identity']?['social_status_ar'] ?? '',
+      socialStatusEn: json['identity']?['social_status_en'] ?? '',
+      nationalId: json['identity']?['national_id'] ?? '',
+      employeeId: json['identity']?['employee_id'] ?? '',
+      birthDate: json['identity']?['birth_date'] != null
+          ? (json['identity']['birth_date'] is Timestamp
+                ? (json['identity']['birth_date'] as Timestamp).toDate()
+                : DateTime.tryParse(json['identity']['birth_date'].toString()))
           : null,
-      profileImage: json['contact']?['profile_image_url'] ?? '',
-      email: json['contact']['university_email'] ?? '',
-      phone: json['contact']['phone_number'] ?? '',
-      addressAr: json['contact']['home_address_ar'] ?? '',
-      addressEn: json['contact']['home_address_en'] ?? '',
-      alternativeEmail: json['contact']['alternative_email'],
+      profileImage: json['identity']?['profile_image_url'] ?? '',
+      email: json['contact']?['university_email'] ?? '',
+      phone: json['contact']?['phone_number'] ?? '',
+      addressAr: json['contact']?['home_address_ar'] ?? '',
+      addressEn: json['contact']?['home_address_en'] ?? '',
+      alternativeEmail: json['contact']?['alternative_email'],
       academicHistory: List<Map<String, dynamic>>.from(
-        json['academic_profile']['history'] ?? [],
+        json['academic_profile']?['history'] ?? [],
       ),
       disciplinaryClearance:
-          json['eligibility_data']['disciplinary_clearance'] ?? true,
+          json['eligibility_data']?['disciplinary_clearance'] ?? true,
       hasPermanentPosition:
-          json['eligibility_data']['has_permanent_position'] ?? true,
-      isOnVacation: json['eligibility_data']['is_on_vacation'] ?? false,
-      isActive:
-          json['eligibility_data']['is_active'] ??
-          true, // قراءة الحالة من فايربيز
-      profileImageUrl: json['contact']['profile_image_url'],
-      cvUrl: json['academic_profile']['cv_url'],
+          json['eligibility_data']?['has_permanent_position'] ?? true,
+      isOnVacation: json['eligibility_data']?['is_on_vacation'] ?? false,
+      isActive: json['eligibility_data']?['is_active'] ?? true,
+      profileImageUrl: json['contact']?['profile_image_url'],
+      cvUrl: json['academic_profile']?['cv_url'],
       researchPapers: List<Map<String, dynamic>>.from(
-        json['scientific_work']['research_papers'] ?? [],
+        json['scientific_work']?['research_papers'] ?? [],
       ),
       trainingCourses: List<Map<String, dynamic>>.from(
-        json['scientific_work']['training_courses'] ?? [],
+        json['scientific_work']?['training_courses'] ?? [],
       ),
       activities: List<Map<String, dynamic>>.from(
-        json['scientific_work']['other_activities'] ?? [],
+        json['scientific_work']?['other_activities'] ?? [],
       ),
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'uid': uid ?? '', // يفضل تمرير الـ UID الفعلي
-      'role': 'doctor',
-      'isFirstLogin': true,
+      'uid': uid ?? '',
+      'role': role,
+      'isFirstLogin': isFirstLogin,
       'isRegistered': true,
       'identity': {
         'name_ar': nameAr,
@@ -128,7 +139,7 @@ class DoctorProfileModel {
         'current_job_en': currentJobEn,
         'national_id': nationalId,
         'employee_id': employeeId,
-        'birth_date': birthDate?.toIso8601String(),
+        'birth_date': birthDate,
         'profile_image_url': profileImage,
         'social_status_ar': socialStatusAr,
         'social_status_en': socialStatusEn,
@@ -146,19 +157,21 @@ class DoctorProfileModel {
         'is_on_vacation': isOnVacation,
         'has_permanent_position': hasPermanentPosition,
         'disciplinary_clearance': disciplinaryClearance,
-        'is_active': isActive, // حفظ الحالة في فايربيز
+        'is_active': isActive,
       },
       'scientific_work': {
         'research_papers': researchPapers,
         'training_courses': trainingCourses,
         'other_activities': activities,
       },
-      'created_at': DateTime.now().toIso8601String(),
+      'created_at': FieldValue.serverTimestamp(),
     };
   }
 
   DoctorProfileModel copyWith({
     String? uid,
+    String? role,
+    bool? isFirstLogin,
     String? nameAr,
     String? nameEn,
     String? nationalityAr,
@@ -189,6 +202,8 @@ class DoctorProfileModel {
   }) {
     return DoctorProfileModel(
       uid: uid ?? this.uid,
+      role: role ?? this.role,
+      isFirstLogin: isFirstLogin ?? this.isFirstLogin,
       nameAr: nameAr ?? this.nameAr,
       nameEn: nameEn ?? this.nameEn,
       nationalityAr: nationalityAr ?? this.nationalityAr,

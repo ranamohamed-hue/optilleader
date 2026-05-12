@@ -6,7 +6,7 @@ import 'package:optialeader/feature/database_admin/data/repo/admin_repository/ad
 class AdminRepoImpl extends AdminRepo {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  CollectionReference get _usersCollection => _firestore.collection('Users');
+  CollectionReference get _usersCollection => _firestore.collection('users');
 
   @override
   Future<Either<String, Unit>> saveAdminData(AdminProfileModel admin) async {

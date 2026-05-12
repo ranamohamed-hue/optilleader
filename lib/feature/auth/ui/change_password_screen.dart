@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_state.dart';
+import 'package:optialeader/core/routing/routes.dart';
 
 class ChangePasswordView extends StatefulWidget {
   const ChangePasswordView({super.key});
@@ -15,10 +17,8 @@ class ChangePasswordView extends StatefulWidget {
 
 class _ChangePasswordViewState extends State<ChangePasswordView> {
   final _formKey = GlobalKey<FormState>();
-
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
-
   bool isObscure = true;
 
   @override
@@ -31,12 +31,7 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
   void _submit() {
     if (_formKey.currentState!.validate()) {
       if (passwordController.text != confirmPasswordController.text) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Password mismatch".tr()),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorSnackBar("validation.password_mismatch".tr());
         return;
       }
 
@@ -44,6 +39,16 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
         newPassword: passwordController.text.trim(),
       );
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -54,105 +59,111 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text("Change password".tr()), // "تغيير كلمة المرور"
+        title: Text("change_password.title".tr()),
         centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: BlocConsumer<AuthCubit, AuthState>(
-            listener: (context, state) {
-              if (state is UpdatePasswordErrorState) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.error),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              } else if (state is UpdatePasswordSuccessState) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-                // هنا ممكن تضيفي توجيه للصفحة الرئيسية بعد النجاح
-              }
-            },
-            builder: (context, state) {
-              return Form(
+        child: BlocConsumer<AuthCubit, AuthState>(
+         listener: (context, state) {
+  if (state is UpdatePasswordErrorState) {
+    _showErrorSnackBar(state.error);
+  } else if (state is UpdatePasswordSuccessState) {
+    // بنعرض رسالة النجاح بس
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("change_password.success_msg".tr()),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+},
+          builder: (context, state) {
+            return SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: Form(
                 key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(height: 40.h),
+                    SizedBox(height: 30.h),
 
-                    /// العنوان: تعيين كلمة مرور جديدة
+                    Icon(
+                      Icons.lock_reset_rounded,
+                      size: 80.sp,
+                      color: const Color(0xFF000080),
+                    ),
+
+                    SizedBox(height: 20.h),
+
                     Text(
-                      "Change password".tr(),
+                      "change_password.header".tr(),
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF000080), // Navy
+                        color: const Color(0xFF000080),
                       ),
                       textAlign: TextAlign.center,
                     ),
 
                     SizedBox(height: 12.h),
 
-                    /// النص الفرعي: هذا مطلوب عند تسجيل دخولك الأول
                     Text(
-                      "Change password".tr(),
-                      style: theme.textTheme.bodyMedium,
+                      "change_password.subtitle".tr(),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey,
+                      ),
                       textAlign: TextAlign.center,
                     ),
 
                     SizedBox(height: 40.h),
 
-                    /// حقل كلمة المرور الجديدة
                     _buildPasswordField(
                       controller: passwordController,
-                      label: "New password".tr(),
+                      label: "fields.new_password".tr(),
                       isObscure: isObscure,
                       onToggle: () => setState(() => isObscure = !isObscure),
                     ),
 
                     SizedBox(height: 20.h),
 
-                    /// حقل تأكيد كلمة المرور
                     _buildPasswordField(
                       controller: confirmPasswordController,
-                      label: "Confirm New Password".tr(),
+                      label: "fields.confirm_password".tr(),
                       isObscure: isObscure,
-                      // بنستخدم نفس الـ toggle للاتنين عشان التسهيل
+                      onToggle: () => setState(() => isObscure = !isObscure),
                     ),
 
-                    SizedBox(height: 40.h),
+                    SizedBox(height: 50.h),
 
-                    /// زر التأكيد
-                    if (state is UpdatePasswordLoadingState)
-                      const CircularProgressIndicator()
-                    else
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52.h,
-                        child: ElevatedButton(
-                          onPressed: _submit,
-                          style: ElevatedButton.styleFrom(
-                          
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r),
+                    state is UpdatePasswordLoadingState
+                        ? const Center(child: CircularProgressIndicator())
+                        : SizedBox(
+                            height: 52.h,
+                            child: ElevatedButton(
+                              onPressed: _submit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF000080),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                              ),
+                              child: Text(
+                                "change_password.submit".tr(),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
                             ),
                           ),
-                          child: Text(
-                            "Password Submit".tr(), // "تأكيد"
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
                   ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -162,25 +173,27 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
     required TextEditingController controller,
     required String label,
     required bool isObscure,
-    VoidCallback? onToggle,
+    required VoidCallback onToggle,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: isObscure,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: const Icon(Icons.lock_outline),
+        prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF000080)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
-        suffixIcon: onToggle != null
-            ? IconButton(
-                icon: Icon(isObscure ? Icons.visibility_off : Icons.visibility),
-                onPressed: onToggle,
-              )
-            : null,
+        suffixIcon: IconButton(
+          icon: Icon(isObscure ? Icons.visibility_off : Icons.visibility),
+          onPressed: onToggle,
+        ),
       ),
       validator: (v) {
-        if (v == null || v.isEmpty) return "auth.validation.required".tr();
-        if (v.length < 6) return "Password short".tr();
+        if (v == null || v.isEmpty) {
+          return "validation.required".tr();
+        }
+        if (v.length < 8) {
+          return "validation.password_short".tr();
+        }
         return null;
       },
     );

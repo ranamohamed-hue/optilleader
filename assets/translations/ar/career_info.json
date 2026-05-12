@@ -1,0 +1,35 @@
+{
+  "career": {
+    "title": "البيانات الوظيفية",
+    "sections": {
+      "credentials": "المؤهلات العلمية",
+      "path": "المسار الوظيفي",
+      "current_employment": "بيانات العمل الحالية"
+    },
+    "degrees": {
+      "phd": "دكتوراه",
+      "msc": "ماجستير",
+      "bsc": "بكالوريوس"
+    },
+    "specs": {
+      "computer_eng": "هندسة الحاسبات",
+      "software_eng": "هندسة البرمجيات",
+      "computer_science": "علوم الحاسب"
+    },
+    "current_role": "تاريخ شغل الوظيفة الحالية: {}",
+    "experience": "عدد سنوات الخبرة: {} سنوات",
+    "previous_positions": "الوظائف السابقة:",
+    "roles": {
+      "lecturer": "مدرس",
+      "ta": "معيد"
+    },
+    "labels": {
+      "dept": "الجهة:",
+      "type": "نوع التعيين:",
+      "hire_date": "تاريخ أول تعيين:"
+    },
+    "employment_type": {
+      "permanent": "تعيين دائم"
+    }
+  }
+}

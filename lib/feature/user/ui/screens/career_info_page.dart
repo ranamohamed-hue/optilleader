@@ -18,16 +18,16 @@ class CareerInfoPage extends StatelessWidget {
       appBar: AppBar(
         toolbarHeight: 90.h,
         automaticallyImplyLeading: false,
-         leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
-              onPressed: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go(Routes.user);
-                }
-              },
-            ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(Routes.user);
+            }
+          },
+        ),
         title: Row(
           children: [
             Container(
@@ -42,10 +42,7 @@ class CareerInfoPage extends StatelessWidget {
                 child: const Icon(Icons.person, color: Colors.white, size: 20),
               ),
             ),
-
             SizedBox(width: 12.w),
-
-            // 2. نصوص العنوان
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -58,14 +55,12 @@ class CareerInfoPage extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Dr. Mohamed Adel',
+                  'Dr. Mohamed Adel', // يمكن استبداله بمتغير من الـ Profile لاحقاً
                   style: textTheme.bodySmall?.copyWith(color: Colors.white70),
                 ),
               ],
             ),
-
             const Spacer(),
-
             InkWell(
               onTap: () {},
               child: Container(
@@ -84,30 +79,18 @@ class CareerInfoPage extends StatelessWidget {
                 ),
               ),
             ),
-
-            SizedBox(width: 10.w),
-
-            // 4. زر العودة
-            IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios_new,
-                color: Colors.white,
-                size: 20,
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
           ],
         ),
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(4.h),
+          preferredSize: Size.fromHeight(2.h),
           child: Container(color: colorScheme.secondary, height: 2.h),
         ),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20.w),
+        physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            // قسم المؤهلات العلمية
             _buildSectionHeader(
               context,
               Icons.school_outlined,
@@ -135,27 +118,20 @@ class CareerInfoPage extends StatelessWidget {
               '10/07/2007',
               isLast: true,
             ),
-
             SizedBox(height: 25.h),
-
-            // قسم المسار الوظيفي
             _buildSectionHeader(
               context,
               Icons.history_edu_rounded,
               'career.sections.path'.tr(),
             ),
             _buildCareerPathCard(context),
-
             SizedBox(height: 25.h),
-
-            // قسم بيانات العمل الحالية
             _buildSectionHeader(
               context,
               Icons.badge_outlined,
               'career.sections.current_employment'.tr(),
             ),
             _buildCurrentInfoCard(context),
-
             SizedBox(height: 30.h),
           ],
         ),
@@ -163,6 +139,7 @@ class CareerInfoPage extends StatelessWidget {
     );
   }
 
+  // الـ Widgets الفرعية كما هي في الكود الخاص بكِ مع التأكد من ربط النصوص بـ .tr()
   Widget _buildSectionHeader(
     BuildContext context,
     IconData icon,
@@ -172,7 +149,7 @@ class CareerInfoPage extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 15.w),
       decoration: BoxDecoration(
-        color: colorScheme.primary, // Navy
+        color: colorScheme.primary,
         borderRadius: BorderRadius.vertical(top: Radius.circular(15.r)),
         border: Border.all(color: colorScheme.secondary.withOpacity(0.3)),
       ),
@@ -321,14 +298,13 @@ class CareerInfoPage extends StatelessWidget {
 
   Widget _buildCurrentInfoCard(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(15.r)),
-        border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
+        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.1)),
       ),
       child: Column(
         children: [

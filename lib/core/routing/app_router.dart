@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/routing/router_refresh_notifier.dart';
 import 'package:optialeader/feature/admin/admin_routes.dart';
-import 'package:optialeader/feature/admin/ui/dashboaer.dart';
+import 'package:optialeader/feature/admin/ui/dashboaer.dart'; // تأكدي من مسمى الملف ده (dashboard)
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
+import 'package:optialeader/feature/auth/logic/cubits/auth_state.dart';
 import 'package:optialeader/feature/auth/ui/change_password_screen.dart';
 import 'package:optialeader/feature/auth/ui/signin_screen.dart';
-import 'package:optialeader/feature/auth/ui/signup_screen.dart';
 import 'package:optialeader/feature/database_admin/routing/database_admin_routes.dart';
 import 'package:optialeader/feature/judge/routing/judge_rouring.dart';
 import 'package:optialeader/feature/judge/ui/screens/judge.dart';
@@ -14,13 +14,13 @@ import 'package:optialeader/feature/setting/ui/setting.dart';
 import 'package:optialeader/feature/user/routing/user_routing.dart';
 import 'package:optialeader/feature/user/ui/screens/dashboard_user.dart';
 import 'package:optialeader/feature/auth/data/models/user_model.dart';
-
 import 'package:optialeader/feature/database_admin/ui/screens/database_admin_dashboard.dart';
-//عشان لنا اجي انتقل من مكان لاخ
 import 'routes.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 GoRouter createRouter(AuthCubit authCubit) {
+  // دالة مساعدة لتحديد الصفحة الرئيسية بناءً على الدور
   String getHomeByRole(UserRole role) {
     switch (role) {
       case UserRole.database_admin:
@@ -38,92 +38,80 @@ GoRouter createRouter(AuthCubit authCubit) {
     navigatorKey: navigatorKey,
     initialLocation: Routes.login,
     refreshListenable: RouterRefreshNotifier(authCubit),
-
     redirect: (context, state) {
       final authState = authCubit.state;
-
       final location = state.uri.toString();
-      /*
+
       final isOnLogin = location == Routes.login;
       final isOnRegister = location == Routes.register;
       final isOnChangePassword = location == Routes.changePassword;
 
-      // مش مسجل
-      if (authState is AuthInitialState) {
+      // 1. لو لسه في البداية أو بيحمل أو حصل خطأ (خليه في صفحة الـ Login)
+      if (authState is AuthInitialState ||
+          authState is LoginErrorState ||
+          authState is LogoutSuccessState) {
         if (isOnLogin || isOnRegister) return null;
         return Routes.login;
       }
 
-      // أول مرة
+      // 2. أول ما ينجح في تسجيل الدخول (LoginSuccessState)
+      if (authState is LoginSuccessState) {
+        final role = authState.userModel.role;
+        return getHomeByRole(role);
+      }
+
+      // 3. حالة المستخدم الجديد (إجبار على تغيير الباسورد)
       if (authState is NewUserFirstLoginState) {
         if (isOnChangePassword) return null;
         return Routes.changePassword;
       }
 
-      // مسجل
+      // 4. حالة المصادقة النهائية المستقرة (AuthenticatedState)
       if (authState is AuthenticatedState) {
         final role = authState.userModel.role;
-
-        // يمنع الرجوع لصفحة تغيير الباسورد
-        if (isOnChangePassword) {
+        // لو هو مسجل دخول وبيحاول يروح لصفحات الـ Auth، رجعه لبيته
+        if (isOnLogin || isOnRegister || isOnChangePassword) {
           return getHomeByRole(role);
         }
-
-        // يمنع الرجوع لصفحات auth
-        if (isOnLogin || isOnRegister) {
-          return getHomeByRole(role);
-        }
-
         return null;
       }
-*/
+
       return null;
     },
-
     routes: [
-      /// AUTH
+      /// --- AUTH ROUTES ---
       GoRoute(
         path: Routes.login,
         builder: (context, state) => const SignInView(),
       ),
       GoRoute(
-        path: Routes.register,
-        builder: (context, state) => const SignUpView(),
-      ),
-
-      /// CHANGE PASSWORD
-      GoRoute(
         path: Routes.changePassword,
         builder: (context, state) => const ChangePasswordView(),
       ),
-      //DatabaseAdmin
+
+      /// --- DASHBOARD ROUTES ---
       GoRoute(
         path: Routes.databaseAdmin,
         builder: (context, state) => const DatabaseAdminDashboard(),
         routes: databaseAdminSubRoutes,
       ),
-
-      /// ADMIN
       GoRoute(
         path: Routes.admin,
         builder: (context, state) => const DashboardScreen(),
         routes: adminSubRoutes,
       ),
-
-      /// JU
       GoRoute(
         path: Routes.judge,
         builder: (context, state) => const MohakemDashboardHome(),
-      routes: judgeSubRoutes
+        routes: judgeSubRoutes,
       ),
-
-      /// USER
       GoRoute(
         path: Routes.user,
         builder: (context, state) => const DashboardUserPage(),
-
         routes: userSubRoutes,
       ),
+
+      /// --- SETTINGS ---
       GoRoute(
         path: Routes.settings,
         builder: (context, state) {

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/routing/routes.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class EvaluationScreen extends StatelessWidget {
   const EvaluationScreen({super.key});
@@ -34,7 +35,7 @@ class EvaluationScreen extends StatelessWidget {
           },
         ),
         title: Text(
-          'تقييم المتقدم',
+          'evaluation.title'.tr(), // ترجمة العنوان
           style: textTheme.titleMedium?.copyWith(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -58,26 +59,34 @@ class EvaluationScreen extends StatelessWidget {
             // 2. أقسام التقييم
             _buildEvaluationSection(
               context,
-              '1. السمات الشخصية والمظهر (الدرجة القصوى: 15)',
+              'evaluation.sections.personal'.tr(),
               [
-                _buildCriterionRow('المظهر العام والهندام', '5', '3'),
-                _buildCriterionRow('الثقة بالنفس ومواجهة الجمهور', '5', '5'),
-                _buildCriterionRow('الاتزان وحسن التصرف', '5', '2'),
+                _buildCriterionRow(
+                  'evaluation.criteria.appearance'.tr(),
+                  '5',
+                  '3',
+                ),
+                _buildCriterionRow(
+                  'evaluation.criteria.confidence'.tr(),
+                  '5',
+                  '5',
+                ),
+                _buildCriterionRow('evaluation.criteria.poise'.tr(), '5', '2'),
               ],
               '10 / 15',
             ),
 
             _buildExpandableSection(
               context,
-              '2. الكفاءة العلمية والمهنية (الدرجة القصوى: 40)',
+              'evaluation.sections.scientific'.tr(),
             ),
             _buildExpandableSection(
               context,
-              '3. مهارات التواصل والعرض (الدرجة القصوى: 25)',
+              'evaluation.sections.communication'.tr(),
             ),
             _buildExpandableSection(
               context,
-              '4. القيادة وتطوير الإدارة (الدرجة القصوى: 20)',
+              'evaluation.sections.leadership'.tr(),
             ),
 
             // 3. المجموع الكلي
@@ -124,7 +133,7 @@ class EvaluationScreen extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           Text(
-            'د. أحمد منصور',
+            'د. أحمد منصور', // يمكن ربطها بـ API لاحقاً
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
@@ -133,7 +142,7 @@ class EvaluationScreen extends StatelessWidget {
             ),
           ),
           Text(
-            'قسم علوم الحاسب - كلية الهندسة',
+            'evaluation.applicant_card.dept'.tr(),
             style: TextStyle(
               fontSize: 13.sp,
               color: Colors.grey,
@@ -157,7 +166,6 @@ class EvaluationScreen extends StatelessWidget {
       child: ExpansionTile(
         title: Text(
           title,
-          textAlign: TextAlign.right,
           style: TextStyle(
             fontSize: 13.sp,
             fontWeight: FontWeight.bold,
@@ -169,7 +177,7 @@ class EvaluationScreen extends StatelessWidget {
           Padding(
             padding: EdgeInsets.all(15.w),
             child: Text(
-              "محتوى التقييم يظهر هنا...",
+              'evaluation.criteria.details_hint'.tr(),
               style: TextStyle(color: Colors.grey.shade600, fontSize: 12.sp),
             ),
           ),
@@ -190,6 +198,15 @@ class EvaluationScreen extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Text(
+              'evaluation.criteria.total_score'.tr(),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16.sp,
+                color: Colors.white,
+                fontFamily: 'Tajawal',
+              ),
+            ),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 6.h),
               decoration: BoxDecoration(
@@ -199,19 +216,10 @@ class EvaluationScreen extends StatelessWidget {
               child: Text(
                 '10 / 100',
                 style: TextStyle(
-                  color: colorScheme.primary,
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 16.sp,
                 ),
-              ),
-            ),
-            Text(
-              'المجموع الكلي :',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16.sp,
-                color: Colors.white,
-                fontFamily: 'Tajawal',
               ),
             ),
           ],
@@ -224,10 +232,11 @@ class EvaluationScreen extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment:
+            CrossAxisAlignment.start, // سيتغير تلقائياً حسب اللغة
         children: [
           Text(
-            'ملاحظات وتوصيات إضافية',
+            'evaluation.notes.title'.tr(),
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: colorScheme.primary,
@@ -238,10 +247,8 @@ class EvaluationScreen extends StatelessWidget {
           SizedBox(height: 10.h),
           TextField(
             maxLines: 3,
-            textAlign: TextAlign.right,
-            style: TextStyle(fontSize: 13.sp),
             decoration: InputDecoration(
-              hintText: 'اكتب ملاحظاتك هنا...',
+              hintText: 'evaluation.notes.hint'.tr(),
               hintStyle: TextStyle(fontSize: 12.sp),
               filled: true,
               fillColor: Colors.white,
@@ -275,12 +282,8 @@ class EvaluationScreen extends StatelessWidget {
                 padding: EdgeInsets.symmetric(vertical: 15.h),
               ),
               child: Text(
-                'اعتماد التقييم',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.sp,
-                  fontFamily: 'Tajawal',
-                ),
+                'evaluation.actions.approve'.tr(),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
               ),
             ),
           ),
@@ -296,12 +299,11 @@ class EvaluationScreen extends StatelessWidget {
                 padding: EdgeInsets.symmetric(vertical: 15.h),
               ),
               child: Text(
-                'حفظ كمسودة',
+                'evaluation.actions.save_draft'.tr(),
                 style: TextStyle(
                   color: colorScheme.primary,
                   fontWeight: FontWeight.bold,
                   fontSize: 14.sp,
-                  fontFamily: 'Tajawal',
                 ),
               ),
             ),
@@ -336,12 +338,10 @@ class EvaluationScreen extends StatelessWidget {
             ),
             child: Text(
               title,
-              textAlign: TextAlign.right,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: colorScheme.primary,
                 fontSize: 13.sp,
-                fontFamily: 'Tajawal',
               ),
             ),
           ),
@@ -358,19 +358,18 @@ class EvaluationScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
+                  'evaluation.criteria.sub_total'.tr(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.sp,
+                  ),
+                ),
+                Text(
                   subTotal,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.primary,
                     fontSize: 14.sp,
-                  ),
-                ),
-                Text(
-                  'المجموع الفرعي :',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13.sp,
-                    fontFamily: 'Tajawal',
                   ),
                 ),
               ],
@@ -390,6 +389,25 @@ class EvaluationScreen extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 10.h),
       child: Row(
         children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'evaluation.criteria.max_score'.tr(args: [maxScore]),
+                  style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 10.w),
           Container(
             width: 45.w,
             height: 35.h,
@@ -403,31 +421,6 @@ class EvaluationScreen extends StatelessWidget {
                 currentScore,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp),
               ),
-            ),
-          ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  label,
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-                Text(
-                  'الدرجة القصوى: $maxScore',
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    color: Colors.grey,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-              ],
             ),
           ),
         ],

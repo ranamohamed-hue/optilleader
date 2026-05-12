@@ -1,0 +1,19 @@
+{
+  "achievements": {
+    "title": "Achievements Log",
+    "tabs": {
+      "research": "Research",
+      "conferences": "Conferences",
+      "activities": "Activities",
+      "courses": "Courses"
+    },
+    "status": {
+      "accepted": "Accepted",
+      "under_review": "Under Review",
+      "rejected": "Rejected"
+    },
+    "sections": {
+      "proposals": "Research Proposals"
+    }
+  }
+}

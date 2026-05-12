@@ -1,0 +1,25 @@
+{
+  "dashboardUser": {
+    "welcome": "مرحباً بك،",
+    "achievements": "الإنجازات",
+    "academic_data": "البيانات الأكاديمية",
+    "requests_status": "حالة الطلبات",
+    "pending": "قيد الانتظار",
+    "career_path": "المسار الوظيفي",
+    "completed": "مكتمل",
+    "latest_opportunities": "أحدث الفرص المتاحة",
+    "view_all": "عرض الكل",
+    "opp1_title": "فرصة بحثية جديدة",
+    "opp1_desc": "مطلوب باحثين في مجال الذكاء الاصطناعي",
+    "opp2_title": "ندوة علمية",
+    "opp2_desc": "تحليل البيانات الضخمة في الهندسة",
+    "nav": {
+      "settings": "الإعدادات",
+      "notifications": "التنبيهات",
+      "files": "الملفات",
+      "home": "الرئيسية"
+    }
+  },
+  "error_message": "حدث خطأ غير متوقع",
+  "retry": "إعادة المحاولة"
+}

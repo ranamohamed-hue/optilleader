@@ -1,0 +1,18 @@
+{
+  "statuses": {
+    "active": "نشط"
+  },
+  "acadimicData": {
+    "personal_section": "المعلومات الشخصية",
+    "academic_section": "السجل الأكاديمي والمهني",
+    "contact_section": "معلومات الاتصال",
+    "name_ar": "الاسم (بالعربي)",
+    "phone": "رقم الهاتف",
+    "social_status": "الحالة الاجتماعية",
+    "birth_date": "تاريخ الميلاد",
+    "job_ar": "الوظيفة (بالعربي)",
+    "email": "البريد الإلكتروني",
+    "address_ar": "العنوان (بالعربي)",
+    "save_btn": "حفظ البيانات"
+  }
+}

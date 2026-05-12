@@ -3,8 +3,9 @@ import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 import 'package:optialeader/feature/admin/ui/announces/announce.dart';
 import 'package:optialeader/feature/admin/ui/announces/announce_dateail.dart';
 import 'package:optialeader/feature/admin/ui/announces/edit_announcement.dart';
-import 'package:optialeader/feature/admin/ui/requesr/full_employee_report_screen.dart';
-import 'package:optialeader/feature/admin/ui/requesr/order_list_screen.dart';
+
+import 'package:optialeader/feature/admin/ui/request/full_employee_report_screen.dart';
+import 'package:optialeader/feature/admin/ui/request/order_list_screen.dart';
 import 'package:optialeader/feature/setting/ui/setting.dart';
 import 'package:optialeader/feature/admin/ui/user_search_screen.dart';
 

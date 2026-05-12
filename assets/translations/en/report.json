@@ -1,0 +1,14 @@
+{
+  "report": {
+    "title": "Employee Report Details",
+    "select_judge": "Select Assigned Judge",
+    "btn_approve": "Approve Final Report",
+    "fields": {
+      "hiring_date": "Hiring Date:"
+    }
+  },
+  "judge": {
+    "name1": "Prof. Mohamed Ali",
+    "name2": "Prof. Sarah Hassan"
+  }
+}

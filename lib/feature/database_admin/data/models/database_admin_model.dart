@@ -10,6 +10,7 @@ class DatabaseAdminProfileModel {
   final String phone;
   final String national_id;
   final String employee_id;
+  final bool isFirstLogin;
 
   const DatabaseAdminProfileModel({
     required this.uid,
@@ -22,24 +23,24 @@ class DatabaseAdminProfileModel {
     this.role = 'database_admin',
     required this.phone,
     required this.national_id,
-    required this.employee_id
+    required this.employee_id,
+    this.isFirstLogin = true,
   });
 
   factory DatabaseAdminProfileModel.fromFirestore(Map<String, dynamic> json, String id) {
     return DatabaseAdminProfileModel(
       uid: id,
-      nameAr: json['display_name']?['ar'] ?? json['username_ar'] ?? 'رنا محمد',
-      nameEn: json['display_name']?['en'] ?? json['username_en'] ?? 'Rana Mohamed',
-      
+      nameAr: json['display_name']?['ar'] ?? json['username_ar'] ?? '',
+      nameEn: json['display_name']?['en'] ?? json['username_en'] ?? '',
       email: json['university_email'] ?? '',
-      
       addressAr: json['address']?['ar'] ?? '',
       addressEn: json['address']?['en'] ?? '',
-      
       profileImage: json['profile_image_url'] ?? '',
-      phone: json['phone']??'',
-      national_id:json['national_id']??'',
-      employee_id: json['employee_id']??''
+      role: json['role'] ?? 'database_admin',
+      phone: json['phone'] ?? '',
+      national_id: json['national_id'] ?? '',
+      employee_id: json['employee_id'] ?? '',
+      isFirstLogin: json['isFirstLogin'] ?? true, 
     );
   }
 
@@ -54,10 +55,15 @@ class DatabaseAdminProfileModel {
         'ar': addressAr,
         'en': addressEn,
       },
-      'profile_image_url': profileImage,
+      'profile_image': profileImage,
       'role': role,
+      'phone': phone,
+      'national_id': national_id,
+      'employee_id': employee_id,
+      'isFirstLogin': isFirstLogin, 
     };
   }
+
   DatabaseAdminProfileModel copyWith({
     String? uid,
     String? nameAr,
@@ -69,7 +75,8 @@ class DatabaseAdminProfileModel {
     String? role,
     String? phone,
     String? national_id,
-    String? employee_id
+    String? employee_id,
+    bool? isFirstLogin, 
   }) {
     return DatabaseAdminProfileModel(
       uid: uid ?? this.uid,
@@ -80,9 +87,10 @@ class DatabaseAdminProfileModel {
       addressEn: addressEn ?? this.addressEn,
       profileImage: profileImage ?? this.profileImage,
       role: role ?? this.role,
-      phone: phone?? this.phone,
-      national_id:national_id??this.national_id,
-      employee_id:employee_id??this.employee_id,
+      phone: phone ?? this.phone,
+      national_id: national_id ?? this.national_id,
+      employee_id: employee_id ?? this.employee_id,
+      isFirstLogin: isFirstLogin ?? this.isFirstLogin, 
     );
   }
 }

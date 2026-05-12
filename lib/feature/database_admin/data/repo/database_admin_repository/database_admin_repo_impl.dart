@@ -49,7 +49,7 @@ Future<Either<String, Unit>> updateAdminInfo({
   @override
   Future<Either<String, Unit>> updateProfileImage(String uid, String imageUrl) async {
     try {
-      await _firestore.collection('users').doc(uid).update({'profile_image_url': imageUrl,});
+      await _firestore.collection('users').doc(uid).update({'profile_image': imageUrl,});
       return const Right(unit);
     } 
     on FirebaseException catch (e) {

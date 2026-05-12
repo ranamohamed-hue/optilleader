@@ -1,0 +1,14 @@
+{
+  "addJudge": {
+    "welcome": "مرحباً بك،",
+    "job_title": "المسمى الوظيفي",
+    "location": "الموقع",
+    "account_status": "حالة الحساب",
+    "contact": "بيانات التواصل",
+    "recent_tasks": "المهام الأخيرة",
+    "task1": "رقم الهاتف المسجل",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "not_specified": "غير محدد"
+  }
+}

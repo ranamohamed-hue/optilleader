@@ -11,7 +11,6 @@ class UserModel extends Equatable {
   final String employeeId;
   final UserRole role;
   final bool isFirstLogin;
-  final bool isRegistered;
 
   const UserModel({
     required this.uid,
@@ -21,10 +20,9 @@ class UserModel extends Equatable {
     required this.employeeId,
     required this.role,
     this.isFirstLogin = true,
-    this.isRegistered = false,
   });
 
-  /// 🔥 Firestore → Model
+  /// Firestore → Model
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
 
@@ -44,11 +42,10 @@ class UserModel extends Equatable {
       role: _mapRole(data['role']),
 
       isFirstLogin: data['isFirstLogin'] ?? true,
-      isRegistered: data['isRegistered'] ?? false,
     );
   }
 
-  /// 🔥 تحويل String → Enum
+  ///  تحويل String → Enum
   static UserRole _mapRole(String? role) {
     switch (role) {
       case 'database_admin':
@@ -62,7 +59,7 @@ class UserModel extends Equatable {
     }
   }
 
-  /// 🔥 تحويل Enum → String
+  ///  تحويل Enum → String
   String get roleString {
     switch (role) {
       case UserRole.database_admin:
@@ -86,7 +83,6 @@ class UserModel extends Equatable {
       'employee_id': employeeId,
       'role': roleString,
       'isFirstLogin': isFirstLogin,
-      'isRegistered': isRegistered,
     };
   }
 
@@ -109,7 +105,6 @@ class UserModel extends Equatable {
       employeeId: employeeId ?? this.employeeId,
       role: role ?? this.role,
       isFirstLogin: isFirstLogin ?? this.isFirstLogin,
-      isRegistered: isRegistered ?? this.isRegistered,
     );
   }
 
@@ -122,6 +117,5 @@ class UserModel extends Equatable {
     employeeId,
     role,
     isFirstLogin,
-    isRegistered,
   ];
 }

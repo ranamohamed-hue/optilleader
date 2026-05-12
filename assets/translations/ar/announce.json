@@ -1,0 +1,21 @@
+{
+  "announce": {
+    "title": "الإعلانات",
+    "subtitle": "إدارة ونشر أخبار المنصة",
+    "add_button": "إضافة إعلان",
+    "no_data": "لا توجد إعلانات حالياً",
+    "preparing": "جاري التجهيز...",
+    "applicant_unit": "متقدم",
+    "active": "نشط",
+    "closed": "مغلق",
+    "pending": "قيد الانتظار",
+    "details": {
+      "badge_title": "إعلان رسمي",
+      "edit_button": "تعديل الإعلان",
+      "applicants_label": "عدد المتقدمين",
+      "person_unit": "شخص",
+      "deadline_label": "الموعد النهائي التقديري",
+      "posted_label": "تاريخ النشر"
+    }
+  }
+}

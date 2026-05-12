@@ -10,7 +10,7 @@ class AuthRepoImpl implements AuthRepo {
 
   AuthRepoImpl({required this.auth, required this.firestore});
 
-  // LOGIN
+  // 1. تسجيل الدخول - هنا الباسورد هو الرقم القومي في أول مرة
   @override
   Future<Either<String, UserModel>> login({
     required String email,
@@ -19,108 +19,76 @@ class AuthRepoImpl implements AuthRepo {
     try {
       final credential = await auth.signInWithEmailAndPassword(
         email: email.trim(),
-        password: password.trim(),
+        password: password.trim(), // بيمثل الرقم القومي في حالة isFirstLogin
       );
 
       final user = credential.user;
-      if (user == null) {
-        return const Left("فشل تسجيل الدخول");
-      }
+      if (user == null) return const Left("فشل تسجيل الدخول");
 
       final doc = await firestore.collection('users').doc(user.uid).get();
 
       if (!doc.exists) {
-        return const Left("بيانات المستخدم غير موجودة");
+        return const Left("بيانات المستخدم غير موجودة في قاعدة البيانات");
       }
 
       final userModel = UserModel.fromFirestore(doc);
-
       return Right(userModel);
     } on FirebaseAuthException catch (e) {
-      return Left(e.message ?? "فشل تسجيل الدخول");
+      return Left(_handleAuthError(e.code));
     } catch (e) {
-      return const Left("حدث خطأ أثناء تسجيل الدخول");
+      return Left("حدث خطأ غير متوقع: ${e.toString()}");
     }
   }
 
-  // SIGN UP
-  @override
-  Future<Either<String, UserModel>> signUp({
-    required UserModel userModel,
-    required String password,
-  }) async {
-    try {
-      // 1. إنشاء الحساب في Firebase Authentication
-      final credential = await auth.createUserWithEmailAndPassword(
-        email: userModel.universityEmail.trim(),
-        password: password.trim(),
-      );
-      final uid = credential.user!.uid;
-
-      // 2. البحث عن الدوكيمنت القديم (صاحب الـ ID العشوائي)
-      final preExistingDoc = await firestore
-          .collection('users')
-          .where('employee_id', isEqualTo: userModel.employeeId)
-          .get();
-
-      // 3. حذف الدوكيمنت القديم لو موجود
-      if (preExistingDoc.docs.isNotEmpty) {
-        for (var doc in preExistingDoc.docs) {
-          await firestore.collection('users').doc(doc.id).delete();
-        }
-      }
-
-      await firestore
-          .collection('users')
-          .doc(uid)
-          .set(userModel.copyWith(uid: uid, isRegistered: true).toMap());
-
-      return Right(userModel.copyWith(uid: uid, isRegistered: true));
-    } on FirebaseAuthException catch (e) {
-      return Left(e.message ?? "فشل إنشاء الحساب");
-    } catch (e) {
-      return const Left("حدث خطأ أثناء التسجيل");
-    }
-  }
-
-  // FIRST LOGIN
+  // 2. تحديث الباسورد وتحويل الرقم القومي لباسورد جديد خاص بالمستخدم
   @override
   Future<Either<String, String>> completeFirstLogin({
     required String newPassword,
   }) async {
     try {
       final user = auth.currentUser;
-
       if (user == null) {
-        return const Left("المستخدم غير مسجل الدخول");
+        return const Left("الجلسة انتهت، يرجى تسجيل الدخول مجدداً");
       }
 
+      // 1. تحديث كلمة المرور في Firebase Auth
       await user.updatePassword(newPassword.trim());
 
+      // 2. تحديث حالة isFirstLogin في Firestore
       await firestore.collection('users').doc(user.uid).update({
         'isFirstLogin': false,
+        // اختياري: ممكن تخزني وقت التحديث
+        'passwordUpdatedAt': FieldValue.serverTimestamp(),
       });
 
-      return const Right("تم تحديث كلمة المرور بنجاح");
+      return const Right("تم تعيين كلمة المرور بنجاح");
+    } on FirebaseAuthException catch (e) {
+      // إذا انتهت الجلسة (Requires recent login)
+      if (e.code == 'requires-recent-login') {
+        return const Left(
+          "للأمان، يرجى تسجيل الدخول مرة أخرى قبل تغيير كلمة المرور",
+        );
+      }
+      return Left(e.message ?? "فشل تحديث كلمة المرور");
     } catch (e) {
-      return const Left("فشل تحديث كلمة المرور");
+      return const Left("حدث خطأ أثناء التحديث، حاول لاحقاً");
     }
   }
 
-  // RESET PASSWORD
   @override
   Future<Either<String, String>> sendPasswordResetEmail({
     required String email,
   }) async {
     try {
       await auth.sendPasswordResetEmail(email: email.trim());
-      return const Right("تم إرسال رابط إعادة التعيين");
+      return const Right("تم إرسال رابط إعادة التعيين لبريدك الإلكتروني");
+    } on FirebaseAuthException catch (e) {
+      return Left(_handleAuthError(e.code));
     } catch (e) {
-      return const Left("فشل إرسال الإيميل");
+      return const Left("فشل إرسال البريد");
     }
   }
 
-  // LOGOUT
   @override
   Future<Either<String, void>> logout() async {
     try {
@@ -131,34 +99,21 @@ class AuthRepoImpl implements AuthRepo {
     }
   }
 
-  // VERIFY USER (لو محتاجه)
-  @override
-  Future<Either<String, UserModel>> verifyUser({
-    required String email,
-    required String nationalId,
-    required String employeeId,
-  }) async {
-    try {
-      final query = await firestore
-          .collection('users')
-          .where('university_email', isEqualTo: email.trim())
-          .where('national_id', isEqualTo: nationalId.trim())
-          .where('employee_id', isEqualTo: employeeId.trim())
-          .get();
-
-      if (query.docs.isEmpty) {
-        return const Left("البيانات غير صحيحة");
-      }
-
-      final user = UserModel.fromFirestore(query.docs.first);
-
-      if (user.isRegistered) {
-        return const Left("تم التسجيل مسبقاً، قم بتسجيل الدخول");
-      }
-
-      return Right(user);
-    } catch (e) {
-      return const Left("خطأ أثناء التحقق");
+  String _handleAuthError(String code) {
+    switch (code) {
+      case 'user-not-found':
+      case 'invalid-credential': // النسخ الجديدة من Firebase بتستخدم ده للأمان
+        return "البريد الإلكتروني أو كلمة المرور (الرقم القومي) غير صحيح";
+      case 'wrong-password':
+        return "كلمة المرور غير صحيحة";
+      case 'invalid-email':
+        return "تنسيق البريد الإلكتروني غير صحيح";
+      case 'user-disabled':
+        return "هذا الحساب تم تعطيله";
+      case 'too-many-requests':
+        return "محاولات كثيرة خاطئة، حاول لاحقاً";
+      default:
+        return "حدث خطأ في المصادقة، يرجى المحاولة مرة أخرى";
     }
   }
 }

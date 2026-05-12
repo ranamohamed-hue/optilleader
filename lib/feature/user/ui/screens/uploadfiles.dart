@@ -2,41 +2,63 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/routing/routes.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; // تأكدي من وجود الـ import ده
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class UploadFilePage extends StatelessWidget {
+class UploadFilePage extends StatefulWidget {
   const UploadFilePage({super.key});
+
+  @override
+  State<UploadFilePage> createState() => _UploadFilePageState();
+}
+
+class _UploadFilePageState extends State<UploadFilePage> {
+  // الكنترولرز دي هتحتاجي تبعتي الـ text بتاعها للـ Cubit لاحقاً
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descController = TextEditingController();
+  String? _selectedCategory;
+
+  // القائمة دي ممكن برضه تخليها تيجي من الـ Constants في ملف منفصل
+  final List<String> _categories = [
+    'archive.folders.certificates',
+    'archive.folders.id',
+    'archive.folders.decisions',
+    'archive.folders.misc',
+  ];
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryDark = theme.colorScheme.primary;
     final accentGold = theme.colorScheme.secondary;
-    final backgroundColor = theme.scaffoldBackgroundColor;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: primaryDark,
         elevation: 0,
-        toolbarHeight: 70.h, // استخدام h هنا
+        toolbarHeight: 70.h,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, size: 20.sp), // استخدام sp هنا
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go(Routes.user);
-            }
-          },
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            size: 20.sp,
+            color: Colors.white,
+          ),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go(Routes.user),
         ),
         title: Text(
           'upload.title'.tr(),
           style: TextStyle(
-            // شلت الـ const عشان sp ديناميكي
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 18.sp, // استخدام sp
+            fontSize: 18.sp,
           ),
         ),
         bottom: PreferredSize(
@@ -45,93 +67,57 @@ class UploadFilePage extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(24.w), // استخدام w للـ padding
+        padding: EdgeInsets.all(24.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               "upload.subtitle".tr(),
               style: TextStyle(
-                fontSize: 16.sp, // استخدام sp
+                fontSize: 16.sp,
                 fontWeight: FontWeight.bold,
                 color: primaryDark,
-              ),
-            ),
-            SizedBox(height: 20.h),
-
-            GestureDetector(
-              onTap: () {
-                // هنا هتحطي الـ File Picker لاحقاً
-              },
-              child: Container(
-                width: double.infinity,
-                height: 180.h, // استخدام h للارتفاع
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(20.r), // r للـ radius
-                  border: Border.all(
-                    color: accentGold.withOpacity(0.5),
-                    width: 2.w,
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.cloud_upload_outlined,
-                      size: 50.sp, // sp للأيقونات برضه
-                      color: primaryDark,
-                    ),
-                    SizedBox(height: 12.h),
-                    Text(
-                      "upload.click_to_select".tr(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14.sp,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      "upload.file_types".tr(),
-                      style: TextStyle(color: Colors.grey, fontSize: 11.sp),
-                    ),
-                  ],
-                ),
               ),
             ),
 
             SizedBox(height: 30.h),
 
+            // حقل العنوان
             _buildInputField(
-              "upload.label_title".tr(),
-              "upload.hint_title".tr(),
-              primaryDark,
-              accentGold,
+              label: "upload.label_title".tr(),
+              hint: "upload.hint_title".tr(),
+              controller: _titleController,
+              primary: primaryDark,
+              gold: accentGold,
             ),
+
             SizedBox(height: 15.h),
-            _buildInputField(
-              "upload.label_category".tr(),
-              "upload.hint_category".tr(),
-              primaryDark,
-              accentGold,
-            ),
+
+            // اختيار التصنيف (Dropdown)
+            _buildCategoryDropdown(primaryDark, accentGold),
+
             SizedBox(height: 15.h),
+
+            // حقل الوصف
             _buildInputField(
-              "upload.label_desc".tr(),
-              "upload.hint_desc".tr(),
-              primaryDark,
-              accentGold,
+              label: "upload.label_desc".tr(),
+              hint: "upload.hint_desc".tr(),
+              controller: _descController,
+              primary: primaryDark,
+              gold: accentGold,
               maxLines: 3,
             ),
 
             SizedBox(height: 40.h),
 
+            // زر الرفع (هنا هتربطي الـ Cubit.upload)
             SPrimaryButton(
               text: "upload.btn_upload".tr(),
               color: primaryDark,
               textColor: accentGold,
               onPressed: () {
-                // Logic Firebase
+                // TODO: اطلبي الـ function من الـ Cubit هنا
+                // context.read<UploadCubit>().uploadData(...);
               },
             ),
           ],
@@ -140,11 +126,64 @@ class UploadFilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildInputField(
-    String label,
-    String hint,
-    Color primary,
-    Color gold, {
+  Widget _buildCategoryDropdown(Color primary, Color gold) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "upload.label_category".tr(),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: primary,
+            fontSize: 14.sp,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        DropdownButtonFormField<String>(
+          style: TextStyle(fontSize: 13.sp, color: Colors.black),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 12.h,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: primary.withOpacity(0.1)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: gold, width: 1.5.w),
+            ),
+          ),
+          value: _selectedCategory,
+          hint: Text(
+            "upload.hint_category".tr(),
+            style: TextStyle(fontSize: 13.sp),
+          ),
+          items: _categories.map((String category) {
+            return DropdownMenuItem<String>(
+              value: category,
+              child: Text(category.tr()),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedCategory = value;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInputField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    required Color primary,
+    required Color gold,
     int maxLines = 1,
   }) {
     return Column(
@@ -160,6 +199,7 @@ class UploadFilePage extends StatelessWidget {
         ),
         SizedBox(height: 8.h),
         TextField(
+          controller: controller,
           maxLines: maxLines,
           style: TextStyle(fontSize: 13.sp),
           decoration: InputDecoration(
@@ -204,7 +244,7 @@ class SPrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 55.h, // استخدام h
+      height: 55.h,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: color,

@@ -22,27 +22,23 @@ class DigitalArchivePage extends StatelessWidget {
           elevation: 0,
           toolbarHeight: 80.h,
           automaticallyImplyLeading: false,
-           leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
-              onPressed: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go(Routes.user);
-                }
-              },
+          // زر الرجوع الموحد
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new,
+              size: 20.sp,
+              color: Colors.white,
             ),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(Routes.user);
+              }
+            },
+          ),
           title: Row(
             children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-              SizedBox(width: 8.w),
               _buildAppBarProfile(colorScheme),
               SizedBox(width: 12.w),
               Text(
@@ -73,9 +69,7 @@ class DigitalArchivePage extends StatelessWidget {
           child: Column(
             children: [
               _buildSearchAndSortBar(colorScheme),
-
               SizedBox(height: 20.h),
-
               Expanded(
                 child: GridView.count(
                   crossAxisCount: 2,
@@ -119,7 +113,9 @@ class DigitalArchivePage extends StatelessWidget {
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+            // هنا يتم إضافة منطق رفع ملف جديد
+          },
           backgroundColor: colorScheme.secondary,
           elevation: 4,
           shape: RoundedRectangleBorder(
@@ -160,13 +156,18 @@ class DigitalArchivePage extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        Container(
-          padding: EdgeInsets.all(8.w),
-          decoration: BoxDecoration(
-            color: colorScheme.primary.withOpacity(0.05),
-            shape: BoxShape.circle,
+        GestureDetector(
+          onTap: () {
+            // منطق البحث
+          },
+          child: Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.search, color: colorScheme.primary, size: 20.sp),
           ),
-          child: Icon(Icons.search, color: colorScheme.primary, size: 20.sp),
         ),
       ],
     );
@@ -182,95 +183,101 @@ class DigitalArchivePage extends StatelessWidget {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: colorScheme.primary.withOpacity(0.05)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Icon(
-                    Icons.folder_rounded,
-                    size: 65.sp,
-                    color: folderColor.withOpacity(0.8),
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12.sp,
-                    color: colorScheme.primary,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: Colors.grey, fontSize: 10.sp),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Icon(
-                      Icons.description_outlined,
-                      size: 12.sp,
-                      color: Colors.grey.shade400,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      "$filesCount",
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+    return InkWell(
+      onTap: () {
+        // الانتقال لفتح المجلد وعرض الملفات
+      },
+      borderRadius: BorderRadius.circular(20.r),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(color: colorScheme.primary.withOpacity(0.05)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-          if (badgeCount > 0)
-            PositionedDirectional(
-              top: 10.h,
-              end: 10.w,
-              child: Container(
-                padding: EdgeInsets.all(6.w),
-                decoration: const BoxDecoration(
-                  color: Colors.redAccent,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  "$badgeCount",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 9.sp,
-                    fontWeight: FontWeight.bold,
+          ],
+        ),
+        child: Stack(
+          children: [
+            Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Icon(
+                      Icons.folder_rounded,
+                      size: 65.sp,
+                      color: folderColor.withOpacity(0.8),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.sp,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: Colors.grey, fontSize: 10.sp),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const Spacer(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Icon(
+                        Icons.description_outlined,
+                        size: 12.sp,
+                        color: Colors.grey.shade400,
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        "$filesCount",
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (badgeCount > 0)
+              PositionedDirectional(
+                top: 10.h,
+                end: 10.w,
+                child: Container(
+                  padding: EdgeInsets.all(6.w),
+                  decoration: const BoxDecoration(
+                    color: Colors.redAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    "$badgeCount",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,0 +1,19 @@
+{
+  "achievements": {
+    "title": "سجل الإنجازات",
+    "tabs": {
+      "research": "الأبحاث",
+      "conferences": "المؤتمرات",
+      "activities": "الأنشطة",
+      "courses": "الدورات"
+    },
+    "status": {
+      "accepted": "مقبول",
+      "under_review": "قيد المراجعة",
+      "rejected": "مرفوض"
+    },
+    "sections": {
+      "proposals": "المقترحات البحثية"
+    }
+  }
+}

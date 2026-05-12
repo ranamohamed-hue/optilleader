@@ -72,8 +72,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       },
       child: Scaffold(
-        // الخلفية ستتغير تلقائياً بناءً على brightness
-        appBar: AppBar( leading: IconButton(
+        appBar: AppBar(
+          leading: IconButton(
             icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
             onPressed: () {
               if (context.canPop()) {
@@ -82,7 +82,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 context.go(Routes.user);
               }
             },
-          ),title: Text('settings.title'.tr())),
+          ),
+          title: Text('settings.title'.tr()),
+          centerTitle: true,
+        ),
         body: BlocBuilder<SettingCubit, SettingState>(
           builder: (context, state) {
             if (state is SettingLoading && !isInitialized) {
@@ -94,6 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             final user = (state is SettingFetchSuccess) ? state.user : null;
 
             return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
                   _buildHeader(context, user?.profileImage ?? ""),
@@ -130,16 +134,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           keyboardType: TextInputType.phone,
                         ),
                         SizedBox(height: 30.h),
-
                         state is SettingLoading && isInitialized
                             ? CircularProgressIndicator(
                                 color: colorScheme.primary,
                               )
-                            : ElevatedButton(
-                                onPressed: () => _onSavePressed(user),
-                                child: Text("settings.save".tr()),
+                            : SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () => _onSavePressed(user),
+                                  child: Text("settings.save".tr()),
+                                ),
                               ),
-                        SizedBox(height: 20.h),
+                        SizedBox(height: 40.h),
                       ],
                     ),
                   ),
@@ -178,7 +184,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       height: 100.h,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: colorScheme.primary, // Navy في اللايت و NavyLight في الدارك
+        color: colorScheme.primary,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(40.r)),
       ),
       child: Stack(
@@ -190,10 +196,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: colorScheme.secondary,
-                  width: 3,
-                ), // Gold
+                border: Border.all(color: colorScheme.secondary, width: 3.w),
               ),
               child: CircleAvatar(
                 radius: 50.r,
@@ -204,7 +207,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? NetworkImage(imageUrl)
                       : null,
                   child: imageUrl.isEmpty
-                      ? Icon(Icons.person, size: 45, color: colorScheme.primary)
+                      ? Icon(
+                          Icons.person,
+                          size: 45.sp,
+                          color: colorScheme.primary,
+                        )
                       : null,
                 ),
               ),
@@ -224,8 +231,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     bool enabled = true,
     TextInputType? keyboardType,
   }) {
-    final theme = Theme.of(context);
-
     return Padding(
       padding: EdgeInsets.only(bottom: 18.h),
       child: TextFormField(
@@ -233,8 +238,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         initialValue: controller == null ? initialValue : null,
         enabled: enabled,
         keyboardType: keyboardType,
-        // الثيم سيتحكم تلقائياً في التصميم بناءً على الـ inputDecorationTheme الذي عرفناه
-        decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, size: 22.sp),
+        ),
       ),
     );
   }

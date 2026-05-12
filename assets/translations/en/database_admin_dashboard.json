@@ -1,0 +1,14 @@
+{
+  "dashboardDatabaseAdmin": {
+    "welcome": "مرحباً بك،",
+    "system_overview": "نظرة عامة على النظام",
+    "manage_data": "إدارة البيانات",
+    "doctors": "الأطباء",
+    "judges": "المحكّمين",
+    "admins": "المسؤولين",
+    "add_doctor": "إضافة طبيب جديد",
+    "add_admin": "إضافة مسؤول جديد",
+    "add_judge": "إضافة محكّم جديد",
+    "error": "حدث خطأ"
+  }
+}

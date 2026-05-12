@@ -1,0 +1,18 @@
+{
+  "statuses": {
+    "active": "Active"
+  },
+  "acadimicData": {
+    "personal_section": "Personal Information",
+    "academic_section": "Academic & Career History",
+    "contact_section": "Contact Details",
+    "name_ar": "Name (Arabic)",
+    "phone": "Phone Number",
+    "social_status": "Social Status",
+    "birth_date": "Birth Date",
+    "job_ar": "Job Title (Arabic)",
+    "email": "Email Address",
+    "address_ar": "Address (Arabic)",
+    "save_btn": "Save Profile"
+  }
+}

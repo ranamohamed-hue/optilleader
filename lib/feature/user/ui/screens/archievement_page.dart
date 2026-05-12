@@ -48,24 +48,13 @@ class AchievementsLogPage extends StatelessWidget {
                   ),
                 ),
               ),
-
               SizedBox(width: 12.w),
-
               Text(
                 'achievements.title'.tr(),
                 style: theme.appBarTheme.titleTextStyle,
               ),
-
               const Spacer(),
-
               Icon(Icons.emoji_events, color: colorScheme.secondary),
-
-              SizedBox(width: 10.w),
-
-              IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-                onPressed: () => Navigator.pop(context),
-              ),
             ],
           ),
           bottom: TabBar(
@@ -93,9 +82,10 @@ class AchievementsLogPage extends StatelessWidget {
             Center(child: Text("achievements.tabs.courses".tr())),
           ],
         ),
-
         floatingActionButton: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+            // منطق إضافة إنجاز جديد
+          },
           child: const Icon(Icons.add, size: 30),
         ),
       ),
@@ -107,6 +97,7 @@ class AchievementsLogPage extends StatelessWidget {
 
     return ListView(
       padding: EdgeInsets.all(20.w),
+      physics: const BouncingScrollPhysics(),
       children: [
         _buildAchievementCard(
           context,
@@ -132,10 +123,7 @@ class AchievementsLogPage extends StatelessWidget {
           statusColor: Colors.red.shade700,
           icon: Icons.cancel_outlined,
         ),
-
         SizedBox(height: 25.h),
-
-        // قسم المقترحات البحثية
         Row(
           children: [
             Icon(Icons.analytics_outlined, color: colorScheme.primary),
@@ -151,7 +139,6 @@ class AchievementsLogPage extends StatelessWidget {
           ],
         ),
         SizedBox(height: 15.h),
-
         _buildSimpleCard(
           context,
           "Advanced Methodology in Crisis Management...",
@@ -160,6 +147,7 @@ class AchievementsLogPage extends StatelessWidget {
           context,
           "Scientific Standards in Software Ranking...",
         ),
+        SizedBox(height: 80.h), // مساحة إضافية للـ FAB
       ],
     );
   }
@@ -176,7 +164,6 @@ class AchievementsLogPage extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Card(
-      // استخدام ثيم الكارد الموحد
       margin: EdgeInsets.only(bottom: 15.h),
       elevation: theme.cardTheme.elevation,
       shape: theme.cardTheme.shape,
@@ -203,7 +190,7 @@ class AchievementsLogPage extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.calendar_today,
-                      size: 14,
+                      size: 14.sp,
                       color: colorScheme.onSurface.withOpacity(0.5),
                     ),
                     SizedBox(width: 5.w),
@@ -225,7 +212,7 @@ class AchievementsLogPage extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(icon, size: 14, color: statusColor),
+                      Icon(icon, size: 14.sp, color: statusColor),
                       SizedBox(width: 5.w),
                       Text(
                         status,
@@ -261,7 +248,11 @@ class AchievementsLogPage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.lightbulb_outline, color: colorScheme.secondary, size: 18),
+          Icon(
+            Icons.lightbulb_outline,
+            color: colorScheme.secondary,
+            size: 18.sp,
+          ),
           SizedBox(width: 12.w),
           Expanded(
             child: Text(

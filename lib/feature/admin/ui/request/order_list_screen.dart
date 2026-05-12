@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/routing/routes.dart';
-import 'package:optialeader/feature/admin/ui/requesr/full_employee_report_screen.dart';
 
 class OrdersListScreen extends StatelessWidget {
   const OrdersListScreen({super.key});
@@ -29,15 +28,15 @@ class OrdersListScreen extends StatelessWidget {
           ),
         ),
         centerTitle: true,
-          leading: IconButton(
-  icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
-  onPressed: () {
-    if (context.canPop()) {
-      context.pop(); 
-    } else {
-      context.go(Routes.admin); 
-    }
-  },
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, size: 20.sp, color: Colors.white),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(Routes.admin);
+            }
+          },
         ),
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(4.h),
@@ -46,7 +45,7 @@ class OrdersListScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // شريط البحث
+          // شريط البحث المربوط بالترجمة
           Container(
             padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
@@ -74,7 +73,8 @@ class OrdersListScreen extends StatelessWidget {
               ),
             ),
           ),
-          // القائمة
+          
+          // قائمة الطلبات
           Expanded(
             child: ListView(
               padding: EdgeInsets.all(15.w),
@@ -82,21 +82,21 @@ class OrdersListScreen extends StatelessWidget {
                 _buildOrderItem(
                   context,
                   'سارة محمد عبد الرحمن',
-                  'orders.status.new'.tr(),
+                  'orders.status.new'.tr(), // مربوط بالترجمة
                   Colors.blue,
                   '2024/03/15',
                 ),
                 _buildOrderItem(
                   context,
                   'أحمد علي محمد',
-                  'orders.status.review'.tr(),
+                  'orders.status.review'.tr(), // مربوط بالترجمة
                   Colors.orange,
                   '2024/03/10',
                 ),
                 _buildOrderItem(
                   context,
                   'منى محمود حسن',
-                  'orders.status.approved'.tr(),
+                  'orders.status.approved'.tr(), // مربوط بالترجمة
                   Colors.green,
                   '2024/03/05',
                 ),
@@ -125,13 +125,23 @@ class OrdersListScreen extends StatelessWidget {
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(20.r),
         border: Border.all(color: goldAccent.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: ListTile(
         contentPadding: EdgeInsets.all(15.w),
-        leading: Icon(
-          Icons.description_outlined,
-          color: primaryNavy,
-          size: 24.sp,
+        leading: CircleAvatar(
+          backgroundColor: primaryNavy.withOpacity(0.1),
+          child: Icon(
+            Icons.description_outlined,
+            color: primaryNavy,
+            size: 20.sp,
+          ),
         ),
         title: Text(
           name,
@@ -141,7 +151,13 @@ class OrdersListScreen extends StatelessWidget {
             fontSize: 15.sp,
           ),
         ),
-        subtitle: Text(date, style: TextStyle(fontSize: 12.sp)),
+        subtitle: Padding(
+          padding: EdgeInsets.only(top: 5.h),
+          child: Text(
+            date, 
+            style: TextStyle(fontSize: 12.sp, color: Colors.grey[600])
+          ),
+        ),
         trailing: Container(
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
           decoration: BoxDecoration(
@@ -159,12 +175,8 @@ class OrdersListScreen extends StatelessWidget {
           ),
         ),
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const FullEmployeeReportScreen(),
-            ),
-          );
+          // تم التعديل لاستخدام GoRouter ليتناسب مع هيكلة مشروعك
+          context.push(Routes.fullEmployeeReport); 
         },
       ),
     );

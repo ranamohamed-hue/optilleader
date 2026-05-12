@@ -44,7 +44,7 @@ class AdminDataCubit extends Cubit<AdminDataState> {
   }
 
   Future<void> deleteAdmin(String uid) async {
-    emit(AdminDeleting()); // تأكدي إن الحالة دي موجودة في ملف الـ States
+    emit(AdminDeleting()); 
     final result = await adminRepo.deleteAdminAccount(uid);
     result.fold(
       (error) => emit(AdminError(error: error)),
@@ -56,5 +56,12 @@ class AdminDataCubit extends Cubit<AdminDataState> {
   Future<void> close() {
     _adminsSubscription?.cancel();
     return super.close();
+  }
+  Future<void> updateAccountStatus(String uid, bool isActive) async {
+    final result = await adminRepo.updateAccountStatus(uid, isActive);
+    result.fold(
+      (error) => emit(AdminError(error: error)),
+      (_) => emit(AdminSuccess()), 
+    );
   }
 }

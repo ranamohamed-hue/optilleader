@@ -42,7 +42,9 @@ class _SignInViewState extends State<SignInView> {
             child: Form(
               key: _formKey,
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  /// Logo
                   Image.asset(
                     'assets/images/logoscreen.jpeg',
                     height: 120.h,
@@ -50,48 +52,55 @@ class _SignInViewState extends State<SignInView> {
                   ),
                   SizedBox(height: 20.h),
 
-                  /// العنوان الرئيسي: OptiLeader
                   Text(
-                    "OptiLeader", // نص مباشر أو مفتاح ترجمة لو متاح
+                    "OptiLeader",
                     style: theme.textTheme.displayLarge?.copyWith(
-                      color: const Color(0xFF000080), // Navy
+                      color: const Color(0xFF000080),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
 
                   SizedBox(height: 8.h),
 
-                  /// العنوان الفرعي: Login
-                  Text("Login".tr(), style: theme.textTheme.bodySmall),
+                  /// Subtitle (NEW)
+                  Text(
+                    "login.subtitle".tr(),
+                    style: theme.textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
 
                   SizedBox(height: 40.h),
 
-                  /// EMAIL - ربطته بـ auth.fields.email
+                  /// Email Field
                   TextFormField(
                     controller: emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
-                      labelText: "auth.fields.email".tr(),
+                      labelText: "fields.email".tr(),
                       prefixIcon: const Icon(Icons.email_outlined),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return "Required".tr();
-                      if (!v.contains('@')) return "Invalid Email".tr();
+                      if (v == null || v.isEmpty) {
+                        return "validation.required".tr();
+                      }
+                      if (!v.contains('@')) {
+                        return "validation.invalid_email".tr();
+                      }
                       return null;
                     },
                   ),
 
                   SizedBox(height: 20.h),
 
-                  /// PASSWORD - ربطته بـ auth.fields.password
+                  /// Password Field
                   TextFormField(
                     controller: passwordController,
                     obscureText: isObscure,
                     decoration: InputDecoration(
-                      labelText: "Password".tr(),
+                      labelText: "fields.password".tr(),
                       prefixIcon: const Icon(Icons.lock_outline),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
@@ -104,27 +113,33 @@ class _SignInViewState extends State<SignInView> {
                       ),
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return "Required".tr();
-                      if (v.length < 6) return "Password short".tr();
+                      if (v == null || v.isEmpty) {
+                        return "validation.required".tr();
+                      }
+                      if (v.length < 8) {
+                        return "validation.password_short".tr();
+                      }
                       return null;
                     },
                   ),
 
-                  SizedBox(height: 30.h),
+                  SizedBox(height: 40.h),
 
-                  /// زر الدخول الرئيسي: Login
+                  /// Login Button
                   BlocConsumer<AuthCubit, AuthState>(
                     listener: (context, state) {
                       if (state is LoginSuccessState) {
                         final role = state.userModel.role;
-                        if (role == UserRole.admin)
+
+                        if (role == UserRole.admin) {
                           context.go(Routes.admin);
-                        else if (role == UserRole.judge)
+                        } else if (role == UserRole.judge) {
                           context.go(Routes.judge);
-                        else if (role == UserRole.database_admin)
+                        } else if (role == UserRole.database_admin) {
                           context.go(Routes.databaseAdmin);
-                        else
+                        } else {
                           context.go(Routes.user);
+                        }
                       } else if (state is LoginErrorState) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -138,7 +153,7 @@ class _SignInViewState extends State<SignInView> {
                     },
                     builder: (context, state) {
                       if (state is LoginLoadingState) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const CircularProgressIndicator();
                       }
 
                       return ElevatedButton(
@@ -151,37 +166,22 @@ class _SignInViewState extends State<SignInView> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF000080),
                           minimumSize: Size(double.infinity, 52.h),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
                         child: Text(
-                          "Login".tr(), // هيعرض "دخول"
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          "login.button".tr(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       );
                     },
-                  ),
-
-                  SizedBox(height: 20.h),
-
-                  /// زر التسجيل: SignUp
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("No Account".tr()), // ليس لديك حساب؟
-                      TextButton(
-                        onPressed: () => context.push(Routes.register),
-                        child: Text(
-                          "Signup".tr(), // سجل الآن
-                          style: TextStyle(
-                            color: theme.primaryColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),

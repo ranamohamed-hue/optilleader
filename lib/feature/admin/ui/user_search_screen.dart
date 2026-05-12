@@ -3,10 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
-import 'package:optialeader/core/routing/routes.dart'; 
+import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
+import 'dart:ui' as ui;
 
 class UserSearchScreen extends StatefulWidget {
   const UserSearchScreen({super.key});
@@ -19,6 +20,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   @override
   void initState() {
     super.initState();
+    // تفعيل مراقبة البيانات فور دخول الشاشة
     context.read<DoctorDataCubit>().watchAllDoctors();
   }
 
@@ -26,19 +28,21 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isAr = context.locale.languageCode == 'ar';
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('search.app_bar_title'.tr()),
-          leading: IconButton(
-  icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
-  onPressed: () {
-    if (context.canPop()) {
-      context.pop(); 
-    } else {
-      context.go(Routes.admin); 
-    }
-  },
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(Routes.admin);
+            }
+          },
         ),
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(2.h),
@@ -51,12 +55,14 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
           Padding(
             padding: EdgeInsets.all(20.w),
             child: TextField(
-              textAlign: TextAlign.right,
+              textAlign: isAr ? TextAlign.right : TextAlign.left,
               decoration: InputDecoration(
                 hintText: 'search.hint'.tr(),
                 prefixIcon: const Icon(Icons.search),
               ),
-              onChanged: (value) {},
+              onChanged: (value) {
+                // هنا ممكن مستقبلاً تضيفي Search logic في الـ Cubit
+              },
             ),
           ),
 
@@ -115,13 +121,15 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   Widget _buildDoctorCard(BuildContext context, DoctorProfileModel doctor) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isAr = context.locale.languageCode == 'ar';
 
     return Card(
       margin: EdgeInsets.only(bottom: 16.h),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
       child: InkWell(
         onTap: () {
-          // context.push('/doctor_details', extra: doctor);
+          // الانتقال لصفحة التفاصيل (Review) عند الضغط
+          // context.push(Routes.employeeReview, extra: doctor);
         },
         borderRadius: BorderRadius.circular(12.r),
         child: Padding(
@@ -129,11 +137,18 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
           child: Column(
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                // تغيير اتجاه الـ Row بناءً على اللغة
+                textDirection: isAr
+                    ? ui.TextDirection.rtl
+                    : ui.TextDirection.ltr,
                 children: [
+                  _buildProfileImage(colorScheme, doctor.profileImageUrl),
+                  SizedBox(width: 15.w),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                      crossAxisAlignment: isAr
+                          ? CrossAxisAlignment.start
+                          : CrossAxisAlignment.end,
                       children: [
                         Text(
                           doctor.nameAr,
@@ -151,7 +166,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
                         Text(
                           'search.employee_id_label'.tr(
                             args: [doctor.employeeId],
-                          ), // ترجمة الرقم الوظيفي
+                          ),
                           style: theme.textTheme.bodySmall?.copyWith(
                             fontSize: 11.sp,
                             color: Colors.grey,
@@ -160,13 +175,13 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(width: 15.w),
-                  _buildProfileImage(colorScheme, doctor.profileImageUrl),
                 ],
               ),
               Divider(height: 25.h, thickness: 0.5),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: isAr
+                    ? MainAxisAlignment.end
+                    : MainAxisAlignment.start,
                 children: [
                   Text(
                     doctor.email,
@@ -198,7 +213,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
       ),
       child: CircleAvatar(
         radius: 30.r,
-        backgroundColor: colorScheme.surfaceVariant,
+        backgroundColor: colorScheme.surfaceContainerHighest,
         backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
             ? NetworkImage(imageUrl)
             : null,
@@ -211,11 +226,22 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
 
   Widget _buildSectionHeader(BuildContext context, String title) {
     final theme = Theme.of(context);
+    final isAr = context.locale.languageCode == 'ar';
+
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: isAr
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         children: [
+          if (!isAr)
+            Icon(
+              Icons.label_important_outline,
+              color: theme.colorScheme.secondary,
+              size: 20.sp,
+            ),
+          if (!isAr) SizedBox(width: 8.w),
           Text(
             title,
             style: theme.textTheme.titleLarge?.copyWith(
@@ -223,12 +249,13 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(width: 8.w),
-          Icon(
-            Icons.label_important_outline,
-            color: theme.colorScheme.secondary,
-            size: 20.sp,
-          ),
+          if (isAr) SizedBox(width: 8.w),
+          if (isAr)
+            Icon(
+              Icons.label_important_outline,
+              color: theme.colorScheme.secondary,
+              size: 20.sp,
+            ),
         ],
       ),
     );

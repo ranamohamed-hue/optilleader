@@ -10,7 +10,7 @@ class DoctorRepoImpl extends DoctorRepo {
   final FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
   final FirebaseStorage firebaseStorage = FirebaseStorage.instance;
   CollectionReference get _usersCollection =>
-      firebaseFirestore.collection('Users');
+      firebaseFirestore.collection('users');
 
   @override
   Future<Either<String, Unit>> saveDoctorData(DoctorProfileModel doctor) async {

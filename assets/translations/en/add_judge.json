@@ -1,0 +1,14 @@
+{
+  "addJudge": {
+    "welcome": "Welcome,",
+    "job_title": "Job Title",
+    "location": "Location",
+    "account_status": "Account Status",
+    "contact": "Contact Info",
+    "recent_tasks": "Recent Tasks",
+    "task1": "Registered Phone",
+    "active": "Active",
+    "inactive": "Inactive",
+    "not_specified": "Not Specified"
+  }
+}

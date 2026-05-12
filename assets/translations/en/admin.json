@@ -1,0 +1,18 @@
+{
+  "dashboard": {
+    "welcome": "Welcome, {0}",
+    "system_admin": "System Admin",
+    "new_requests": "New Requests",
+    "under_review": "Under Review",
+    "add_announcement": "Add Announcement",
+    "no_data": "No Data Available",
+    "retry": "Retry"
+  },
+
+  "sidebar": {
+    "profile": "Profile",
+    "search": "Search Users",
+    "notifications": "Notifications",
+    "logout": "Logout"
+  }
+}

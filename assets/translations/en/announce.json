@@ -1,0 +1,21 @@
+{
+  "announce": {
+    "title": "Announcements",
+    "subtitle": "Manage and publish platform news",
+    "add_button": "Add Announcement",
+    "no_data": "No announcements found",
+    "preparing": "Preparing...",
+    "applicant_unit": "Applicants",
+    "active": "Active",
+    "closed": "Closed",
+    "pending": "Pending",
+    "details": {
+      "badge_title": "OFFICIAL ANNOUNCEMENT",
+      "edit_button": "Edit Announcement",
+      "applicants_label": "Number of Applicants",
+      "person_unit": "Person",
+      "deadline_label": "Estimated Deadline",
+      "posted_label": "Posted On"
+    }
+  }
+}

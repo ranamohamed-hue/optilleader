@@ -1,0 +1,19 @@
+{
+  "edit_announcement": {
+    "title": "تعديل الإعلان",
+    "field_title": "العنوان",
+    "hint_title": "أدخل عنوان الإعلان",
+    "field_desc": "الوصف",
+    "hint_desc": "أدخل تفاصيل الإعلان هنا...",
+    "field_date": "تاريخ الانتهاء",
+    "field_status": "الحالة",
+    "save_button": "حفظ التعديلات",
+    "success_msg": "تم تحديث الإعلان بنجاح"
+  },
+  "common": {
+    "cancel": "إلغاء"
+  },
+  "Active": "نشط",
+  "Pending": "قيد الانتظار",
+  "Closed": "مغلق"
+}

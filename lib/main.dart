@@ -4,32 +4,47 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:optialeader/core/services/folder_json_loader.dart';
+import 'firebase_options.dart';
 
-import 'package:optialeader/core/routing/app_router.dart'; 
+import 'package:optialeader/core/routing/app_router.dart';
 import 'package:optialeader/core/services/app_providers.dart';
 import 'package:optialeader/core/theming/app_theme.dart';
 import 'package:optialeader/core/theming/logic/theme_cubit.dart';
 import 'package:optialeader/core/theming/logic/theme_state.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
-import 'firebase_options.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  /// Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  
-  await EasyLocalization.ensureInitialized();
 
-  runApp(
-    EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('ar')],
-      path: 'assets/translations',
-      fallbackLocale: const Locale('en'),
-      child: MultiBlocProvider(
-        providers: AppProviders.providers,
-        child: const MyApp(),
-      ),
+  /// App Check
+ /* await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.debug,
+    appleProvider: AppleProvider.debug,
+  );*/
+
+ /// Localization
+await EasyLocalization.ensureInitialized();
+runApp(
+  EasyLocalization(
+    supportedLocales: const [Locale('en'), Locale('ar')],
+    path: 'assets/translations',
+    
+    
+    assetLoader: const FolderJsonLoader(), 
+    
+    fallbackLocale: const Locale('ar'),
+    startLocale: const Locale('ar'),
+    child: MultiBlocProvider(
+      providers: AppProviders.providers,
+      child: const MyApp(),
     ),
-  );
+  ),
+);
 }
 
 class MyApp extends StatefulWidget {
@@ -41,10 +56,11 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final GoRouter _router;
+
   @override
   void initState() {
     super.initState();
-    // بنكاري الـ router مرة واحدة فقط عند تشغيل التطبيق
+
     _router = createRouter(context.read<AuthCubit>());
   }
 
@@ -57,20 +73,23 @@ class _MyAppState extends State<MyApp> {
       builder: (context, child) {
         return BlocBuilder<ThemeCubit, ThemeState>(
           builder: (context, state) {
-            //  استخدام MaterialApp.router عشان نشغل الـ GoRouter
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
-              title: 'Optia Leader',
 
-              ///  Themes
-              themeMode: state.themeMode,
+              /// App title
+              title: "Optia Leader",
+
+              /// Theme
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
+              themeMode: state.themeMode,
 
-              ///  Localization
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
+              /// Localization
               locale: context.locale,
+              supportedLocales: context.supportedLocales,
+              localizationsDelegates: context.localizationDelegates,
+
+              /// Router
               routerConfig: _router,
             );
           },
