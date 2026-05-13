@@ -29,6 +29,7 @@ class FolderJsonLoader extends AssetLoader {
     'search',
     'setting',
     'upload_files',
+    'employee_search'
   ];
 
   @override

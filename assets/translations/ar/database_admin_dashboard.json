@@ -1,5 +1,5 @@
 {
-  "dashboardDatabaseAdmin": {
+  "dashboard": {
     "welcome": "مرحباً بك،",
     "system_overview": "نظرة عامة على النظام",
     "manage_data": "إدارة البيانات",
@@ -9,6 +9,7 @@
     "add_doctor": "إضافة طبيب جديد",
     "add_admin": "إضافة مسؤول جديد",
     "add_judge": "إضافة محكّم جديد",
+    "search": "بحث عن موظف",
     "error": "حدث خطأ"
   }
 }

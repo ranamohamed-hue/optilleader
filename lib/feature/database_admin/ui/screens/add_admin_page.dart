@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,7 +10,7 @@ import 'package:optialeader/feature/database_admin/logic/admin_data/admin_data_s
 import 'dart:ui' as ui;
 
 class AddAdminPage extends StatefulWidget {
-  final String? existingUid; // للتعديل من البحث
+  final String? existingUid;
 
   const AddAdminPage({super.key, this.existingUid});
 
@@ -22,7 +21,6 @@ class AddAdminPage extends StatefulWidget {
 class _AddAdminPageState extends State<AddAdminPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers
   final _emailController = TextEditingController();
   final _nameArController = TextEditingController();
   final _nameEnController = TextEditingController();
@@ -31,13 +29,14 @@ class _AddAdminPageState extends State<AddAdminPage> {
   final _jobTitleEnController = TextEditingController();
   final _addressArController = TextEditingController();
   final _addressEnController = TextEditingController();
-
-  // 🟢 [إضافة] كنترولرز الرقم القومي والوظيفي
   final _nationalIdController = TextEditingController();
   final _employeeIdController = TextEditingController();
 
   bool get isArabic => context.locale.languageCode == 'ar';
   bool get isEditing => widget.existingUid != null;
+
+  // ✅ منع النقر المزدوج
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -57,19 +56,34 @@ class _AddAdminPageState extends State<AddAdminPage> {
     _jobTitleEnController.dispose();
     _addressArController.dispose();
     _addressEnController.dispose();
-    _nationalIdController.dispose(); // 🟢 [إضافة]
-    _employeeIdController.dispose(); // 🟢 [إضافة]
+    _nationalIdController.dispose();
+    _employeeIdController.dispose();
     super.dispose();
   }
 
+  /// ✅ ملء المتحكمات من بيانات المسؤول
+  void _populateFields(AdminProfileModel admin) {
+    _nameArController.text = admin.nameAr;
+    _nameEnController.text = admin.nameEn;
+    _emailController.text = admin.email;
+    _phoneController.text = admin.phone;
+    _jobTitleArController.text = admin.jopAr;
+    _jobTitleEnController.text = admin.jopEn;
+    _addressArController.text = admin.addressAr;
+    _addressEnController.text = admin.addressEn;
+    _nationalIdController.text = admin.nationalId;
+    _employeeIdController.text = admin.employeeId;
+    // ✅ لا حاجة لـ setState — المتحكمات تُحدّث الواجهة تلقائياً
+  }
+
   void _onSavePressed(BuildContext context) {
+    if (_isSubmitting) return; // ✅ منع النقر المزدوج
+
     if (_formKey.currentState!.validate()) {
-      final String uidToSave = isEditing
-          ? widget.existingUid!
-          : FirebaseFirestore.instance.collection('Users').doc().id;
+      setState(() => _isSubmitting = true);
 
       final adminModel = AdminProfileModel(
-        uid: uidToSave,
+        uid: '',
         email: _emailController.text.trim(),
         nameAr: _nameArController.text.trim(),
         nameEn: _nameEnController.text.trim(),
@@ -78,16 +92,53 @@ class _AddAdminPageState extends State<AddAdminPage> {
         phone: _phoneController.text.trim(),
         addressAr: _addressArController.text.trim(),
         addressEn: _addressEnController.text.trim(),
-        nationalId: _nationalIdController.text.trim(), // 🟢 [إضافة]
-        employeeId: _employeeIdController.text.trim(), // 🟢 [إضافة]
+        nationalId: _nationalIdController.text.trim(),
+        employeeId: _employeeIdController.text.trim(),
         profileImage: "",
         isActive: true,
         role: 'admin',
         isFirstLogin: true,
       );
 
-      context.read<AdminDataCubit>().saveAdminData(adminModel);
+      if (isEditing) {
+        final updatedAdmin = adminModel.copyWith(uid: widget.existingUid!);
+        context.read<AdminDataCubit>().saveAdminData(updatedAdmin);
+      } else {
+        context.read<AdminDataCubit>().createNewAdmin(adminModel);
+      }
     }
+  }
+
+  // ✅ محقق محسّن للرقم القومي
+  String? _validateNationalId(String? value) {
+    if (value == null || value.isEmpty) {
+      return "add_admin.required".tr();
+    }
+    if (value.length != 14) {
+      return "add_admin.valid_national_id".tr();
+    }
+    if (!RegExp(r'^\d+$').hasMatch(value)) {
+      return "add_admin.valid_national_id".tr();
+    }
+    return null;
+  }
+
+  // ✅ محقق محسّن للبريد الإلكتروني
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return "add_admin.required".tr();
+    }
+    if (!RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$').hasMatch(value)) {
+      return "add_admin.valid_email_format".tr();
+    }
+    return null;
+  }
+
+  String? _requiredField(String? value) {
+    if (value == null || value.isEmpty) {
+      return "add_admin.required".tr();
+    }
+    return null;
   }
 
   @override
@@ -99,32 +150,46 @@ class _AddAdminPageState extends State<AddAdminPage> {
           current is AdminLoaded,
       listener: (context, state) {
         if (state is AdminLoaded) {
-          final admin = state.admin!;
-          _nameArController.text = admin.nameAr;
-          _nameEnController.text = admin.nameEn;
-          _emailController.text = admin.email;
-          _phoneController.text = admin.phone;
-          _jobTitleArController.text = admin.jopAr;
-          _jobTitleEnController.text = admin.jopEn;
-          _addressArController.text = admin.addressAr;
-          _addressEnController.text = admin.addressEn;
-          _nationalIdController.text = admin.nationalId; // 🟢 [إضافة]
-          _employeeIdController.text = admin.employeeId; // 🟢 [إضافة]
-          setState(() {});
+          _populateFields(state.admin!);
         } else if (state is AdminSuccess) {
+          _isSubmitting = false; // ✅ إعادة تعيين حالة الزر
+
+          // 1. إخفاء أي SnackBar قديم لمنع التراكم
+          ScaffoldMessenger.of(context).clearSnackBars();
+
+          // 2. عرض رسالة النجاح
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                isEditing ? "تم التعديل بنجاح" : "add_admin.success_msg".tr(),
+                isEditing
+                    ? "add_admin.edit_success_msg".tr()
+                    : "add_admin.success_msg".tr(),
               ),
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.pop(context);
+
+          // ✅ 3. [الحل الجذري للتهنيج] تأخير بسيط جداً ثم العودة للخلف بأمان
+          Future.microtask(() {
+            if (context.mounted && Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          });
         } else if (state is AdminError) {
+          _isSubmitting = false; // ✅ إعادة تعيين بعد الخطأ
+          setState(() {}); // ✅ ضروري لتحديث حالة الزر
+
+          String errorMessage = state.error;
+          if (state.error == "ERROR_EMAIL_ALREADY_IN_USE") {
+            errorMessage = "add_admin.email_in_use".tr();
+          } else if (state.error == "ERROR_WEAK_PASSWORD") {
+            errorMessage = "add_admin.weak_password".tr();
+          }
+
+          ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.error),
+              content: Text(errorMessage),
               backgroundColor: AppColors.error,
             ),
           );
@@ -133,147 +198,197 @@ class _AddAdminPageState extends State<AddAdminPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            isEditing ? "تعديل بيانات المسؤول" : "add_admin.app_bar_title".tr(),
+            isEditing
+                ? "add_admin.edit_app_bar_title"
+                      .tr() // ✅ كان نص ثابت
+                : "add_admin.app_bar_title".tr(),
           ),
           centerTitle: true,
           elevation: 0,
         ),
-        body: SingleChildScrollView(
-          padding: EdgeInsets.all(20.w),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                // القسم الأول: البيانات الشخصية
-                _buildSectionCard(
-                  "add_admin.personal_info_section".tr(),
-                  Icons.admin_panel_settings,
-                  [
-                    _buildTextField(
-                      "add_admin.name_ar".tr(),
-                      _nameArController,
-                      Icons.person,
-                      (v) => v!.isEmpty ? "add_admin.valid_name_ar".tr() : null,
-                    ),
-                    _buildTextField(
-                      "add_admin.name_en".tr(),
-                      _nameEnController,
-                      Icons.person_outline,
-                      (v) => v!.isEmpty ? "add_admin.valid_name_en".tr() : null,
-                      isEn: true,
-                    ),
-                    _buildTextField(
-                      "add_admin.email".tr(),
-                      _emailController,
-                      Icons.email_outlined,
-                      (v) =>
-                          !RegExp(
-                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                          ).hasMatch(v!)
-                          ? "add_admin.valid_email_format".tr()
-                          : null,
-                      isEn: true,
-                    ),
-                    _buildTextField(
-                      "add_admin.phone".tr(),
-                      _phoneController,
-                      Icons.phone,
-                      (v) => v!.isEmpty ? "add_admin.required".tr() : null,
-                      keyboardType: TextInputType.phone,
-                      isEn: true,
-                    ),
-                    // 🟢 [إضافة] حقل الرقم القومي
-                    _buildTextField(
-                      "الرقم القومي",
-                      _nationalIdController,
-                      Icons.badge,
-                      (v) => v!.isEmpty ? "هذا الحقل مطلوب" : null,
-                      keyboardType: TextInputType.number,
-                      isEn: true,
-                    ),
-                    // 🟢 [إضافة] حقل الرقم الوظيفي
-                    _buildTextField(
-                      "الرقم الوظيفي",
-                      _employeeIdController,
-                      Icons.work_history,
-                      (v) => v!.isEmpty ? "هذا الحقل مطلوب" : null,
-                      keyboardType: TextInputType.number,
-                      isEn: true,
-                    ),
-                  ],
-                ),
+        // ✅ إضافة BlocBuilder للتحقق من حالة التحميل الأولي
+        body: BlocBuilder<AdminDataCubit, AdminDataState>(
+          builder: (context, state) {
+            // ✅ عرض مؤشر تحميل أثناء جلب البيانات في وضع التعديل
+            if (isEditing && state is! AdminLoaded && state is! AdminError) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.darkGold),
+              );
+            }
 
-                // القسم الثاني: بيانات العمل
-                _buildSectionCard(
-                  "add_admin.job_info_section".tr(),
-                  Icons.business_center,
-                  [
-                    _buildTextField(
-                      "add_admin.job_ar".tr(),
-                      _jobTitleArController,
-                      Icons.work,
-                      (v) => v!.isEmpty ? "add_admin.valid_job_ar".tr() : null,
+            // ✅ عرض خطأ إذا فشل جلب البيانات
+            if (isEditing && state is AdminError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 60.sp,
+                      color: AppColors.error,
                     ),
-                    _buildTextField(
-                      "add_admin.job_en".tr(),
-                      _jobTitleEnController,
-                      Icons.work_outline,
-                      (v) => v!.isEmpty ? "add_admin.valid_job_en".tr() : null,
-                      isEn: true,
+                    SizedBox(height: 16.h),
+                    Text(
+                      state.error,
+                      style: AppTextStyles.bodyMedium,
+                      textAlign: TextAlign.center,
                     ),
-                    _buildTextField(
-                      "add_admin.address_ar".tr(),
-                      _addressArController,
-                      Icons.location_on,
-                      (v) => v!.isEmpty ? "add_admin.required".tr() : null,
-                    ),
-                    _buildTextField(
-                      "add_admin.address_en".tr(),
-                      _addressEnController,
-                      Icons.location_on_outlined,
-                      (v) => v!.isEmpty ? "add_admin.required".tr() : null,
-                      isEn: true,
+                    SizedBox(height: 16.h),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<AdminDataCubit>().getAdminProfile(
+                          widget.existingUid!,
+                        );
+                      },
+                      child: Text("retry".tr()),
                     ),
                   ],
                 ),
-                SizedBox(height: 30.h),
-                BlocBuilder<AdminDataCubit, AdminDataState>(
-                  builder: (context, state) {
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 55.h,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.navyDark,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
+              );
+            }
+
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(20.w),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    _buildSectionCard(
+                      "add_admin.personal_info_section".tr(),
+                      Icons.admin_panel_settings,
+                      [
+                        _buildTextField(
+                          "add_admin.name_ar".tr(),
+                          _nameArController,
+                          Icons.person,
+                          (v) => v!.isEmpty
+                              ? "add_admin.valid_name_ar".tr()
+                              : null,
                         ),
-                        onPressed: state is AdminLoading
-                            ? null
-                            : () => _onSavePressed(context),
-                        child: state is AdminLoading
-                            ? const CircularProgressIndicator(
-                                color: AppColors.darkGold,
-                              )
-                            : Text(
-                                isEditing
-                                    ? "حفظ التعديلات"
-                                    : "add_admin.submit_button".tr(),
-                                style: AppTextStyles.labelLarge.copyWith(
-                                  color: AppColors.darkGold,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
-                    );
-                  },
+                        _buildTextField(
+                          "add_admin.name_en".tr(),
+                          _nameEnController,
+                          Icons.person_outline,
+                          (v) => v!.isEmpty
+                              ? "add_admin.valid_name_en".tr()
+                              : null,
+                          isEn: true,
+                        ),
+                        _buildTextField(
+                          "add_admin.email".tr(),
+                          _emailController,
+                          Icons.email_outlined,
+                          _validateEmail, // ✅ محقق محسّن
+                          isEn: true,
+                        ),
+                        _buildTextField(
+                          "add_admin.phone".tr(),
+                          _phoneController,
+                          Icons.phone,
+                          _requiredField, // ✅ دالة موحدة
+                          keyboardType: TextInputType.phone,
+                          isEn: true,
+                        ),
+                        _buildTextField(
+                          "add_admin.national_id".tr(), // ✅ كان نص ثابت
+                          _nationalIdController,
+                          Icons.badge,
+                          _validateNationalId, // ✅ محقق محسّن
+                          keyboardType: TextInputType.number,
+                          isEn: true,
+                          maxLength: 14,
+                        ),
+                        _buildTextField(
+                          "add_admin.employee_id".tr(), // ✅ كان نص ثابت
+                          _employeeIdController,
+                          Icons.work_history,
+                          _requiredField, // ✅ كان نص ثابت
+                          keyboardType: TextInputType.number,
+                          isEn: true,
+                        ),
+                      ],
+                    ),
+                    _buildSectionCard(
+                      "add_admin.job_info_section".tr(),
+                      Icons.business_center,
+                      [
+                        _buildTextField(
+                          "add_admin.job_ar".tr(),
+                          _jobTitleArController,
+                          Icons.work,
+                          (v) =>
+                              v!.isEmpty ? "add_admin.valid_job_ar".tr() : null,
+                        ),
+                        _buildTextField(
+                          "add_admin.job_en".tr(),
+                          _jobTitleEnController,
+                          Icons.work_outline,
+                          (v) =>
+                              v!.isEmpty ? "add_admin.valid_job_en".tr() : null,
+                          isEn: true,
+                        ),
+                        _buildTextField(
+                          "add_admin.address_ar".tr(),
+                          _addressArController,
+                          Icons.location_on,
+                          _requiredField,
+                        ),
+                        _buildTextField(
+                          "add_admin.address_en".tr(),
+                          _addressEnController,
+                          Icons.location_on_outlined,
+                          _requiredField,
+                          isEn: true,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 30.h),
+                    _buildSaveButton(state), // ✅ فصل الزر
+                    SizedBox(height: 20.h),
+                  ],
                 ),
-                SizedBox(height: 20.h),
-              ],
-            ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // ✅ فصل زر الحفظ لدالة مستقلة
+  Widget _buildSaveButton(AdminDataState state) {
+    final isLoading = state is AdminLoading || _isSubmitting;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 55.h,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.navyDark,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
           ),
         ),
+        onPressed: isLoading ? null : () => _onSavePressed(context),
+        child: isLoading
+            ? SizedBox(
+                width: 24.w,
+                height: 24.w,
+                child: const CircularProgressIndicator(
+                  color: AppColors.darkGold,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : Text(
+                isEditing
+                    ? "add_admin.save_changes"
+                          .tr() // ✅ كان نص ثابت
+                    : "add_admin.submit_button".tr(),
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.darkGold,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
       ),
     );
   }
@@ -319,6 +434,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
     String? Function(String?)? validator, {
     bool isEn = false,
     TextInputType keyboardType = TextInputType.text,
+    int? maxLength, // ✅ إضافة حد أقصى للطول
   }) {
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
@@ -326,6 +442,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
         controller: controller,
         validator: validator,
         keyboardType: keyboardType,
+        maxLength: maxLength,
         textAlign: isEn
             ? TextAlign.left
             : (isArabic ? TextAlign.right : TextAlign.left),
@@ -338,6 +455,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
           prefixIcon: Icon(icon, size: 20.sp, color: AppColors.navyLight),
           labelStyle: AppTextStyles.bodySmall,
           alignLabelWithHint: true,
+          counterText: '', // ✅ إخفاء عداد الأحرف
         ),
       ),
     );

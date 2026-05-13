@@ -4,7 +4,7 @@ import 'package:optialeader/feature/database_admin/logic/search/search_state.dar
 
 class SearchCubit extends Cubit<SearchState> {
   final SearchRepo _searchRepo;
-  
+
   SearchCubit(this._searchRepo) : super(SearchInitial());
 
   Future<void> searchUsers({
@@ -26,14 +26,11 @@ class SearchCubit extends Cubit<SearchState> {
     );
 
     result.fold(
-      (error) => emit(SearchError(error)),
-      (users) {
-        if (users.isEmpty) {
-          emit(SearchError("لا توجد نتائج تطابق البحث"));
-        } else {
-          emit(SearchSuccess(users));
-        }
-      },
+      (error) => emit(
+        SearchError("ERROR_SEARCH_FAILED"),
+      ), // ✅ إرسال كود خطأ بدل النص العربي
+      (users) =>
+          emit(SearchSuccess(users)), // ✅ إرجاع القائمة حتى لو كانت فارغة
     );
   }
 }

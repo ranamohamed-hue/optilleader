@@ -1,18 +1,16 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:optialeader/core/theming/app_color.dart';
 import 'package:optialeader/core/theming/app_text_style.dart';
-import 'package:optialeader/feature/database_admin/data/models/judge_profile_model.dart'; // تأكد إن المودل موجود
+import 'package:optialeader/feature/database_admin/data/models/judge_profile_model.dart';
 import 'package:optialeader/feature/database_admin/logic/judge_data/judge_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/judge_data/judge_data_state.dart';
 import 'dart:ui' as ui;
 
 class AddJudgePage extends StatefulWidget {
-  final String? existingUid; // 🟢 لاستقبال الـ UID لو جايين من البحث للتعديل
-
+  final String? existingUid;
   const AddJudgePage({super.key, this.existingUid});
 
   @override
@@ -22,7 +20,6 @@ class AddJudgePage extends StatefulWidget {
 class _AddJudgePageState extends State<AddJudgePage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers
   final _emailController = TextEditingController();
   final _nameArController = TextEditingController();
   final _nameEnController = TextEditingController();
@@ -35,14 +32,11 @@ class _AddJudgePageState extends State<AddJudgePage> {
   final _employeeIdController = TextEditingController();
 
   bool get isArabic => context.locale.languageCode == 'ar';
-  
-  // 🟢 متغير يحدد هل إحنا بنضيف جديد ولا بنعدل على موجود
   bool get isEditing => widget.existingUid != null;
 
   @override
   void initState() {
     super.initState();
-    // 🟢 لو بنعدل، نجيب الداتا القديمة
     if (isEditing) {
       context.read<JudgeDataCubit>().getJudgeProfile(widget.existingUid!);
     }
@@ -63,15 +57,24 @@ class _AddJudgePageState extends State<AddJudgePage> {
     super.dispose();
   }
 
+  void _populateFields(JudgeProfileModel judge) {
+    _nameArController.text = judge.nameAr;
+    _nameEnController.text = judge.nameEn;
+    _emailController.text = judge.email;
+    _phoneController.text = judge.phone;
+    _jobTitleArController.text = judge.jopAr;
+    _jobTitleEnController.text = judge.jopEn;
+    _addressArController.text = judge.addressAr;
+    _addressEnController.text = judge.addressEn;
+    _nationalIdController.text = judge.nationalId;
+    _employeeIdController.text = judge.employeeId;
+    // ✅ لا حاجة لـ setState لأن المتحكمات تحدث الواجهة تلقائياً
+  }
+
   void _onSavePressed(BuildContext context) {
     if (_formKey.currentState!.validate()) {
-      // 🟢 لو بنعدل نستخدم الـ ID القديم، ولو بنضيف نولد ID جديد
-      final String uidToSave = isEditing 
-          ? widget.existingUid! 
-          : FirebaseFirestore.instance.collection('users').doc().id;
-
       final judgeModel = JudgeProfileModel(
-        uid: uidToSave,
+        uid: '',
         email: _emailController.text.trim(),
         nameAr: _nameArController.text.trim(),
         nameEn: _nameEnController.text.trim(),
@@ -84,11 +87,16 @@ class _AddJudgePageState extends State<AddJudgePage> {
         employeeId: _employeeIdController.text.trim(),
         profileImage: "",
         isActive: true,
-        role: 'judge', // 🟢 الرتبة ثابتة judge
+        role: 'judge',
         isFirstLogin: true,
       );
 
-      context.read<JudgeDataCubit>().saveJudgeData(judgeModel);
+      if (isEditing) {
+        final updatedJudge = judgeModel.copyWith(uid: widget.existingUid!);
+        context.read<JudgeDataCubit>().saveJudgeData(updatedJudge);
+      } else {
+        context.read<JudgeDataCubit>().createNewJudge(judgeModel);
+      }
     }
   }
 
@@ -96,35 +104,39 @@ class _AddJudgePageState extends State<AddJudgePage> {
   Widget build(BuildContext context) {
     return BlocListener<JudgeDataCubit, JudgeDataState>(
       listenWhen: (previous, current) =>
-          current is JudgeSuccess || current is JudgeError || current is JudgeLoaded,
+          current is JudgeSuccess ||
+          current is JudgeError ||
+          current is JudgeLoaded,
       listener: (context, state) {
         if (state is JudgeLoaded) {
-          // 🟢 تعبئة الفيلدات بالداتا القديمة لما تيجي من البحث
-          final judge = state.judge!;
-          _nameArController.text = judge.nameAr;
-          _nameEnController.text = judge.nameEn;
-          _emailController.text = judge.email;
-          _phoneController.text = judge.phone;
-          _jobTitleArController.text = judge.jopAr;
-          _jobTitleEnController.text = judge.jopEn;
-          _addressArController.text = judge.addressAr;
-          _addressEnController.text = judge.addressEn;
-          _nationalIdController.text = judge.nationalId;
-          _employeeIdController.text = judge.employeeId;
-          setState(() {}); // تحديث الشاشة
-        } 
-        else if (state is JudgeSuccess) {
+          _populateFields(state.judge!);
+        } else if (state is JudgeSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(isEditing ? "تم التعديل بنجاح" : "تم إضافة المحكم بنجاح"),
+              content: Text(
+                isEditing
+                    ? "add_judge.edit_success".tr()
+                    : "add_judge.add_success".tr(),
+              ),
               backgroundColor: Colors.green,
             ),
           );
           Navigator.pop(context);
         } else if (state is JudgeError) {
+          // ✅ ترجمة أكواد الأخطاء القادمة من الـ Cubit
+          String errorMessage = state.error;
+          if (state.error == "ERROR_EMAIL_ALREADY_IN_USE") {
+            errorMessage = "add_judge.email_in_use".tr();
+          } else if (state.error == "ERROR_WEAK_PASSWORD") {
+            errorMessage = "add_judge.weak_password".tr();
+          } else if (state.error == "ERROR_USER_CREATION_FAILED" ||
+              state.error == "ERROR_AUTH_UNKNOWN") {
+            errorMessage = "add_judge.auth_error".tr();
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.error),
+              content: Text(errorMessage),
               backgroundColor: AppColors.error,
             ),
           );
@@ -132,146 +144,129 @@ class _AddJudgePageState extends State<AddJudgePage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(isEditing ? "تعديل بيانات المحكم" : "إضافة محكم جديد"), // 🟢
+          title: Text(
+            isEditing
+                ? "add_judge.edit_title".tr()
+                : "add_judge.add_title".tr(),
+          ),
           centerTitle: true,
           elevation: 0,
         ),
-        body: SingleChildScrollView(
-          padding: EdgeInsets.all(20.w),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                // القسم الأول: البيانات الشخصية
-                _buildSectionCard(
-                  "البيانات الشخصية",
-                  Icons.gavel,
-                  [
-                    _buildTextField(
-                      "الاسم بالعربي",
-                      _nameArController,
-                      Icons.person,
-                      (v) => v!.isEmpty ? "هذا الحقل مطلوب" : null,
-                    ),
-                    _buildTextField(
-                      "الاسم بالإنجليزي",
-                      _nameEnController,
-                      Icons.person_outline,
-                      (v) => v!.isEmpty ? "هذا الحقل مطلوب" : null,
-                      isEn: true,
-                    ),
-                    _buildTextField(
-                      "البريد الإلكتروني",
-                      _emailController,
-                      Icons.email_outlined,
-                      (v) =>
-                          !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v!)
-                              ? "صيغة البريد غير صحيحة"
-                              : null,
-                      isEn: true,
-                    ),
-                    _buildTextField(
-                      "رقم الهاتف",
-                      _phoneController,
-                      Icons.phone,
-                      (v) => v!.isEmpty ? "هذا الحقل مطلوب" : null,
-                      keyboardType: TextInputType.phone,
-                      isEn: true,
-                    ),
-                    _buildTextField(
-                      "الرقم القومي",
-                      _nationalIdController,
-                      Icons.badge,
-                      (v) => v!.isEmpty ? "هذا الحقل مطلوب" : null,
-                      keyboardType: TextInputType.number,
-                      isEn: true,
-                    ),
-                    _buildTextField(
-                      "الرقم الوظيفي",
-                      _employeeIdController,
-                      Icons.work_history,
-                      (v) => v!.isEmpty ? "هذا الحقل مطلوب" : null,
-                      keyboardType: TextInputType.number,
-                      isEn: true,
-                    ),
-                  ],
-                ),
+        // ✅ إضافة BlocBuilder للتحقق من حالة التحميل الأولي لجلب البيانات
+        body: BlocBuilder<JudgeDataCubit, JudgeDataState>(
+          builder: (context, state) {
+            if (isEditing && state is! JudgeLoaded && state is! JudgeError) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.darkGold),
+              );
+            }
 
-                // القسم الثاني: بيانات العمل
-                _buildSectionCard(
-                  "بيانات العمل",
-                  Icons.business_center,
-                  [
-                    _buildTextField(
-                      "المسمى الوظيفي (عربي)",
-                      _jobTitleArController,
-                      Icons.work,
-                      (v) => v!.isEmpty ? "هذا الحقل مطلوب" : null,
-                    ),
-                    _buildTextField(
-                      "المسمى الوظيفي (إنجليزي)",
-                      _jobTitleEnController,
-                      Icons.work_outline,
-                      (v) => v!.isEmpty ? "هذا الحقل مطلوب" : null,
-                      isEn: true,
-                    ),
-                    _buildTextField(
-                      "العنوان (عربي)",
-                      _addressArController,
-                      Icons.location_on,
-                      (v) => v!.isEmpty ? "هذا الحقل مطلوب" : null,
-                    ),
-                    _buildTextField(
-                      "العنوان (إنجليزي)",
-                      _addressEnController,
-                      Icons.location_on_outlined,
-                      (v) => v!.isEmpty ? "هذا الحقل مطلوب" : null,
-                      isEn: true,
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 30.h),
-
-                // زر الحفظ
-                BlocBuilder<JudgeDataCubit, JudgeDataState>(
-                  builder: (context, state) {
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 55.h,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.navyDark,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(20.w),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    _buildSectionCard(
+                      "add_judge.personal_info".tr(),
+                      Icons.gavel,
+                      [
+                        _buildTextField(
+                          "add_judge.name_ar".tr(),
+                          _nameArController,
+                          Icons.person,
+                          (v) => v!.isEmpty ? "add_judge.required".tr() : null,
                         ),
-                        onPressed: state is JudgeLoading
-                            ? null
-                            : () => _onSavePressed(context),
-                        child: state is JudgeLoading
-                            ? const CircularProgressIndicator(color: AppColors.darkGold)
-                            : Text(
-                                isEditing ? "حفظ التعديلات" : "إضافة المحكم", // 🟢
-                                style: AppTextStyles.labelLarge.copyWith(
-                                  color: AppColors.darkGold,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
-                    );
-                  },
+                        _buildTextField(
+                          "add_judge.name_en".tr(),
+                          _nameEnController,
+                          Icons.person_outline,
+                          (v) => v!.isEmpty ? "add_judge.required".tr() : null,
+                          isEn: true,
+                        ),
+                        _buildTextField(
+                          "add_judge.email".tr(),
+                          _emailController,
+                          Icons.email_outlined,
+                          (v) =>
+                              !RegExp(
+                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                              ).hasMatch(v!)
+                              ? "add_judge.invalid_email".tr()
+                              : null,
+                          isEn: true,
+                        ),
+                        _buildTextField(
+                          "add_judge.phone".tr(),
+                          _phoneController,
+                          Icons.phone,
+                          (v) => v!.isEmpty ? "add_judge.required".tr() : null,
+                          keyboardType: TextInputType.phone,
+                          isEn: true,
+                        ),
+                        _buildTextField(
+                          "add_judge.national_id".tr(),
+                          _nationalIdController,
+                          Icons.badge,
+                          (v) => v!.isEmpty ? "add_judge.required".tr() : null,
+                          keyboardType: TextInputType.number,
+                          isEn: true,
+                        ),
+                        _buildTextField(
+                          "add_judge.employee_id".tr(),
+                          _employeeIdController,
+                          Icons.work_history,
+                          (v) => v!.isEmpty ? "add_judge.required".tr() : null,
+                          keyboardType: TextInputType.number,
+                          isEn: true,
+                        ),
+                      ],
+                    ),
+                    _buildSectionCard(
+                      "add_judge.job_info".tr(),
+                      Icons.business_center,
+                      [
+                        _buildTextField(
+                          "add_judge.job_ar".tr(),
+                          _jobTitleArController,
+                          Icons.work,
+                          (v) => v!.isEmpty ? "add_judge.required".tr() : null,
+                        ),
+                        _buildTextField(
+                          "add_judge.job_en".tr(),
+                          _jobTitleEnController,
+                          Icons.work_outline,
+                          (v) => v!.isEmpty ? "add_judge.required".tr() : null,
+                          isEn: true,
+                        ),
+                        _buildTextField(
+                          "add_judge.address_ar".tr(),
+                          _addressArController,
+                          Icons.location_on,
+                          (v) => v!.isEmpty ? "add_judge.required".tr() : null,
+                        ),
+                        _buildTextField(
+                          "add_judge.address_en".tr(),
+                          _addressEnController,
+                          Icons.location_on_outlined,
+                          (v) => v!.isEmpty ? "add_judge.required".tr() : null,
+                          isEn: true,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 30.h),
+                    _buildSaveButton(state),
+                    SizedBox(height: 20.h),
+                  ],
                 ),
-                SizedBox(height: 20.h),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  // --- Widgets المساعدة ---
   Widget _buildSectionCard(String title, IconData icon, List<Widget> children) {
     return Card(
       elevation: 0,
@@ -333,6 +328,33 @@ class _AddJudgePageState extends State<AddJudgePage> {
           labelStyle: AppTextStyles.bodySmall,
           alignLabelWithHint: true,
         ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton(JudgeDataState state) {
+    return SizedBox(
+      width: double.infinity,
+      height: 55.h,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.navyDark,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+        onPressed: state is JudgeLoading ? null : () => _onSavePressed(context),
+        child: state is JudgeLoading
+            ? const CircularProgressIndicator(color: AppColors.darkGold)
+            : Text(
+                isEditing
+                    ? "add_judge.save_changes".tr()
+                    : "add_judge.add_button".tr(),
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.darkGold,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
       ),
     );
   }

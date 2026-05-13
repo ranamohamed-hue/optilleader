@@ -10,9 +10,11 @@ import 'package:optialeader/feature/database_admin/data/repo/admin_repository/ad
 import 'package:optialeader/feature/database_admin/data/repo/database_admin_repository/database_admin_repo_impl.dart';
 import 'package:optialeader/feature/database_admin/data/repo/doctor_repository/doctor_repo_impl.dart';
 import 'package:optialeader/feature/database_admin/data/repo/judge_repository/judge_repo_impl.dart';
+import 'package:optialeader/feature/database_admin/data/repo/search/search_repo.dart';
 import 'package:optialeader/feature/database_admin/logic/admin_data/admin_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/judge_data/judge_data_cubit.dart';
+import 'package:optialeader/feature/database_admin/logic/search/search_cubit.dart';
 import 'package:optialeader/feature/setting/data/repo/setting_repo_impl.dart';
 import 'package:optialeader/feature/setting/logic/setting_cubit.dart';
 import 'package:provider/single_child_widget.dart'; 
@@ -50,5 +52,8 @@ class AppProviders {
     ),
     //كيوبيت الاعدادات
     BlocProvider(create: (context) => SettingCubit(SettingRepoImpl())),
+    BlocProvider(
+      create: (context) => SearchCubit(SearchRepo(FirebaseFirestore.instance)),
+    )
   ];
 }

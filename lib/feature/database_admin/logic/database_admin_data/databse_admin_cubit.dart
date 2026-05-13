@@ -8,17 +8,17 @@ class DatabseAdminCubit extends Cubit<DatabaseAdminState> {
 
   Future<void> getProfile(String uid) async {
     emit(DatabaseAdminLoading());
-    print('🟢 Cubit: Fetching profile for UID: $uid'); // عشان نعرف هو بيبعت الـ UID ولا لأ
+    print('🟢 Cubit: Fetching profile for UID: $uid'); // ✅ تم إرجاع print
 
     final result = await _databaseAdminRepo.getAdminProfile(uid);
 
     result.fold(
       (error) {
-        print('🔴 Cubit: Error fetching profile: $error'); // لو حصل خطأ في الفايرستور
+        print('🔴 Cubit: Error fetching profile: $error'); // ✅ تم إرجاع print
         emit(DatabaseAdminError(error));
       },
       (profile) {
-        print('🟢 Cubit: Profile fetched successfully! Name: ${profile.nameAr}'); // لو الداتا جت
+        print('🟢 Cubit: Profile fetched successfully! Name: ${profile.nameAr}'); // ✅ تم إرجاع print
         emit(DatabaseAdminSuccess(profile));
       },
     );

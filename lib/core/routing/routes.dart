@@ -22,6 +22,7 @@ class Routes {
   static const addDoctorPage = '/databaseAdmin/addDoctorPage';
   static const addAdminPage = '/databaseAdmin/addAdminPage';
   static const addJudgePage = '/databaseAdmin/addJudgePage';
+  static const searchPage='/databaseAdmin/searchPage';
   //صفحات خاصه بالمحكم
   static const judgeEvaluation = '/judge/evaluationScreen';
   //صفخات خاصه

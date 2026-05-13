@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart'; // 🟢 مهم جداً عشان نجيب الـ UID
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -10,7 +10,6 @@ import 'package:optialeader/feature/database_admin/logic/database_admin_data/dat
 import 'package:optialeader/core/theming/app_color.dart';
 
 class DatabaseAdminDashboard extends StatefulWidget {
-  // 🟢 اتحول لـ StatefulWidget
   const DatabaseAdminDashboard({super.key});
 
   @override
@@ -21,7 +20,6 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
   @override
   void initState() {
     super.initState();
-    // 🟢 هنا بنطلب الداتا بمجرد ما الصفحة تفتح وبأمان
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
@@ -37,7 +35,6 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
 
     return BlocBuilder<DatabseAdminCubit, DatabaseAdminState>(
       builder: (context, state) {
-        // 1. حالة التحميل
         if (state is DatabaseAdminLoading) {
           return Scaffold(
             body: Center(
@@ -46,7 +43,6 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
           );
         }
 
-        // 2. حالة الخطأ
         if (state is DatabaseAdminError) {
           return Scaffold(
             body: Center(
@@ -69,7 +65,6 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
           );
         }
 
-        // 3. حالة النجاح (Success)
         if (state is DatabaseAdminSuccess) {
           final admin = state.profile;
           final isArabic = context.locale.languageCode == 'ar';
@@ -185,6 +180,13 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
                     SizedBox(height: 15.h),
                     _buildActionCard(
                       context,
+                      "dashboard.search".tr(),
+                      Icons.person_search,
+                      Colors.teal,
+                      Routes.searchPage,
+                    ),
+                    _buildActionCard(
+                      context,
                       "dashboard.add_doctor".tr(),
                       Icons.person_add_alt_1,
                       AppColors.navyDark,
@@ -211,7 +213,6 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
           );
         }
 
-        // 4. حالة البداية (Initial) - عشان ماتجبش شاشة سودة
         return Scaffold(
           body: Center(
             child: CircularProgressIndicator(color: AppColors.darkGold),

@@ -31,8 +31,6 @@ class _EmployeeSearchScreenState extends State<EmployeeSearchScreen> {
     context.read<SearchCubit>().searchUsers(
       query: _searchController.text,
       searchField: _searchField,
-      // لو عايز تفلتر لدكاترة بس خليها role: 'user'
-      // لو عايز كل الناس خليها role: null
       role: null,
     );
   }
@@ -41,7 +39,7 @@ class _EmployeeSearchScreenState extends State<EmployeeSearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("بحث عن موظفين"),
+        title: Text("employee_search.title".tr()),
         backgroundColor: AppColors.navyDark,
       ),
       body: Padding(
@@ -52,7 +50,7 @@ class _EmployeeSearchScreenState extends State<EmployeeSearchScreen> {
             Row(
               children: [
                 ChoiceChip(
-                  label: Text("البحث بالاسم"),
+                  label: Text("employee_search.by_name".tr()),
                   selected: _searchField == 'username',
                   selectedColor: AppColors.darkGold,
                   onSelected: (bool selected) {
@@ -64,7 +62,7 @@ class _EmployeeSearchScreenState extends State<EmployeeSearchScreen> {
                 ),
                 SizedBox(width: 10.w),
                 ChoiceChip(
-                  label: Text("البحث بالرقم الوظيفي"),
+                  label: Text("employee_search.by_id".tr()),
                   selected: _searchField == 'employee_id',
                   selectedColor: AppColors.darkGold,
                   onSelected: (bool selected) {
@@ -83,8 +81,8 @@ class _EmployeeSearchScreenState extends State<EmployeeSearchScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: _searchField == 'username'
-                    ? "اكتب اسم الموظف..."
-                    : "اكتب الرقم الوظيفي...",
+                    ? "employee_search.hint_name".tr()
+                    : "employee_search.hint_id".tr(),
                 prefixIcon: Icon(Icons.search, color: AppColors.navyDark),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
@@ -108,7 +106,6 @@ class _EmployeeSearchScreenState extends State<EmployeeSearchScreen> {
               onSubmitted: (_) => _performSearch(),
               onChanged: (value) {
                 if (value.length >= 2) {
-                  // يبدأ يبحث بعد حرفين
                   _performSearch();
                 }
               },
@@ -126,13 +123,27 @@ class _EmployeeSearchScreenState extends State<EmployeeSearchScreen> {
                       ),
                     );
                   } else if (state is SearchError) {
+                    // ✅ ترجمة كود الخطأ القادم من الـ Cubit
+                    String errorMessage = state.message;
+                    if (state.message == "ERROR_SEARCH_FAILED") {
+                      errorMessage = "employee_search.error".tr();
+                    }
                     return Center(
                       child: Text(
-                        state.message,
+                        errorMessage,
                         style: TextStyle(color: Colors.grey),
                       ),
                     );
                   } else if (state is SearchSuccess) {
+                    // ✅ معالجة حالة القائمة الفارغة
+                    if (state.users.isEmpty) {
+                      return Center(
+                        child: Text(
+                          "employee_search.no_users".tr(),
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      );
+                    }
                     return ListView.builder(
                       itemCount: state.users.length,
                       itemBuilder: (context, index) {
@@ -143,7 +154,7 @@ class _EmployeeSearchScreenState extends State<EmployeeSearchScreen> {
                   }
                   return Center(
                     child: Text(
-                      "ابدأ بكتابة الاسم أو الرقم الوظيفي",
+                      "employee_search.start_searching".tr(),
                       style: TextStyle(color: Colors.grey),
                     ),
                   );
@@ -174,7 +185,9 @@ class _EmployeeSearchScreenState extends State<EmployeeSearchScreen> {
             color: AppColors.navyDark,
           ),
         ),
-        subtitle: Text("الرقم الوظيفي: ${user.employeeId}"),
+        subtitle: Text(
+          "employee_search.employee_id_label".tr(args: [user.employeeId]),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -187,21 +200,19 @@ class _EmployeeSearchScreenState extends State<EmployeeSearchScreen> {
             ),
             IconButton(
               icon: Icon(Icons.edit, color: AppColors.navyDark),
-              // 🟢 هنا بنوجهه للصفحة الصح وبنبعت الـ UID
+              tooltip: "employee_search.edit".tr(),
               onPressed: () {
                 String targetRoute;
                 if (user.role == UserRole.user) {
-                  targetRoute =
-                      Routes.addDoctorPage; // لو الدكتور عنده role = user
+                  targetRoute = Routes.addDoctorPage;
                 } else if (user.role == UserRole.admin) {
                   targetRoute = Routes.addAdminPage;
                 } else if (user.role == UserRole.judge) {
                   targetRoute = Routes.addJudgePage;
                 } else {
-                  return; // لو نوع تاني ماتعملش حاجة
+                  return;
                 }
 
-                // بنوديه لصفحة الإضافة وبنبعت الـ UID كـ Argument
                 context.push(targetRoute, extra: user.uid);
               },
             ),

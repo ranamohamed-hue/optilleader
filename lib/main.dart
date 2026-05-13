@@ -18,33 +18,42 @@ import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  /// Firebase
+  /// 1. Firebase Primary App (الأساسي)
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  /// App Check
- /* await FirebaseAppCheck.instance.activate(
+  /// ✅ 2. [إضافة ضرورية] Firebase Secondary App (النسخة الخفية لإنشاء الحسابات)
+  try {
+    await Firebase.initializeApp(
+      name: 'SecondaryApp',
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    // في حال كان التطبيق قد تم تهيئته مسبقاً (بسبب Hot Restart)، يتم تجاهل الخطأ بأمان
+    debugPrint('SecondaryApp already initialized: $e');
+  }
+
+  /// App Check (معطل حالياً)
+  /*await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug,
     appleProvider: AppleProvider.debug,
   );*/
 
- /// Localization
-await EasyLocalization.ensureInitialized();
-runApp(
-  EasyLocalization(
-    supportedLocales: const [Locale('en'), Locale('ar')],
-    path: 'assets/translations',
-    
-    
-    assetLoader: const FolderJsonLoader(), 
-    
-    fallbackLocale: const Locale('ar'),
-    startLocale: const Locale('ar'),
-    child: MultiBlocProvider(
-      providers: AppProviders.providers,
-      child: const MyApp(),
+  /// Localization
+  await EasyLocalization.ensureInitialized();
+  
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [Locale('en'), Locale('ar')],
+      path: 'assets/translations',
+      assetLoader: const FolderJsonLoader(), 
+      fallbackLocale: const Locale('ar'),
+      startLocale: const Locale('ar'),
+      child: MultiBlocProvider(
+        providers: AppProviders.providers,
+        child: const MyApp(),
+      ),
     ),
-  ),
-);
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -60,7 +69,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-
     _router = createRouter(context.read<AuthCubit>());
   }
 
@@ -75,21 +83,13 @@ class _MyAppState extends State<MyApp> {
           builder: (context, state) {
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
-
-              /// App title
               title: "Optia Leader",
-
-              /// Theme
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
               themeMode: state.themeMode,
-
-              /// Localization
               locale: context.locale,
               supportedLocales: context.supportedLocales,
               localizationsDelegates: context.localizationDelegates,
-
-              /// Router
               routerConfig: _router,
             );
           },

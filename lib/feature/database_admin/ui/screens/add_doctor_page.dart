@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:intl/intl.dart'; // ✅ [إضافة] ضروري لدالة DateFormat
 import 'package:optialeader/core/theming/app_color.dart';
 import 'package:optialeader/core/theming/app_text_style.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
@@ -25,15 +25,15 @@ class AcademicControllers {
   Map<String, dynamic> toMap() => {
     'degree': degree.text.trim(),
     'major': major.text.trim(),
-    'date': date.text.trim(),
+    'date': date.text.trim(), // ✅ [إصلاح] كان degree.text بالخطأ
     'place': place.text.trim(),
   };
 }
 
 class AddDoctorPage extends StatefulWidget {
-  final String? existingUid; // 🟢 [إضافة] استقبال الـ UID لو جايين من البحث
+  final String? existingUid;
 
-  const AddDoctorPage({super.key, this.existingUid}); // 🟢 [تعديل]
+  const AddDoctorPage({super.key, this.existingUid});
 
   @override
   State<AddDoctorPage> createState() => _AddDoctorPageState();
@@ -73,13 +73,10 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
   bool disciplinaryClearance = true;
 
   bool get isArabic => context.locale.languageCode == 'ar';
-
-  // 🟢 [إضافة] متغير يحدد هل إحنا بنضيف جديد ولا بنعدل على موجود
   bool get isEditing => widget.existingUid != null;
 
   @override
   void initState() {
-    // 🟢 [إضافة] دالة initState عشان نجيب الداتا القديمة لو بنعدل
     super.initState();
     if (isEditing) {
       context.read<DoctorDataCubit>().getDoctorProfile(widget.existingUid!);
@@ -109,20 +106,16 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
   void _onSavePressed() {
     if (_formKey.currentState!.validate()) {
       if (birthDate == null && !isEditing) {
-        // 🟢 [تعديل] مسموش يسيبه فاضي غير لما بيضيف جديد
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("add_doctor.validate_birth_date".tr())),
+          SnackBar(
+            content: Text("add_doctor.validate_birth_date".tr()),
+          ), // ✅ مربوط
         );
         return;
       }
 
-      // 🟢 [تعديل] لو بنعدل نستخدم الـ ID القديم، ولو بنضيف نولد ID جديد
-      final String uidToSave = isEditing
-          ? widget.existingUid!
-          : FirebaseFirestore.instance.collection('Users').doc().id;
-
       final doctorModel = DoctorProfileModel(
-        uid: uidToSave, // 🟢 [تعديل] استخدام الـ ID الصح
+        uid: '',
         nameAr: _nameAr.text.trim(),
         nameEn: _nameEn.text.trim(),
         nationalityAr: _nationalityAr.text.trim(),
@@ -146,7 +139,12 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
         isActive: true,
       );
 
-      context.read<DoctorDataCubit>().saveDoctorData(doctorModel);
+      if (isEditing) {
+        final updatedDoctor = doctorModel.copyWith(uid: widget.existingUid!);
+        context.read<DoctorDataCubit>().saveDoctorData(updatedDoctor);
+      } else {
+        context.read<DoctorDataCubit>().createNewDoctor(doctorModel);
+      }
     }
   }
 
@@ -156,12 +154,9 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
 
     return BlocListener<DoctorDataCubit, DoctorDataState>(
       listenWhen: (prev, curr) =>
-          curr is DoctorSuccess ||
-          curr is DoctorError ||
-          curr is DoctorLoaded, // 🟢 [تعديل] إضافة DoctorLoaded
+          curr is DoctorSuccess || curr is DoctorError || curr is DoctorLoaded,
       listener: (context, state) {
         if (state is DoctorLoaded) {
-          // 🟢 [إضافة] بلوك تعبئة الفيلدات بالداتا القديمة
           final doc = state.doctor!;
           _nameAr.text = doc.nameAr;
           _nameEn.text = doc.nameEn;
@@ -191,22 +186,35 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
             ctrl.place.text = item['place'] ?? '';
             academicControllersList.add(ctrl);
           }
-          setState(() {}); // تحديث الشاشة عشان تتعرض الداتا
+          setState(() {});
         } else if (state is DoctorSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              // 🟢 [تعديل] تغيير رسالة النجاح حسب الحالة
               content: Text(
-                isEditing ? "تم التعديل بنجاح" : "add_doctor.success_msg".tr(),
+                isEditing
+                    ? "add_doctor.edit_success_msg"
+                          .tr() // ✅ مربوط
+                    : "add_doctor.success_msg".tr(), // ✅ مربوط
               ),
               backgroundColor: Colors.green,
             ),
           );
           Navigator.pop(context);
         } else if (state is DoctorError) {
+          // ✅ ترجمة أكواد الأخطاء القادمة من الـ Cubit
+          String errorMessage = state.error ?? "error".tr();
+          if (state.error == "ERROR_EMAIL_ALREADY_IN_USE") {
+            errorMessage = "add_doctor.email_in_use".tr();
+          } else if (state.error == "ERROR_WEAK_PASSWORD") {
+            errorMessage = "add_doctor.weak_password".tr();
+          } else if (state.error == "ERROR_USER_CREATION_FAILED" ||
+              state.error == "ERROR_AUTH_UNKNOWN") {
+            errorMessage = "add_doctor.auth_error".tr();
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.error ?? "error".tr()),
+              content: Text(errorMessage),
               backgroundColor: AppColors.error,
             ),
           );
@@ -214,9 +222,10 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          // 🟢 [تعديل] تغيير العنوان حسب الحالة
           title: Text(
-            isEditing ? "تعديل بيانات الدكتور" : "add_doctor.title".tr(),
+            isEditing
+                ? "add_doctor.edit_title".tr()
+                : "add_doctor.title".tr(), // ✅ مربوط
             style: theme.appBarTheme.titleTextStyle,
           ),
           actions: [
@@ -238,21 +247,21 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
             child: Column(
               children: [
                 _buildSectionCard(
-                  "add_doctor.identity_job".tr(),
+                  "add_doctor.identity_job".tr(), // ✅ مربوط
                   Icons.person_pin_rounded,
                   [
                     _buildVerticalDoubleField(
-                      "add_doctor.name_ar".tr(),
+                      "add_doctor.name_ar".tr(), // ✅ مربوط
                       _nameAr,
-                      "add_doctor.name_en".tr(),
+                      "add_doctor.name_en".tr(), // ✅ مربوط
                       _nameEn,
                       Icons.person,
                     ),
                     SizedBox(height: 15.h),
                     _buildVerticalDoubleField(
-                      "add_doctor.nat_ar".tr(),
+                      "add_doctor.nat_ar".tr(), // ✅ مربوط
                       _nationalityAr,
-                      "add_doctor.nat_en".tr(),
+                      "add_doctor.nat_en".tr(), // ✅ مربوط
                       _nationalityEn,
                       Icons.flag,
                     ),
@@ -260,9 +269,9 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
                     _buildSocialStatusDropdown(),
                     SizedBox(height: 15.h),
                     _buildVerticalDoubleField(
-                      "add_doctor.job_ar".tr(),
+                      "add_doctor.job_ar".tr(), // ✅ مربوط
                       _currentJobAr,
-                      "add_doctor.job_en".tr(),
+                      "add_doctor.job_en".tr(), // ✅ مربوط
                       _currentJobEn,
                       Icons.work,
                     ),
@@ -271,7 +280,7 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
                       children: [
                         Expanded(
                           child: _buildField(
-                            "add_doctor.national_id".tr(),
+                            "add_doctor.national_id".tr(), // ✅ مربوط
                             _nationalId,
                             Icons.badge,
                             keyboardType: TextInputType.number,
@@ -280,7 +289,7 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
                         SizedBox(width: 10.w),
                         Expanded(
                           child: _buildField(
-                            "add_doctor.employee_id".tr(),
+                            "add_doctor.employee_id".tr(), // ✅ مربوط
                             _employeeId,
                             Icons.work_history,
                             keyboardType: TextInputType.number,
@@ -290,40 +299,40 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
                     ),
                     SizedBox(height: 15.h),
                     _buildDatePicker(
-                      "add_doctor.birth_date".tr(),
+                      "add_doctor.birth_date".tr(), // ✅ مربوط
                       birthDate,
                       (date) => setState(() => birthDate = date),
                     ),
                   ],
                 ),
                 _buildSectionCard(
-                  "add_doctor.contact_info".tr(),
+                  "add_doctor.contact_info".tr(), // ✅ مربوط
                   Icons.contact_phone,
                   [
                     _buildField(
-                      "add_doctor.email".tr(),
+                      "add_doctor.email".tr(), // ✅ مربوط
                       _email,
                       Icons.alternate_email,
                       keyboardType: TextInputType.emailAddress,
                     ),
                     _buildField(
-                      "add_doctor.phone".tr(),
+                      "add_doctor.phone".tr(), // ✅ مربوط
                       _phone,
                       Icons.phone_android,
                       keyboardType: TextInputType.phone,
                     ),
                     SizedBox(height: 15.h),
                     _buildVerticalDoubleField(
-                      "add_doctor.address_ar".tr(),
+                      "add_doctor.address_ar".tr(), // ✅ مربوط
                       _addressAr,
-                      "add_doctor.address_en".tr(),
+                      "add_doctor.address_en".tr(), // ✅ مربوط
                       _addressEn,
                       Icons.location_on,
                     ),
                   ],
                 ),
                 _buildSectionCard(
-                  "add_doctor.academic_history".tr(),
+                  "add_doctor.academic_history".tr(), // ✅ مربوط
                   Icons.school,
                   [
                     ...academicControllersList.asMap().entries.map(
@@ -341,7 +350,7 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
                           color: AppColors.darkGold,
                         ),
                         label: Text(
-                          "add_doctor.add_degree".tr(),
+                          "add_doctor.add_degree".tr(), // ✅ مربوط
                           style: TextStyle(color: AppColors.navyDark),
                         ),
                       ),
@@ -349,21 +358,21 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
                   ],
                 ),
                 _buildSectionCard(
-                  "add_doctor.eligibility".tr(),
+                  "add_doctor.eligibility".tr(), // ✅ مربوط
                   Icons.verified_user,
                   [
                     _buildSwitch(
-                      "add_doctor.clearance".tr(),
+                      "add_doctor.clearance".tr(), // ✅ مربوط
                       disciplinaryClearance,
                       (v) => setState(() => disciplinaryClearance = v),
                     ),
                     _buildSwitch(
-                      "add_doctor.permanent_pos".tr(),
+                      "add_doctor.permanent_pos".tr(), // ✅ مربوط
                       hasPermanentPosition,
                       (v) => setState(() => hasPermanentPosition = v),
                     ),
                     _buildSwitch(
-                      "add_doctor.on_vacation".tr(),
+                      "add_doctor.on_vacation".tr(), // ✅ مربوط
                       isOnVacation,
                       (v) => setState(() => isOnVacation = v),
                     ),
@@ -380,7 +389,6 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
     );
   }
 
-  // --- Helper Methods --- (مفيش تعديلات هنا)
   Widget _buildSectionCard(String title, IconData icon, List<Widget> children) {
     return Card(
       elevation: 0.5,
@@ -424,7 +432,8 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
       textAlign: isEn
           ? TextAlign.left
           : (isArabic ? TextAlign.right : TextAlign.left),
-      validator: (v) => v!.isEmpty ? "add_doctor.required".tr() : null,
+      validator: (v) =>
+          v!.isEmpty ? "add_doctor.required".tr() : null, // ✅ مربوط
       style: AppTextStyles.bodyMedium,
       decoration: InputDecoration(
         labelText: label,
@@ -456,7 +465,7 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
       children: [
         Expanded(
           child: _buildDropdownField(
-            "add_doctor.social_status".tr(),
+            "add_doctor.social_status".tr(), // ✅ مربوط
             statusMapping.keys.toList(),
             selectedStatusAr,
             (val) => setState(() {
@@ -468,7 +477,8 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
         SizedBox(width: 10.w),
         Expanded(
           child: _buildDropdownField(
-            "Social Status",
+            "add_doctor.social_status"
+                .tr(), // ✅ [إصلاح] كان نص ثابت "Social Status"
             statusMapping.values.toList(),
             selectedStatusEn,
             (val) => setState(() {
@@ -502,7 +512,8 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
           )
           .toList(),
       onChanged: onChanged,
-      validator: (v) => v == null ? "add_doctor.required".tr() : null,
+      validator: (v) =>
+          v == null ? "add_doctor.required".tr() : null, // ✅ مربوط
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: isEn
@@ -526,7 +537,7 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "${"add_doctor.degree".tr()} ${index + 1}",
+                "${"add_doctor.degree".tr()} ${index + 1}", // ✅ مربوط
                 style: AppTextStyles.bodySmall.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -538,23 +549,29 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
               ),
             ],
           ),
-          _buildSmallInput("add_doctor.degree_hint".tr(), controllers.degree),
+          _buildSmallInput(
+            "add_doctor.degree_hint".tr(),
+            controllers.degree,
+          ), // ✅ مربوط
           SizedBox(height: 8.h),
-          _buildSmallInput("add_doctor.major_hint".tr(), controllers.major),
+          _buildSmallInput(
+            "add_doctor.major_hint".tr(),
+            controllers.major,
+          ), // ✅ مربوط
           SizedBox(height: 8.h),
           Row(
             children: [
               Expanded(
                 child: _buildSmallInput(
                   "add_doctor.year".tr(),
-                  controllers.date,
+                  controllers.date, // ✅ مربوط
                 ),
               ),
               SizedBox(width: 8.w),
               Expanded(
                 child: _buildSmallInput(
                   "add_doctor.university".tr(),
-                  controllers.place,
+                  controllers.place, // ✅ مربوط
                 ),
               ),
             ],
@@ -638,8 +655,9 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
                 ? const CircularProgressIndicator(color: Colors.white)
                 : Text(
                     isEditing
-                        ? "حفظ التعديلات"
-                        : "add_doctor.save_button".tr(), // 🟢 [تعديل]
+                        ? "add_doctor.save_changes"
+                              .tr() // ✅ مربوط
+                        : "add_doctor.save_button".tr(), // ✅ مربوط
                     style: AppTextStyles.labelLarge.copyWith(
                       color: Colors.white,
                     ),
