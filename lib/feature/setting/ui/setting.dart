@@ -42,10 +42,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
+  void _onSavePressed(UserSettingsModel? user) {
+    if (user != null) {
+      // ✅ استخدام copyWith لتعديل الحقول المطلوبة فقط
+      final updatedData = user.copyWith(
+        addressAr: addressController.text.trim(),
+        phone: phone1Controller.text.trim(),
+      );
+
+      context.read<SettingCubit>().updateUserData(
+        user: updatedData,
+        role: widget.role,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    // ✅ معرفة لغة التطبيق الحالية لعرض الاسم المناسب
+    final isArabic = context.locale.languageCode == 'ar';
 
     return BlocListener<SettingCubit, SettingState>(
       listener: (context, state) {
@@ -63,9 +80,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           );
         } else if (state is SettingError) {
+          // ✅ ترجمة أكواد الأخطاء القادمة من الـ Cubit
+          String errorMessage = state.message;
+          if (state.message == "ERROR_USER_NOT_FOUND") {
+            errorMessage = "settings.error_user_not_found".tr();
+          } else if (state.message == "ERROR_DB_CONNECTION" ||
+              state.message == "ERROR_DB_UPDATE") {
+            errorMessage = "settings.error_db".tr();
+          } else if (state.message == "ERROR_UNKNOWN") {
+            errorMessage = "settings.error_unknown".tr();
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.message),
+              content: Text(errorMessage), // ✅ عرض الرسالة المترجمة
               backgroundColor: colorScheme.error,
             ),
           );
@@ -110,7 +138,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           context: context,
                           label: 'settings.username'.tr(),
                           icon: Icons.person_outline,
-                          initialValue: user?.username ?? "...",
+                          // ✅ عرض الاسم بناءً على لغة التطبيق الحالية
+                          initialValue: isArabic
+                              ? (user?.nameAr ?? "...")
+                              : (user?.nameEn ?? "..."),
                           enabled: false,
                         ),
                         _buildInputField(
@@ -156,25 +187,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
-  }
-
-  void _onSavePressed(UserSettingsModel? user) {
-    if (user != null) {
-      final updatedData = UserSettingsModel(
-        uid: user.uid,
-        username: user.username,
-        email: user.email,
-        addressAr: addressController.text,
-        addressEn: user.addressEn,
-        phone: phone1Controller.text,
-        profileImage: user.profileImage,
-      );
-
-      context.read<SettingCubit>().updateUserData(
-        user: updatedData,
-        role: widget.role,
-      );
-    }
   }
 
   Widget _buildHeader(BuildContext context, String imageUrl) {

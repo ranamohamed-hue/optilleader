@@ -1,4 +1,4 @@
-class AdminProfileModel {
+ class AdminProfileModel {
   final String uid;
   final String email;
   final String nameAr;
@@ -12,7 +12,7 @@ class AdminProfileModel {
   final bool isActive;
   final String role;
   final bool isFirstLogin;
-  final String nationalId; // 🟢 [إضافة] الرقم القومي
+  final String nationalId; 
   final String employeeId;
   const AdminProfileModel({
     required this.uid,
@@ -25,7 +25,7 @@ class AdminProfileModel {
     required this.addressAr,
     required this.addressEn,
     required this.profileImage,
-    this.nationalId = '', // 🟢 [إضافة]
+    this.nationalId = '', 
     this.employeeId = '',
     this.isActive = true,
     this.role = 'admin',

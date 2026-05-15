@@ -10,4 +10,5 @@ abstract class DatabaseAdminRepo {
     required String addressEn,
   });
   Future<Either<String, Unit>> updateProfileImage(String uid, String imageUrl);
+  Future<Map<String, int>> getUserCounts(); 
 }

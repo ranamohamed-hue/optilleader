@@ -20,4 +20,8 @@ abstract class DoctorRepo {
   // تحديث الصورة الشخصية مباشرة}
   Future<Either<String, Unit>> updateDoctorImage(String uid, String imageUrl);
   Future<Either<String, Unit>> deleteDoctorAccount(String uid);
+  Future<Either<String, Unit>> updateDoctorProfileData(
+    String uid,
+    Map<String, dynamic> updatedFields,
+  );
 }

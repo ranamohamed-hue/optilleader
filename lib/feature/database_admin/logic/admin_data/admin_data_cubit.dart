@@ -14,12 +14,24 @@ class AdminDataCubit extends Cubit<AdminDataState> {
   AdminDataCubit(this.adminRepo) : super(AdminInitial());
 
   // جلب بيانات أدمن معين
+  // جلب بيانات أدمن معين
   Future<void> getAdminProfile(String uid) async {
     emit(AdminLoading());
     final result = await adminRepo.getAdminProfile(uid);
+    
     result.fold(
       (error) => emit(AdminError(error: error)),
-      (admin) => emit(AdminLoaded(admin: admin)),
+      (admin) async {
+        // ✅ بعد ما نجحنا في جلب البروفايل، نجلب العدادات
+        final counts = await adminRepo.getAdminDashboardCounts();
+        
+        // ✅ نemit حالة النجاح بالبروفايل والعدادات
+        emit(AdminLoaded(
+          admin: admin,
+          newRequestsCount: counts['newRequests'] ?? 0,
+          underReviewCount: counts['underReview'] ?? 0,
+        ));
+      },
     );
   }
 
@@ -91,7 +103,6 @@ class AdminDataCubit extends Cubit<AdminDataState> {
     } catch (e) {
       emit(AdminError(error: e.toString()));
     } finally {
-      // ✅ 4. تسجيل الخروج وتنظيف الـ Auth الثانوي بالكامل
       try {
         final secondaryApp = Firebase.app('SecondaryApp');
         final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);

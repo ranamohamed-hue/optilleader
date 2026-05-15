@@ -7,9 +7,20 @@ abstract class DatabaseAdminState {}
 
 class DatabaseAdminInitial extends DatabaseAdminState {}
 class DatabaseAdminLoading extends DatabaseAdminState {}
+
 class DatabaseAdminSuccess extends DatabaseAdminState {
   final DatabaseAdminProfileModel profile;
-  DatabaseAdminSuccess(this.profile);
+  
+  final int doctorsCount;
+  final int judgesCount;
+  final int adminsCount;
+
+  DatabaseAdminSuccess(
+    this.profile, {
+    this.doctorsCount = 0, 
+    this.judgesCount = 0,
+    this.adminsCount = 0,
+  });
 }
 class DatabaseAdminError extends DatabaseAdminState {
   final String message;

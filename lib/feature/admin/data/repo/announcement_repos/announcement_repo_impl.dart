@@ -1,29 +1,31 @@
+import 'package:dartz/dartz.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 
-// تعريف الـ Interface (عشان لو حبيتي تعملي Unit Testing بعدين)
 abstract class IAnnouncementRepository {
-  Future<void> addAnnouncement(AnnouncementModel announcement);
+  Future<Either<String, Unit>> addAnnouncement(AnnouncementModel announcement);
   Stream<List<AnnouncementModel>> getAnnouncements();
-  Future<void> updateAnnouncement(AnnouncementModel announcement);
-  Future<void> deleteAnnouncement(String id);
+  Future<Either<String, Unit>> updateAnnouncement(
+    AnnouncementModel announcement,
+  );
+  Future<Either<String, Unit>> deleteAnnouncement(String id);
 }
 
 class AnnouncementRepositoryImpl implements IAnnouncementRepository {
   final FirebaseFirestore _firestore;
-
-  // Constructor بياخد instance من الفايربيز
   AnnouncementRepositoryImpl(this._firestore);
 
-  // الكوليكشن الأساسي
   CollectionReference get _collection => _firestore.collection('announcements');
 
   @override
-  Future<void> addAnnouncement(AnnouncementModel announcement) async {
+  Future<Either<String, Unit>> addAnnouncement(
+    AnnouncementModel announcement,
+  ) async {
     try {
       await _collection.add(announcement.toMap());
+      return const Right(unit);
     } catch (e) {
-      throw Exception("فشل في إضافة الإعلان: $e");
+      return const Left("ERROR_ADD_ANNOUNCEMENT"); // ✅ استبدال النص العربي
     }
   }
 
@@ -42,24 +44,27 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
   }
 
   @override
-  Future<void> updateAnnouncement(AnnouncementModel announcement) async {
+  Future<Either<String, Unit>> updateAnnouncement(
+    AnnouncementModel announcement,
+  ) async {
     try {
       if (announcement.id != null) {
         await _collection.doc(announcement.id).update(announcement.toMap());
-      } else {
-        throw Exception("ID الإعلان غير موجود");
+        return const Right(unit);
       }
+      return const Left("ERROR_ANNOUNCEMENT_NO_ID");
     } catch (e) {
-      throw Exception("فشل في تحديث الإعلان: $e");
+      return const Left("ERROR_UPDATE_ANNOUNCEMENT");
     }
   }
 
   @override
-  Future<void> deleteAnnouncement(String id) async {
+  Future<Either<String, Unit>> deleteAnnouncement(String id) async {
     try {
       await _collection.doc(id).delete();
+      return const Right(unit);
     } catch (e) {
-      throw Exception("فشل في حذف الإعلان: $e");
+      return const Left("ERROR_DELETE_ANNOUNCEMENT");
     }
   }
 }

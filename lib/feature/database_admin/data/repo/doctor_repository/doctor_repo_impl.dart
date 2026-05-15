@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// ✅ المسار الصحيح الموحد
 import 'package:optialeader/feature/database_admin/data/repo/doctor_repository/doctor_repo.dart';
 import 'package:dartz/dartz.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
@@ -94,10 +93,8 @@ class DoctorRepoImpl extends DoctorRepo {
     String storagePath,
   ) async {
     try {
-      // التصحيح الثاني: استخدام firebaseStorage للرفع
       final ref = firebaseStorage.ref().child(storagePath);
       await ref.putFile(file);
-
       final url = await ref.getDownloadURL();
       return right(url);
     } catch (e) {
@@ -112,7 +109,7 @@ class DoctorRepoImpl extends DoctorRepo {
   ) async {
     try {
       await _usersCollection.doc(uid).update({
-        'contact.profile_image_url': imageUrl,
+        'identity.profile_image_url': imageUrl,
       });
       return right(unit);
     } catch (e) {
@@ -127,6 +124,21 @@ class DoctorRepoImpl extends DoctorRepo {
       return right(unit);
     } catch (e) {
       return left("فشل حذف الحساب: ${e.toString()}");
+    }
+  }
+
+  // ✅ [الإضافة الجديدة] دالة تحديث شاملة للدكتور (لما الدكتور يكمل بياناته)
+  @override
+  
+  Future<Either<String, Unit>> updateDoctorProfileData(
+    String uid,
+    Map<String, dynamic> updatedFields,
+  ) async {
+    try {
+      await _usersCollection.doc(uid).update(updatedFields);
+      return right(unit);
+    } catch (e) {
+      return left("فشل تحديث بيانات الدكتور: ${e.toString()}");
     }
   }
 }

@@ -178,7 +178,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final statusColor = announcement.getStatusColor();
+    final statusColor = announcement.getStatusColor(context);
 
     final formattedDeadline = DateFormat(
       'EEEE, d MMMM yyyy',
@@ -191,7 +191,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:go_router/go_router.dart'; // ✅
+import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_state.dart';
 import 'package:optialeader/feature/admin/ui/announces/announce_dateail.dart';
-import '../../data/model/announcement_model.dart';
 
 class AnnouncementsPage extends StatelessWidget {
   const AnnouncementsPage({super.key});
@@ -15,7 +16,6 @@ class AnnouncementsPage extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       body: BlocBuilder<AnnouncementCubit, AnnouncementState>(
         builder: (context, state) {
           return CustomScrollView(
@@ -42,46 +42,17 @@ class AnnouncementsPage extends StatelessWidget {
         ),
       ];
     }
-
     if (state is AnnouncementLoaded) {
       if (state.announcements.isEmpty) {
-        // تم الربط مع announce.no_data
         return [_buildEmptyState("announce.no_data".tr())];
       }
       return [_buildAnnouncementsList(state.announcements)];
     }
-
     if (state is AnnouncementError) {
-      return [_buildErrorState(state.message)];
+      return [_buildErrorState(state.message)]; // الـ message هيكون Error Code
     }
-
-    if (state is AnnouncementActionSuccess) {
-      return [
-        SliverFillRemaining(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.check_circle_outline,
-                  size: 60,
-                  color: Colors.green,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  state.message,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ];
-    }
-
     return [
       SliverFillRemaining(
-        // تم الربط مع announce.preparing
         child: Center(child: Text("announce.preparing".tr())),
       ),
     ];
@@ -104,12 +75,7 @@ class AnnouncementsPage extends StatelessWidget {
         background: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                colorScheme.primary,
-                colorScheme.primary.withOpacity(0.8),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              colors: [colorScheme.primary, colorScheme.primaryContainer],
             ),
           ),
           child: Padding(
@@ -122,8 +88,8 @@ class AnnouncementsPage extends StatelessWidget {
                     color: Colors.white,
                     size: 20,
                   ),
-                  onPressed: () => Navigator.pop(context),
-                ),
+                  onPressed: () => context.pop(),
+                ), // ✅ GoRouter
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -131,7 +97,6 @@ class AnnouncementsPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        // تم الربط مع announce.title
                         "announce.title".tr(),
                         style: theme.textTheme.headlineSmall?.copyWith(
                           color: Colors.white,
@@ -139,7 +104,6 @@ class AnnouncementsPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        // تم الربط مع announce.subtitle
                         "announce.subtitle".tr(),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.secondary.withOpacity(0.9),
@@ -174,12 +138,12 @@ class AnnouncementsPage extends StatelessWidget {
     AnnouncementModel announcement,
   ) {
     final theme = Theme.of(context);
-    final statusColor = announcement.getStatusColor();
+    final statusColor = announcement.getStatusColor(context); // ✅ بيوخد Context
 
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor, // ✅ من الثيم
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
@@ -193,15 +157,10 @@ class AnnouncementsPage extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    AnnouncementDetailsPage(announcement: announcement),
-              ),
-            );
-          },
+          onTap: () => context.push(
+            '/admin/announcementDetails',
+            extra: announcement,
+          ), // ✅ GoRouter
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: Column(
@@ -235,7 +194,6 @@ class AnnouncementsPage extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.grey[600],
-                    height: 1.4,
                   ),
                 ),
                 const Padding(
@@ -247,8 +205,7 @@ class AnnouncementsPage extends StatelessWidget {
                     Icon(Icons.group_outlined, size: 18, color: statusColor),
                     const SizedBox(width: 6),
                     Text(
-                      // الربط مع عدد المتقدمين
-                      "${announcement.applicants} ${'announce.applicant_unit'.tr()}",
+                      "${announcement.applicants} ${'announce.details.person_unit'.tr()}",
                       style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -264,10 +221,8 @@ class AnnouncementsPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        // الربط مع حالة الإعلان (active/closed/pending)
                         "announce.${announcement.status.toLowerCase()}"
-                            .tr()
-                            .toUpperCase(),
+                            .tr(), // ✅ ترجمة الحالة
                         style: TextStyle(
                           color: statusColor,
                           fontSize: 11,
@@ -285,57 +240,51 @@ class AnnouncementsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(String msg) {
-    return SliverFillRemaining(
+  Widget _buildEmptyState(String msg) => SliverFillRemaining(
+    child: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inbox_rounded, size: 60, color: Colors.grey[300]),
+          const SizedBox(height: 10),
+          Text(msg, style: const TextStyle(color: Colors.grey)),
+        ],
+      ),
+    ),
+  );
+
+  Widget _buildErrorState(String errorCode) => SliverFillRemaining(
+    child: Padding(
+      padding: const EdgeInsets.all(20),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox_rounded, size: 60, color: Colors.grey[300]),
-            const SizedBox(height: 10),
-            Text(msg, style: const TextStyle(color: Colors.grey)),
+            const Icon(
+              Icons.wifi_off_rounded,
+              size: 60,
+              color: Colors.redAccent,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              errorCode.tr(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.redAccent),
+            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildErrorState(String message) {
-    return SliverFillRemaining(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.wifi_off_rounded,
-                size: 60,
-                color: Colors.redAccent,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.redAccent,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+    ),
+  ); // ✅ ترجمة كود الخطأ
 
   Widget _buildFAB(BuildContext context, ColorScheme colorScheme) {
     return FloatingActionButton.extended(
-      onPressed: () {},
+      onPressed: () => context.push(
+        '/admin/editAnnountmentPage',
+      ), // ✅ GoRouter (مسار الإضافة)
       backgroundColor: colorScheme.primary,
       icon: Icon(Icons.add_rounded, color: colorScheme.secondary),
       label: Text(
-        // تم الربط مع announce.add_button
         "announce.add_button".tr(),
         style: const TextStyle(
           fontWeight: FontWeight.bold,

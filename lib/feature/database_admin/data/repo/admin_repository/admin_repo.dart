@@ -9,4 +9,6 @@ abstract class AdminRepo {
 
   Future<Either<String, Unit>> updateAdminImage(String uid, String imageUrl);
   Future<Either<String, Unit>> deleteAdminAccount(String uid);
+    Future<Map<String, int>> getAdminDashboardCounts(); 
+
 }

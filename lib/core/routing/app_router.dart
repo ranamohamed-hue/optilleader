@@ -11,8 +11,8 @@ import 'package:optialeader/feature/database_admin/routing/database_admin_routes
 import 'package:optialeader/feature/judge/routing/judge_rouring.dart';
 import 'package:optialeader/feature/judge/ui/screens/judge.dart';
 import 'package:optialeader/feature/setting/ui/setting.dart';
-import 'package:optialeader/feature/user/routing/user_routing.dart';
-import 'package:optialeader/feature/user/ui/screens/dashboard_user.dart';
+import 'package:optialeader/feature/doctor/routing/user_routing.dart';
+import 'package:optialeader/feature/doctor/ui/screens/dashboard_user.dart';
 import 'package:optialeader/feature/auth/data/models/user_model.dart';
 import 'package:optialeader/feature/database_admin/ui/screens/database_admin_dashboard.dart';
 import 'routes.dart';

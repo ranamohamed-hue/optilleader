@@ -1,0 +1,49 @@
+{
+  "notifications": {
+    "title": "Notifications",
+    "empty_state": "No notifications yet",
+    "error_fetching": "An error occurred while fetching notifications",
+    
+    "user_login_title": "Login",
+    "user_login_message": "{userName} has logged in",
+    
+    "user_logout_title": "Logout",
+    "user_logout_message": "{userName} has logged out",
+    
+    "profile_updated_title": "Profile Updated",
+    "profile_updated_message": "{userName} has updated their contact information",
+    
+    "account_suspended_title": "Account Suspended",
+    "account_suspended_message": "The account of {userName} has been suspended",
+    
+    "welcome_title": "Welcome!",
+    "welcome_admin_message": "Welcome to the Admin system",
+    "welcome_doctor_message": "Welcome to the Doctor system",
+    "welcome_judge_message": "Welcome to the Judge system",
+    
+    "announcement_created_title": "New Announcement",
+    "announcement_created_message": "A new announcement has been added: {announcementTitle}",
+    
+    "announcement_expired_title": "Announcement Expired",
+    "announcement_expired_message": "The announcement has expired: {announcementTitle}",
+    
+    "new_doctor_request_title": "New Request",
+    "new_doctor_request_message": "A new request has been received from a doctor",
+    
+    "judge_completed_title": "Arbitration Completed",
+    "judge_completed_message": "The judge has completed the arbitration request",
+    
+    "new_competition_title": "New Competition",
+    "new_competition_message": "A new competition has been added: {competitionName}",
+    
+    "competition_result_title": "Competition Result",
+    "competition_result_message": "The result for competition: {competitionName} is out",
+    
+    "request_status_title": "Request Update",
+    "request_status_accepted_message": "Your request has been accepted",
+    "request_status_rejected_message": "Your request has been rejected",
+    
+    "arbitration_request_title": "Arbitration Request",
+    "arbitration_request_message": "You have a new arbitration request from the administration"
+  }
+}

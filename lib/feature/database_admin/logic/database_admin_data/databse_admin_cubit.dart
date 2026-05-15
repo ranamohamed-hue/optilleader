@@ -6,24 +6,29 @@ class DatabseAdminCubit extends Cubit<DatabaseAdminState> {
   final DatabaseAdminRepo _databaseAdminRepo;
   DatabseAdminCubit(this._databaseAdminRepo) : super(DatabaseAdminInitial());
 
-  Future<void> getProfile(String uid) async {
+   Future<void> getProfile(String uid) async {
     emit(DatabaseAdminLoading());
-    print('🟢 Cubit: Fetching profile for UID: $uid'); // ✅ تم إرجاع print
 
     final result = await _databaseAdminRepo.getAdminProfile(uid);
 
     result.fold(
       (error) {
-        print('🔴 Cubit: Error fetching profile: $error'); // ✅ تم إرجاع print
         emit(DatabaseAdminError(error));
       },
-      (profile) {
-        print('🟢 Cubit: Profile fetched successfully! Name: ${profile.nameAr}'); // ✅ تم إرجاع print
-        emit(DatabaseAdminSuccess(profile));
+      (profile) async {
+        // ✅ بعد ما نجحنا في جلب البروفايل، نجلب العدادات
+        final counts = await _databaseAdminRepo.getUserCounts();
+        
+        // ✅ نemit حالة النجاح بالبروفايل والعدادات
+        emit(DatabaseAdminSuccess(
+          profile,
+          doctorsCount: counts['doctors'] ?? 0,
+          judgesCount: counts['judges'] ?? 0,
+          adminsCount: counts['admins'] ?? 0,
+        ));
       },
     );
   }
-
   Future<void> updateInfo({
     required String uid,
     required String phone,

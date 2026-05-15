@@ -12,38 +12,62 @@ class SearchRepo {
     String? role, // عشان يفلتر النتايج (مثلاً دكاترة بس)
   }) async {
     try {
-      QuerySnapshot snapshot;
-
       if (searchField == 'employee_id') {
-        // البحث بالرقم الوظيفي (مطابقة تامة)
+        // 1. البحث بالرقم الوظيفي (مطابقة تامة)
         var queryRef = _firestore
             .collection('users')
-            .where('employee_id', isEqualTo: query);
+            .where('employeeId', isEqualTo: query); // تأكد أن اسم الحقل في الفايرستور employeeId أو employee_id
             
         if (role != null) {
           queryRef = queryRef.where('role', isEqualTo: role);
         }
-        snapshot = await queryRef.get();
+        final snapshot = await queryRef.get();
+        final users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+        return Right(users);
 
       } else {
-        // البحث بالاسم (Prefix Search)
-        var queryRef = _firestore
+        // 2. البحث بالاسم (Prefix Search)
+        
+        // أ. بحث في حقل الاسم العربي
+        var arabicQueryRef = _firestore
             .collection('users')
-            .where('username', isGreaterThanOrEqualTo: query)
-            .where('username', isLessThanOrEqualTo: '$query\uf8ff');
+            .where('nameAr', isGreaterThanOrEqualTo: query)
+            .where('nameAr', isLessThanOrEqualTo: '$query\uf8ff');
             
         if (role != null) {
-          queryRef = queryRef.where('role', isEqualTo: role);
+          arabicQueryRef = arabicQueryRef.where('role', isEqualTo: role);
         }
-        snapshot = await queryRef.get();
+        final arabicSnapshot = await arabicQueryRef.get();
+
+        // ب. بحث في حقل الاسم الإنجليزي
+        var englishQueryRef = _firestore
+            .collection('users')
+            .where('nameEn', isGreaterThanOrEqualTo: query)
+            .where('nameEn', isLessThanOrEqualTo: '$query\uf8ff');
+            
+        if (role != null) {
+          englishQueryRef = englishQueryRef.where('role', isEqualTo: role);
+        }
+        final englishSnapshot = await englishQueryRef.get();
+
+        // ج. دمج النتائج وإزالة التكرار (باستخدام UID كمعرف فريد)
+        final Map<String, UserModel> usersMap = {};
+
+        for (var doc in arabicSnapshot.docs) {
+          final user = UserModel.fromFirestore(doc);
+          usersMap[user.uid] = user; // إضافة النتائج العربية
+        }
+        for (var doc in englishSnapshot.docs) {
+          final user = UserModel.fromFirestore(doc);
+          usersMap[user.uid] = user; // إضافة النتائج الإنجليزية (لو مكرر هيستبدله)
+        }
+
+        final users = usersMap.values.toList();
+        return Right(users);
       }
-
-      final users = snapshot.docs
-          .map((doc) => UserModel.fromFirestore(doc))
-          .toList();
-
-      return Right(users);
     } on FirebaseException catch (e) {
+      // ⚠️ ملاحظة هامة جداً: إذا ظهر لك خطأ يطلب منك إنشاء (Index) في الفايرستور،
+      // اذهب للخطأ في الـ Console واضغط على الرابط الذي سيظهر لإنشائه تلقائياً.
       return Left("خطأ في البحث: ${e.message}");
     } catch (e) {
       return Left("حدث خطأ غير متوقع: ${e.toString()}");

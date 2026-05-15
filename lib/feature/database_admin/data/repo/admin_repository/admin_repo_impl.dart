@@ -16,12 +16,13 @@ class AdminRepoImpl extends AdminRepo {
           .set(admin.toMap(), SetOptions(merge: true));
       return right(unit);
     } catch (e) {
-      return left("فشل حفظ بيانات الأدمن: ${e.toString()}");
+      return left("ERROR_ADMIN_SAVE"); // ✅ استبدال النص العربي
     }
   }
 
   @override
-  Future<Either<String, AdminProfileModel?>> getAdminProfile(String uid) async {
+  // ✅ [تعديل] إزالة علامة الـ ? عشان نرجع كائن صحيح أو خطأ
+  Future<Either<String, AdminProfileModel>> getAdminProfile(String uid) async {
     try {
       final doc = await _usersCollection.doc(uid).get();
       if (doc.exists && doc.data() != null) {
@@ -32,9 +33,9 @@ class AdminRepoImpl extends AdminRepo {
           ),
         );
       }
-      return right(null);
+      return left("ERROR_ADMIN_NOT_FOUND"); // ✅ لو مش موجود يبقى خطأ
     } catch (e) {
-      return left("فشل جلب بيانات الأدمن: ${e.toString()}");
+      return left("ERROR_DB_FETCH"); // ✅ استبدال النص العربي
     }
   }
 
@@ -61,7 +62,7 @@ class AdminRepoImpl extends AdminRepo {
       await _usersCollection.doc(uid).update({'is_active': isActive});
       return right(unit);
     } catch (e) {
-      return left("فشل تحديث حالة الحساب: ${e.toString()}");
+      return left("ERROR_ADMIN_STATUS_UPDATE"); // ✅
     }
   }
 
@@ -76,7 +77,7 @@ class AdminRepoImpl extends AdminRepo {
       });
       return right(unit);
     } catch (e) {
-      return left("فشل تحديث صورة الأدمن: ${e.toString()}");
+      return left("ERROR_ADMIN_IMAGE_UPDATE"); // ✅
     }
   }
 
@@ -86,7 +87,39 @@ class AdminRepoImpl extends AdminRepo {
       await _usersCollection.doc(uid).delete();
       return right(unit);
     } catch (e) {
-      return left("فشل حذف حساب الأدمن: ${e.toString()}");
+      return left("ERROR_ADMIN_DELETE"); // ✅
     }
   }
+  @override
+    // ✅ [إضافة] دالة لجلب عدد الطلبات للداشبورد
+  Future<Map<String, int>> getAdminDashboardCounts() async {
+    try {
+      int newRequestsCount = 0;
+      int underReviewCount = 0;
+
+      // 1. عدد الطلبات الجديدة (بتاعة الدكاترة)
+      // ⚠️ ملاحظة: تأكدي إن اسم الـ Collection هو 'requests' أو 'orders' زي ما عندك في الفايرستور
+      final newRequestsQuery = _firestore
+          .collection('requests')
+          .where('status', isEqualTo: 'new'); // ⚠️ تأكدي من قيمة الـ status
+      final newRequestsSnapshot = await newRequestsQuery.count().get();
+      newRequestsCount = newRequestsSnapshot.count ?? 0;
+
+      // 2. عدد الطلبات تحت المراجعة (اللي المحكمين شغالين عليها)
+      final underReviewQuery = _firestore
+          .collection('requests')
+          .where('status', isEqualTo: 'under_review'); // ⚠️ تأكدي من قيمة الـ status
+      final underReviewSnapshot = await underReviewQuery.count().get();
+      underReviewCount = underReviewSnapshot.count ?? 0;
+
+      return {
+        'newRequests': newRequestsCount,
+        'underReview': underReviewCount,
+      };
+    } catch (e) {
+      // لو حصل خطأ، نرجع الأصفار عشان التطبيق مايقفش
+      return {'newRequests': 0, 'underReview': 0};
+    }
+  }
+
 }

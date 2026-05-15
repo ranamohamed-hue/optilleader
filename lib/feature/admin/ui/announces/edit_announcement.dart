@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:go_router/go_router.dart'; 
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart';
-
+import 'package:intl/intl.dart'; 
 class EditAnnouncementPage extends StatefulWidget {
-  final AnnouncementModel announcement;
+  final AnnouncementModel?
+  announcement; // ✅ Nullable عشان نستخدمها في الإضافة والتعديل
 
-  const EditAnnouncementPage({super.key, required this.announcement});
+  const EditAnnouncementPage({super.key, this.announcement});
 
   @override
   State<EditAnnouncementPage> createState() => _EditAnnouncementPageState();
@@ -23,14 +25,16 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.announcement.title);
-    _bodyController = TextEditingController(
-      text: widget.announcement.description,
+    // لو فيه announcement يبقى تعديل، لو مفيش يبقى إضافة جديدة
+    _titleController = TextEditingController(
+      text: widget.announcement?.title ?? '',
     );
-    _selectedDeadline = widget.announcement.deadline;
-    _selectedStatus = widget.announcement.status;
+    _bodyController = TextEditingController(
+      text: widget.announcement?.description ?? '',
+    );
+    _selectedDeadline = widget.announcement?.deadline ?? DateTime.now();
+    _selectedStatus = widget.announcement?.status ?? 'Active';
 
-    // تهيئة التاريخ بناءً على لغة الجهاز (عربي أو إنجليزي)
     _dateController = TextEditingController(
       text: DateFormat.yMd(
         context.locale.languageCode,
@@ -48,21 +52,17 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ شيلنا الألوان الثابتة وخديناها من الثيم
     final theme = Theme.of(context);
-    final primaryNavy = const Color(0xFF0A1D37); // الكحلي الملكي
-    final accentGold = const Color(0xFFC5A358); // الذهبي
-    final softBeige = const Color(0xFFF8F5F0); // خلفية بيج فاتحة جداً
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: softBeige,
       body: CustomScrollView(
         slivers: [
-          // AppBar بتصميم دائري وألوان ملكية
           SliverAppBar(
             expandedHeight: 100.0,
             pinned: true,
-            backgroundColor: primaryNavy,
-            elevation: 8,
+            backgroundColor: colorScheme.primary,
             centerTitle: true,
             leading: IconButton(
               icon: const Icon(
@@ -70,8 +70,8 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
                 color: Colors.white,
                 size: 20,
               ),
-              onPressed: () => Navigator.pop(context),
-            ),
+              onPressed: () => context.pop(),
+            ), // ✅ GoRouter
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
             ),
@@ -80,22 +80,20 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
               title: Text(
                 "edit_announcement.title".tr(),
                 style: TextStyle(
-                  color: accentGold,
+                  color: colorScheme.secondary,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  letterSpacing: 0.5,
                 ),
               ),
             ),
           ),
-
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface, // ✅ من الثيم
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
@@ -108,42 +106,29 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // عنوان الإعلان
                     _buildFieldLabel(
                       "edit_announcement.field_title".tr(),
                       Icons.title_rounded,
-                      accentGold,
-                      primaryNavy,
+                      colorScheme,
                     ),
                     _buildCustomTextField(
                       _titleController,
-                      accentGold,
-                      softBeige,
-                      primaryNavy,
+                      colorScheme,
                       hint: "edit_announcement.hint_title".tr(),
                     ),
-
                     const SizedBox(height: 25),
-
-                    // وصف الإعلان
                     _buildFieldLabel(
                       "edit_announcement.field_desc".tr(),
                       Icons.subject_rounded,
-                      accentGold,
-                      primaryNavy,
+                      colorScheme,
                     ),
                     _buildCustomTextField(
-                      _bodyController,
-                      accentGold,
-                      softBeige,
-                      primaryNavy,
+                      _bodyController, // ✅ الصح: كنترولر الوصف
+                      colorScheme,
                       hint: "edit_announcement.hint_desc".tr(),
                       maxLines: 4,
                     ),
-
                     const SizedBox(height: 25),
-
-                    // التاريخ والحالة في صف واحد
                     Row(
                       children: [
                         Expanded(
@@ -153,14 +138,9 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
                               _buildFieldLabel(
                                 "edit_announcement.field_date".tr(),
                                 Icons.calendar_month_rounded,
-                                accentGold,
-                                primaryNavy,
+                                colorScheme,
                               ),
-                              _buildDateField(
-                                accentGold,
-                                softBeige,
-                                primaryNavy,
-                              ),
+                              _buildDateField(colorScheme),
                             ],
                           ),
                         ),
@@ -172,56 +152,42 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
                               _buildFieldLabel(
                                 "edit_announcement.field_status".tr(),
                                 Icons.info_outline_rounded,
-                                accentGold,
-                                primaryNavy,
+                                colorScheme,
                               ),
-                              _buildStatusDropdown(
-                                accentGold,
-                                softBeige,
-                                primaryNavy,
-                              ),
+                              _buildStatusDropdown(colorScheme),
                             ],
                           ),
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 40),
-
-                    // أزرار التحكم
                     Row(
                       children: [
                         Expanded(
                           child: TextButton(
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: () => context.pop(),
                             child: Text(
                               "common.cancel".tr(),
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(color: Colors.grey[500]),
                             ),
                           ),
-                        ),
+                        ), // ✅ GoRouter
                         const SizedBox(width: 10),
                         Expanded(
                           flex: 2,
                           child: ElevatedButton(
                             onPressed: () => _handleUpdate(context),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryNavy,
-                              foregroundColor: accentGold,
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: colorScheme.secondary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              elevation: 4,
                             ),
                             child: Text(
                               "edit_announcement.save_button".tr(),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 16,
                               ),
                             ),
                           ),
@@ -238,21 +204,23 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
     );
   }
 
-  // --- Widgets المساعدة مع دعم الـ Localization ---
-
-  Widget _buildFieldLabel(String label, IconData icon, Color gold, Color navy) {
+  Widget _buildFieldLabel(
+    String label,
+    IconData icon,
+    ColorScheme colorScheme,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, left: 4, right: 4),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: gold),
+          Icon(icon, size: 18, color: colorScheme.secondary),
           const SizedBox(width: 8),
           Text(
             label,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
-              color: navy,
+              color: colorScheme.primary,
             ),
           ),
         ],
@@ -262,35 +230,33 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
 
   Widget _buildCustomTextField(
     TextEditingController controller,
-    Color gold,
-    Color beige,
-    Color navy, {
+    ColorScheme colorScheme, {
     int maxLines = 1,
     required String hint,
   }) {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      style: TextStyle(color: navy, fontSize: 14),
+      style: TextStyle(color: colorScheme.primary),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
         filled: true,
-        fillColor: beige.withOpacity(0.5),
-        contentPadding: const EdgeInsets.all(16),
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(
+          0.3,
+        ), // ✅ من الثيم
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: gold, width: 1.5),
+          borderSide: BorderSide(color: colorScheme.secondary, width: 1.5),
         ),
       ),
     );
   }
 
-  Widget _buildDateField(Color gold, Color beige, Color navy) {
+  Widget _buildDateField(ColorScheme colorScheme) {
     return InkWell(
       onTap: () async {
         DateTime? pickedDate = await showDatePicker(
@@ -311,45 +277,56 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: beige.withOpacity(0.5),
+          color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               _dateController.text,
-              style: TextStyle(fontSize: 13, color: navy),
+              style: TextStyle(fontSize: 13, color: colorScheme.primary),
             ),
-            Icon(Icons.calendar_today_rounded, size: 16, color: gold),
+            Icon(
+              Icons.calendar_today_rounded,
+              size: 16,
+              color: colorScheme.secondary,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatusDropdown(Color gold, Color beige, Color navy) {
+  Widget _buildStatusDropdown(ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: beige.withOpacity(0.5),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedStatus,
           isExpanded: true,
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: gold),
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: colorScheme.secondary,
+          ),
           style: TextStyle(
-            color: navy,
+            color: colorScheme.primary,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
           onChanged: (val) => setState(() => _selectedStatus = val!),
-          items: ['Active', 'Pending', 'Closed']
-              .map((v) => DropdownMenuItem(value: v, child: Text(v.tr())))
+          // ✅ الـ Status بيتحول لمفتاح ترجمة تلقائياً
+          items: AnnouncementModel.statusList
+              .map(
+                (v) =>
+                    DropdownMenuItem(value: v, child: Text("announce.$v".tr())),
+              )
               .toList(),
         ),
       ),
@@ -357,21 +334,32 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
   }
 
   void _handleUpdate(BuildContext context) {
-    final updatedModel = widget.announcement.copyWith(
-      title: _titleController.text,
-      description: _bodyController.text,
-      status: _selectedStatus,
-      deadline: _selectedDeadline,
-    );
+    // لو التعديل
+    if (widget.announcement != null) {
+      final updatedModel = widget.announcement!.copyWith(
+        title: _titleController.text,
+        description: _bodyController.text,
+        status: _selectedStatus,
+        deadline: _selectedDeadline,
+      );
+      context.read<AnnouncementCubit>().updateAnnouncement(updatedModel);
+    } else {
+      // لو إضافة جديدة
+      final newAnnouncement = AnnouncementModel(
+        title: _titleController.text,
+        description: _bodyController.text,
+        status: _selectedStatus,
+        deadline: _selectedDeadline,
+        createdAt: DateTime.now(),
+      );
+      context.read<AnnouncementCubit>().addAnnouncement(newAnnouncement);
+    }
 
-    context.read<AnnouncementCubit>().updateAnnouncement(updatedModel);
-    Navigator.pop(context);
-
+    context.pop(); // ✅ GoRouter
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("edit_announcement.success_msg".tr()),
         backgroundColor: Colors.green[700],
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }

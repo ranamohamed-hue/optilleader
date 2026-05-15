@@ -1,11 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
 import 'package:optialeader/feature/database_admin/data/repo/doctor_repository/doctor_repo.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
-import 'package:optialeader/firebase_options.dart'; // ✅ [مهم جداً] يجب إضافة هذا الاستيراد ليعمل DefaultFirebaseOptions
+import 'package:optialeader/firebase_options.dart';
 
 class DoctorDataCubit extends Cubit<DoctorDataState> {
   final DoctorRepo doctorRepo;
@@ -23,7 +24,7 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     );
   }
 
-  // حفظ بيانات دكتور بالكامل
+  // حفظ بيانات دكتور بالكامل (للأدمن)
   Future<void> saveDoctorData(DoctorProfileModel doctor) async {
     emit(DoctorLoading());
     final result = await doctorRepo.saveDoctorData(doctor);
@@ -31,6 +32,39 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
       (error) => emit(DoctorError(error: error)),
       (_) => emit(DoctorSuccess()),
     );
+  }
+
+  // ✅ [الإضافة الجديدة] تحديث بيانات الدكتور (لما الدكتور يكمل بروفايله)
+  Future<void> updateDoctorProfile(
+    String uid,
+    Map<String, dynamic> updatedFields,
+  ) async {
+    // مش بنعمل DoctorLoading عشان الداشبورد ميقفشش، بنحدث الداتا في الخلفية
+    final result = await doctorRepo.updateDoctorProfileData(uid, updatedFields);
+    result.fold((error) => emit(DoctorError(error: error)), (_) {
+      // بعد نجاح التحديث، نجيب الداتا الجديدة عشان الـ UI يتحسن
+      getDoctorProfile(uid);
+    });
+  }
+
+  // ✅ [الإضافة الجديدة] رفع صورة وتحديث البروفايل
+  Future<void> uploadAndSetProfileImage(String uid, File imageFile) async {
+    emit(DoctorLoading()); // هنا ينفع لودينج عشان العملية بتاخر شوية
+    final uploadResult = await doctorRepo.uploadFile(
+      imageFile,
+      'profiles/$uid/profile.jpg',
+    );
+
+    uploadResult.fold((error) => emit(DoctorError(error: error)), (
+      imageUrl,
+    ) async {
+      // بعد ما الصورة تترفع، حدث الفايرستور
+      final updateResult = await doctorRepo.updateDoctorImage(uid, imageUrl);
+      updateResult.fold((error) => emit(DoctorError(error: error)), (_) {
+        // نجيب الداتا الجديدة
+        getDoctorProfile(uid);
+      });
+    });
   }
 
   // تحديث حالة الحساب
@@ -57,16 +91,17 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     );
   }
 
-  /// 🟢 إنشاء دكتور جديد (Auth + Firestore)
+  /// إنشاء دكتور جديد (Auth + Firestore)
   Future<void> createNewDoctor(DoctorProfileModel doctor) async {
     emit(DoctorLoading());
     UserCredential? credential;
 
     try {
-      // ✅ [الحل الجذري] التحقق من وجود النسخة الثانوية وإنشاؤها إذا لم تكن موجودة
       FirebaseApp secondaryApp;
-      final isSecondaryAppInitialized = Firebase.apps.any((app) => app.name == 'SecondaryApp');
-      
+      final isSecondaryAppInitialized = Firebase.apps.any(
+        (app) => app.name == 'SecondaryApp',
+      );
+
       if (isSecondaryAppInitialized) {
         secondaryApp = Firebase.app('SecondaryApp');
       } else {
@@ -76,40 +111,29 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
         );
       }
 
-      // 2. إنشاء الحساب (الإيميل + الرقم القومي كباصورد)
       final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
       credential = await secondaryAuth.createUserWithEmailAndPassword(
         email: doctor.email.trim(),
         password: doctor.nationalId.trim(),
       );
 
-      // ✅ 3. استخراج الـ user والتأكد من أنه ليس null بأمان
       final firebaseUser = credential.user;
       if (firebaseUser == null) {
         emit(DoctorError(error: "ERROR_USER_CREATION_FAILED"));
         return;
       }
 
-      // 4. أخذ الـ UID بأمان
       final String newUid = firebaseUser.uid;
-
-      // 5. تحديث الموديل بالـ UID
       final updatedDoctor = doctor.copyWith(uid: newUid);
-
-      // 6. حفظ البيانات في الفايرستور
       final result = await doctorRepo.saveDoctorData(updatedDoctor);
 
-      // 7. معالجة النتيجة
       result.fold((error) async {
-        // ❌ فشل الحفظ في الفايرستور -> ✅ حذف الحساب من الـ Auth لمنع الحساب اليتيم
         try {
           await firebaseUser.delete();
         } catch (_) {}
         emit(DoctorError(error: error));
       }, (_) => emit(DoctorSuccess()));
-      
     } on FirebaseAuthException catch (e) {
-      // ✅ إرسال كود الخطأ بدلاً من النص العربي
       String errorCode = "ERROR_AUTH_UNKNOWN";
       if (e.code == 'email-already-in-use') {
         errorCode = "ERROR_EMAIL_ALREADY_IN_USE";
@@ -120,13 +144,11 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
       }
       emit(DoctorError(error: errorCode));
     } catch (e) {
-      // في حال فشل أي شيء آخر، نحاول حذف الحساب إذا تم إنشاؤه
       try {
         await credential?.user?.delete();
       } catch (_) {}
       emit(DoctorError(error: e.toString()));
     } finally {
-      // ✅ تسجيل الخروج من النسخة الثانوية بأمان في جميع الحالات
       try {
         final secondaryApp = Firebase.app('SecondaryApp');
         final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);

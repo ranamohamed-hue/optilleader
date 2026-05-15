@@ -4,18 +4,40 @@
     "subtitle": "إدارة ونشر أخبار المنصة",
     "add_button": "إضافة إعلان",
     "no_data": "لا توجد إعلانات حالياً",
-    "preparing": "جاري التجهيز...",
+    "preparing": "جاري التحميل...",
     "applicant_unit": "متقدم",
     "active": "نشط",
-    "closed": "مغلق",
     "pending": "قيد الانتظار",
+    "closed": "مغلق",
     "details": {
       "badge_title": "إعلان رسمي",
       "edit_button": "تعديل الإعلان",
       "applicants_label": "عدد المتقدمين",
       "person_unit": "شخص",
-      "deadline_label": "الموعد النهائي التقديري",
+      "deadline_label": "موعد الإغلاق",
       "posted_label": "تاريخ النشر"
-    }
+    },
+    "ERROR_FETCH_ANNOUNCEMENTS": "حدث خطأ أثناء جلب البيانات",
+    "ERROR_ADD_ANNOUNCEMENT": "فشل إضافة الإعلان",
+    "ERROR_UPDATE_ANNOUNCEMENT": "فشل تحديث الإعلان",
+    "ERROR_DELETE_ANNOUNCEMENT": "فشل حذف الإعلان",
+    "SUCCESS_ADD_ANNOUNCEMENT": "تم إضافة الإعلان بنجاح",
+    "SUCCESS_UPDATE_ANNOUNCEMENT": "تم تحديث الإعلان بنجاح",
+    "SUCCESS_DELETE_ANNOUNCEMENT": "تم حذف الإعلان بنجاح"
+  },
+  "edit_announcement": {
+    "title": "تعديل الإعلان",
+    "field_title": "العنوان",
+    "hint_title": "أدخل عنوان الإعلان",
+    "field_desc": "الوصف",
+    "hint_desc": "أدخل تفاصيل الإعلان هنا...",
+    "field_date": "تاريخ الانتهاء",
+    "field_status": "الحالة",
+    "save_button": "حفظ التعديلات",
+    "success_msg": "تم تحديث الإعلان بنجاح"
+  },
+  "common": {
+    "cancel": "إلغاء",
+    "app_name": "نظام الجامعة"
   }
 }

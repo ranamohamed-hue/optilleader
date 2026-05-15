@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:optialeader/feature/doctor/data/model/activities_model.dart';
+import 'package:optialeader/feature/doctor/data/model/research_paper_model.dart';
 
 class DoctorProfileModel {
   final String? uid;
@@ -27,7 +29,8 @@ class DoctorProfileModel {
   final String? alternativeEmail;
 
   // البيانات الأكاديمية
-  final List<Map<String, dynamic>> academicHistory;
+  final List<Map<String, dynamic>>
+  academicHistory; // دي هتفضل Map مؤقتاً لحد ما نعرف هيكلها
 
   // البيانات الأهلية والإدارية
   final bool disciplinaryClearance;
@@ -35,12 +38,11 @@ class DoctorProfileModel {
   final bool isOnVacation;
   final bool isActive;
 
-  // الأبحاث وباقي البيانات
-  final String? profileImageUrl;
+  // الأبحاث والأنشطة (✅ تم التعديل)
   final String? cvUrl;
-  final List<Map<String, dynamic>> researchPapers;
-  final List<Map<String, dynamic>> trainingCourses;
-  final List<Map<String, dynamic>> activities;
+  final List<ResearchPaperModel> researchPapers;
+  final List<ActivityModel> trainingCourses;
+  final List<ActivityModel> activities;
 
   DoctorProfileModel({
     this.uid,
@@ -68,7 +70,6 @@ class DoctorProfileModel {
     required this.hasPermanentPosition,
     required this.isOnVacation,
     this.isActive = true,
-    this.profileImageUrl = "",
     this.cvUrl = "",
     this.researchPapers = const [],
     this.trainingCourses = const [],
@@ -110,16 +111,23 @@ class DoctorProfileModel {
           json['eligibility_data']?['has_permanent_position'] ?? true,
       isOnVacation: json['eligibility_data']?['is_on_vacation'] ?? false,
       isActive: json['eligibility_data']?['is_active'] ?? true,
-      profileImageUrl: json['contact']?['profile_image_url'],
       cvUrl: json['academic_profile']?['cv_url'],
-      researchPapers: List<Map<String, dynamic>>.from(
-        json['scientific_work']?['research_papers'] ?? [],
+
+      // ✅ القراءة باستخدام الموديلات الجديدة
+      researchPapers: List<ResearchPaperModel>.from(
+        (json['scientific_work']?['research_papers'] ?? []).map(
+          (x) => ResearchPaperModel.fromJson(x),
+        ),
       ),
-      trainingCourses: List<Map<String, dynamic>>.from(
-        json['scientific_work']?['training_courses'] ?? [],
+      trainingCourses: List<ActivityModel>.from(
+        (json['scientific_work']?['training_courses'] ?? []).map(
+          (x) => ActivityModel.fromJson(x),
+        ),
       ),
-      activities: List<Map<String, dynamic>>.from(
-        json['scientific_work']?['other_activities'] ?? [],
+      activities: List<ActivityModel>.from(
+        (json['scientific_work']?['other_activities'] ?? []).map(
+          (x) => ActivityModel.fromJson(x),
+        ),
       ),
     );
   }
@@ -129,7 +137,6 @@ class DoctorProfileModel {
       'uid': uid ?? '',
       'role': role,
       'isFirstLogin': isFirstLogin,
-      'isRegistered': true,
       'identity': {
         'name_ar': nameAr,
         'name_en': nameEn,
@@ -150,7 +157,6 @@ class DoctorProfileModel {
         'phone_number': phone,
         'home_address_ar': addressAr,
         'home_address_en': addressEn,
-        'profile_image_url': profileImageUrl,
       },
       'academic_profile': {'history': academicHistory, 'cv_url': cvUrl},
       'eligibility_data': {
@@ -159,12 +165,12 @@ class DoctorProfileModel {
         'disciplinary_clearance': disciplinaryClearance,
         'is_active': isActive,
       },
+      // ✅ الكتابة باستخدام الموديلات الجديدة
       'scientific_work': {
-        'research_papers': researchPapers,
-        'training_courses': trainingCourses,
-        'other_activities': activities,
+        'research_papers': researchPapers.map((x) => x.toMap()).toList(),
+        'training_courses': trainingCourses.map((x) => x.toMap()).toList(),
+        'other_activities': activities.map((x) => x.toMap()).toList(),
       },
-      'created_at': FieldValue.serverTimestamp(),
     };
   }
 
@@ -194,11 +200,10 @@ class DoctorProfileModel {
     bool? hasPermanentPosition,
     bool? isOnVacation,
     bool? isActive,
-    String? profileImageUrl,
     String? cvUrl,
-    List<Map<String, dynamic>>? researchPapers,
-    List<Map<String, dynamic>>? trainingCourses,
-    List<Map<String, dynamic>>? activities,
+    List<ResearchPaperModel>? researchPapers, // ✅
+    List<ActivityModel>? trainingCourses, // ✅
+    List<ActivityModel>? activities, // ✅
   }) {
     return DoctorProfileModel(
       uid: uid ?? this.uid,
@@ -227,7 +232,6 @@ class DoctorProfileModel {
       hasPermanentPosition: hasPermanentPosition ?? this.hasPermanentPosition,
       isOnVacation: isOnVacation ?? this.isOnVacation,
       isActive: isActive ?? this.isActive,
-      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       cvUrl: cvUrl ?? this.cvUrl,
       researchPapers: researchPapers ?? this.researchPapers,
       trainingCourses: trainingCourses ?? this.trainingCourses,

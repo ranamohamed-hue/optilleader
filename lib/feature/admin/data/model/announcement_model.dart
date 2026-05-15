@@ -21,7 +21,6 @@ class AnnouncementModel {
     required this.createdAt,
   });
 
-  // 1. تحويل البيانات من Map (Firebase) إلى Object (Flutter)
   factory AnnouncementModel.fromMap(
     Map<String, dynamic> map,
     String documentId,
@@ -31,7 +30,6 @@ class AnnouncementModel {
       title: map['title'] ?? '',
       description: map['description'] ?? '',
       status: map['status'] ?? 'Active',
-      // التعامل مع التاريخ القادم من Firebase كـ Timestamp
       deadline: (map['deadline'] != null)
           ? (map['deadline'] as dynamic).toDate()
           : DateTime.now(),
@@ -42,6 +40,7 @@ class AnnouncementModel {
           : DateTime.now(),
     );
   }
+
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -54,18 +53,23 @@ class AnnouncementModel {
     };
   }
 
-  Color getStatusColor() {
+  // ✅ [إضافة] قائمة الحالات الممكنة للإعلان (للاستخدام في الـ Dropdown)
+  static List<String> get statusList => ['Active', 'Pending', 'Closed'];
+
+  Color getStatusColor(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     switch (status) {
       case 'Active':
-        return const Color(0xFF2196F3); // Blue
+        return Colors.blue;
       case 'Pending':
         return Colors.orange.shade700;
       case 'Closed':
-        return Colors.redAccent;
+        return colorScheme.error;
       default:
         return Colors.grey;
     }
   }
+
   AnnouncementModel copyWith({
     String? id,
     String? title,

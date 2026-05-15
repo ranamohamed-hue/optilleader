@@ -8,6 +8,8 @@ import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/logic/database_admin_data/database_admin_state.dart';
 import 'package:optialeader/feature/database_admin/logic/database_admin_data/databse_admin_cubit.dart';
 import 'package:optialeader/core/theming/app_color.dart';
+import 'package:optialeader/feature/notification/ui/notification_page.dart';
+import 'package:optialeader/feature/setting/ui/setting.dart';
 
 class DatabaseAdminDashboard extends StatefulWidget {
   const DatabaseAdminDashboard({super.key});
@@ -17,6 +19,8 @@ class DatabaseAdminDashboard extends StatefulWidget {
 }
 
 class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
+  int _currentIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -28,17 +32,58 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
     });
   }
 
+  final List<Widget> _tabs = const [
+    _HomeTab(),
+    _NotificationsTab(),
+    _SettingsTab(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(index: _currentIndex, children: _tabs),
+
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'الرئيسية',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications_none_outlined),
+            activeIcon: Icon(Icons.notifications),
+            label: 'التنبيهات',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
+            activeIcon: Icon(Icons.settings),
+            label: 'الإعدادات',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// تبويب الرئيسية (مربوط بالثيم)
+class _HomeTab extends StatelessWidget {
+  const _HomeTab();
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
+    final colorScheme = theme.colorScheme;
 
     return BlocBuilder<DatabseAdminCubit, DatabaseAdminState>(
       builder: (context, state) {
         if (state is DatabaseAdminLoading) {
           return Scaffold(
             body: Center(
-              child: CircularProgressIndicator(color: AppColors.darkGold),
+              child: CircularProgressIndicator(color: colorScheme.secondary),
             ),
           );
         }
@@ -51,12 +96,18 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline, color: Colors.red, size: 60.sp),
+                    Icon(
+                      Icons.error_outline,
+                      color: colorScheme.error,
+                      size: 60.sp,
+                    ),
                     SizedBox(height: 10.h),
                     Text(
                       "${"dashboard.error".tr()}: ${state.message}",
                       textAlign: TextAlign.center,
-                      style: textTheme.bodyLarge?.copyWith(color: Colors.red),
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: colorScheme.error,
+                      ),
                     ),
                   ],
                 ),
@@ -72,22 +123,30 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
           return Scaffold(
             appBar: AppBar(
               toolbarHeight: 90.h,
-              backgroundColor: AppColors.navyDark,
+              // تم إزالة backgroundColor، سيأتي تلقائياً من الثيم (NavyDark في الفاتح)
               title: Row(
                 children: [
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.darkGold, width: 2),
+                      border: Border.all(
+                        color: colorScheme.secondary,
+                        width: 2,
+                      ), // DarkGold
                     ),
                     child: CircleAvatar(
                       radius: 28.r,
-                      backgroundColor: AppColors.navyLight,
+                      backgroundColor:
+                          colorScheme.primaryContainer, // NavyLight
                       backgroundImage: admin.profileImage.isNotEmpty
                           ? NetworkImage(admin.profileImage)
                           : null,
                       child: admin.profileImage.isEmpty
-                          ? Icon(Icons.person, color: Colors.white, size: 30.sp)
+                          ? Icon(
+                              Icons.person,
+                              color: colorScheme.onPrimary,
+                              size: 30.sp,
+                            )
                           : null,
                     ),
                   ),
@@ -106,9 +165,8 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
                         Text(
                           isArabic ? admin.nameAr : admin.nameEn,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18.sp,
+                          style: textTheme.titleLarge?.copyWith(
+                            color: colorScheme.onPrimary, // White
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -119,17 +177,14 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(
-                    Icons.notifications_none,
-                    color: Colors.white,
-                  ),
+                  icon: const Icon(Icons.notifications_none),
                   onPressed: () {},
                 ),
                 SizedBox(width: 10.w),
               ],
             ),
             body: RefreshIndicator(
-              color: AppColors.darkGold,
+              color: colorScheme.secondary, // DarkGold
               onRefresh: () async =>
                   await context.read<DatabseAdminCubit>().getProfile(admin.uid),
               child: SingleChildScrollView(
@@ -150,21 +205,21 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
                         _buildStatCard(
                           context,
                           "dashboard.doctors".tr(),
-                          "25",
+                          state.doctorsCount.toString(),
                           Icons.school,
                           Colors.blue,
                         ),
                         _buildStatCard(
                           context,
                           "dashboard.judges".tr(),
-                          "12",
+                          state.judgesCount.toString(),
                           Icons.gavel,
-                          AppColors.darkGold,
+                          colorScheme.secondary, // DarkGold
                         ),
                         _buildStatCard(
                           context,
                           "dashboard.admins".tr(),
-                          "8",
+                          state.adminsCount.toString(),
                           Icons.admin_panel_settings,
                           Colors.green,
                         ),
@@ -189,14 +244,14 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
                       context,
                       "dashboard.add_doctor".tr(),
                       Icons.person_add_alt_1,
-                      AppColors.navyDark,
+                      colorScheme.primary, // NavyDark
                       Routes.addDoctorPage,
                     ),
                     _buildActionCard(
                       context,
                       "dashboard.add_admin".tr(),
                       Icons.manage_accounts,
-                      AppColors.navyLight,
+                      colorScheme.primaryContainer, // NavyLight
                       Routes.addAdminPage,
                     ),
                     _buildActionCard(
@@ -215,7 +270,7 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
 
         return Scaffold(
           body: Center(
-            child: CircularProgressIndicator(color: AppColors.darkGold),
+            child: CircularProgressIndicator(color: colorScheme.secondary),
           ),
         );
       },
@@ -229,12 +284,10 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
     IconData icon,
     Color iconColor,
   ) {
+    final theme = Theme.of(context);
     return Expanded(
       child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
+        // الـ Card هياخد شكله من cardTheme المعرف في AppTheme
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 15.h),
           child: Column(
@@ -243,12 +296,14 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
               SizedBox(height: 5.h),
               Text(
                 value,
-                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text(
                 label,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
               ),
             ],
           ),
@@ -264,6 +319,7 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
     Color bgColor,
     String route,
   ) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: () => context.push(route),
       child: Container(
@@ -282,25 +338,58 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
         ),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.darkGold, size: 26.sp),
+            Icon(
+              icon,
+              color: theme.colorScheme.secondary,
+              size: 26.sp,
+            ), // DarkGold
             SizedBox(width: 15.w),
             Text(
               title,
-              style: TextStyle(
+              style: theme.textTheme.bodyLarge?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
-                fontSize: 15.sp,
               ),
             ),
             const Spacer(),
             Icon(
               Icons.arrow_forward_ios,
-              color: AppColors.darkGold,
+              color: theme.colorScheme.secondary, // DarkGold
               size: 14.sp,
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+// 2. تبويب التنبيهات (مربوط بالثيم)
+class _NotificationsTab extends StatelessWidget {
+  const _NotificationsTab();
+  Widget build(BuildContext context) {
+    final state = context.watch<DatabseAdminCubit>().state;
+
+    if (state is DatabaseAdminSuccess) {
+      return NotificationsScreen();
+    }
+
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+  }
+}
+
+// 3. تبويب الإعدادات (مربوط بالصفحة الحقيقية)
+class _SettingsTab extends StatelessWidget {
+  const _SettingsTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<DatabseAdminCubit>().state;
+
+    if (state is DatabaseAdminSuccess) {
+      return SettingsScreen(uid: state.profile.uid, role: 'database_admin');
+    }
+
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

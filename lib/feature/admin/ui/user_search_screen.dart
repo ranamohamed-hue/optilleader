@@ -142,7 +142,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
                     ? ui.TextDirection.rtl
                     : ui.TextDirection.ltr,
                 children: [
-                  _buildProfileImage(colorScheme, doctor.profileImageUrl),
+                  _buildProfileImage(colorScheme, doctor.profileImage),
                   SizedBox(width: 15.w),
                   Expanded(
                     child: Column(

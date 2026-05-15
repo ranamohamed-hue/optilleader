@@ -1,19 +1,20 @@
 {
-  "dashboardAdmin": {
+  "dashboard": {
     "welcome": "مرحباً، {0}",
     "system_admin": "مدير النظام",
     "new_requests": "طلبات جديدة",
     "under_review": "قيد المراجعة",
     "add_announcement": "إضافة إعلان",
     "no_data": "لا توجد بيانات",
-    "retry": "إعادة المحاولة"
+    "retry": "إعادة المحاولة",
+    "error": "حدث خطأ"
   },
 
   "sidebar": {
+    "home": "الرئيسية",
     "profile": "الملف الشخصي",
     "search": "بحث المستخدمين",
     "notifications": "الإشعارات",
     "logout": "تسجيل الخروج"
   }
-  
 }

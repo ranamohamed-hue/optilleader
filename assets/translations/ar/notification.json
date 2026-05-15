@@ -1,0 +1,49 @@
+{
+  "notifications": {
+    "title": "التنبيهات",
+    "empty_state": "لا توجد إشعارات حالياً",
+    "error_fetching": "حدث خطأ أثناء جلب الإشعارات",
+    
+    "user_login_title": "تسجيل دخول",
+    "user_login_message": "قام {userName} بتسجيل الدخول",
+    
+    "user_logout_title": "تسجيل خروج",
+    "user_logout_message": "قام {userName} بتسجيل الخروج",
+    
+    "profile_updated_title": "تحديث بيانات",
+    "profile_updated_message": "قام {userName} بتحديث بيانات الاتصال الخاصة به",
+    
+    "account_suspended_title": "تعليق حساب",
+    "account_suspended_message": "تم تعليق حساب {userName}",
+    
+    "welcome_title": "مرحباً بك!",
+    "welcome_admin_message": "أهلاً بك في نظام المسؤولين",
+    "welcome_doctor_message": "أهلاً بك في نظام الأطباء",
+    "welcome_judge_message": "أهلاً بك في نظام المحكمين",
+    
+    "announcement_created_title": "إعلان جديد",
+    "announcement_created_message": "تم إضافة إعلان جديد: {announcementTitle}",
+    
+    "announcement_expired_title": "انتهاء إعلان",
+    "announcement_expired_message": "انتهت مدة الإعلان: {announcementTitle}",
+    
+    "new_doctor_request_title": "طلب جديد",
+    "new_doctor_request_message": "تم استلام طلب جديد من دكتور",
+    
+    "judge_completed_title": "تحكيم مكتمل",
+    "judge_completed_message": "قام المحكم بإنهاء طلب التحكيم",
+    
+    "new_competition_title": "مسابقة جديدة",
+    "new_competition_message": "تم إضافة مسابقة جديدة: {competitionName}",
+    
+    "competition_result_title": "نتيجة المسابقة",
+    "competition_result_message": "تم إعلان نتيجة مسابقة: {competitionName}",
+    
+    "request_status_title": "تحديث الطلب",
+    "request_status_accepted_message": "تم قبول طلبك",
+    "request_status_rejected_message": "تم رفض طلبك",
+    
+    "arbitration_request_title": "طلب تحكيم",
+    "arbitration_request_message": "لديك طلب تحكيم جديد من الإدارة"
+  }
+}

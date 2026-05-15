@@ -6,10 +6,12 @@
     "under_review": "Under Review",
     "add_announcement": "Add Announcement",
     "no_data": "No Data Available",
-    "retry": "Retry"
+    "retry": "Retry",
+    "error": "An error occurred"
   },
 
   "sidebar": {
+    "home": "Home",
     "profile": "Profile",
     "search": "Search Users",
     "notifications": "Notifications",

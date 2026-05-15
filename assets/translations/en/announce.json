@@ -7,8 +7,8 @@
     "preparing": "Preparing...",
     "applicant_unit": "Applicants",
     "active": "Active",
-    "closed": "Closed",
     "pending": "Pending",
+    "closed": "Closed",
     "details": {
       "badge_title": "OFFICIAL ANNOUNCEMENT",
       "edit_button": "Edit Announcement",
@@ -16,6 +16,28 @@
       "person_unit": "Person",
       "deadline_label": "Estimated Deadline",
       "posted_label": "Posted On"
-    }
+    },
+    "ERROR_FETCH_ANNOUNCEMENTS": "An error occurred while fetching data",
+    "ERROR_ADD_ANNOUNCEMENT": "Failed to add announcement",
+    "ERROR_UPDATE_ANNOUNCEMENT": "Failed to update announcement",
+    "ERROR_DELETE_ANNOUNCEMENT": "Failed to delete announcement",
+    "SUCCESS_ADD_ANNOUNCEMENT": "Announcement added successfully",
+    "SUCCESS_UPDATE_ANNOUNCEMENT": "Announcement updated successfully",
+    "SUCCESS_DELETE_ANNOUNCEMENT": "Announcement deleted successfully"
+  },
+  "edit_announcement": {
+    "title": "Edit Announcement",
+    "field_title": "Title",
+    "hint_title": "Enter announcement title",
+    "field_desc": "Description",
+    "hint_desc": "Enter announcement details here...",
+    "field_date": "Expiry Date",
+    "field_status": "Status",
+    "save_button": "Save Changes",
+    "success_msg": "Announcement updated successfully"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "app_name": "University System"
   }
 }
