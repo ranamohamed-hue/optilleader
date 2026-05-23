@@ -6,6 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:optialeader/core/services/folder_json_loader.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 
 import 'package:optialeader/core/routing/app_router.dart';
@@ -31,6 +32,10 @@ void main() async {
     // في حال كان التطبيق قد تم تهيئته مسبقاً (بسبب Hot Restart)، يتم تجاهل الخطأ بأمان
     debugPrint('SecondaryApp already initialized: $e');
   }
+  await Supabase.initialize(
+    url: 'https://ybmeqikzcqmaudedzxif.supabase.com',
+    anonKey: 'sb_publishable_sf2YFT0RYrAapmg5XfjY4A_37kNyqyF',
+  );
 
   /// App Check (معطل حالياً)
   /*await FirebaseAppCheck.instance.activate(
@@ -40,12 +45,12 @@ void main() async {
 
   /// Localization
   await EasyLocalization.ensureInitialized();
-  
+
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('ar')],
       path: 'assets/translations',
-      assetLoader: const FolderJsonLoader(), 
+      assetLoader: const FolderJsonLoader(),
       fallbackLocale: const Locale('ar'),
       startLocale: const Locale('ar'),
       child: MultiBlocProvider(

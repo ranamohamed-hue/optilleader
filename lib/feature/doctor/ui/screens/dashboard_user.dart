@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
-
+import 'package:cached_network_image/cached_network_image.dart';
 class DashboardUserPage extends StatelessWidget {
   const DashboardUserPage({super.key});
 
@@ -209,8 +209,9 @@ class DashboardUserPage extends StatelessWidget {
       child: CircleAvatar(
         radius: 22.r,
         backgroundColor: Colors.white10,
+        // ✅ [تعديل] استخدام CachedNetworkImageProvider بدل NetworkImage
         backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
-            ? NetworkImage(imageUrl)
+            ? CachedNetworkImageProvider(imageUrl) 
             : null,
         child: (imageUrl == null || imageUrl.isEmpty)
             ? Icon(Icons.person, color: gold, size: 26.sp)

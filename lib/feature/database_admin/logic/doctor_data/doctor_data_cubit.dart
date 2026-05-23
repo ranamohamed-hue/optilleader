@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data'; // ✅ [إضافة]
+import 'package:path/path.dart' as p;
+import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ [إضافة مهمة] عشان FieldValue.arrayUnion
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +10,7 @@ import 'package:optialeader/feature/database_admin/data/models/doctor_profile_mo
 import 'package:optialeader/feature/database_admin/data/repo/doctor_repository/doctor_repo.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 import 'package:optialeader/firebase_options.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart'; // ✅ [إضافة]
 
 class DoctorDataCubit extends Cubit<DoctorDataState> {
   final DoctorRepo doctorRepo;
@@ -34,37 +38,107 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     );
   }
 
-  // ✅ [الإضافة الجديدة] تحديث بيانات الدكتور (لما الدكتور يكمل بروفايله)
+  // ✅ تحديث بيانات الدكتور (لما الدكتور يكمل بروفايله)
   Future<void> updateDoctorProfile(
     String uid,
     Map<String, dynamic> updatedFields,
   ) async {
-    // مش بنعمل DoctorLoading عشان الداشبورد ميقفشش، بنحدث الداتا في الخلفية
     final result = await doctorRepo.updateDoctorProfileData(uid, updatedFields);
     result.fold((error) => emit(DoctorError(error: error)), (_) {
-      // بعد نجاح التحديث، نجيب الداتا الجديدة عشان الـ UI يتحسن
       getDoctorProfile(uid);
     });
   }
 
-  // ✅ [الإضافة الجديدة] رفع صورة وتحديث البروفايل
+  // ✅ رفع صورة وتحديث البروفايل (بتضغط الصورة)
   Future<void> uploadAndSetProfileImage(String uid, File imageFile) async {
-    emit(DoctorLoading()); // هنا ينفع لودينج عشان العملية بتاخر شوية
-    final uploadResult = await doctorRepo.uploadFile(
-      imageFile,
-      'profiles/$uid/profile.jpg',
-    );
+    emit(DoctorLoading()); 
 
-    uploadResult.fold((error) => emit(DoctorError(error: error)), (
-      imageUrl,
-    ) async {
-      // بعد ما الصورة تترفع، حدث الفايرستور
-      final updateResult = await doctorRepo.updateDoctorImage(uid, imageUrl);
-      updateResult.fold((error) => emit(DoctorError(error: error)), (_) {
-        // نجيب الداتا الجديدة
-        getDoctorProfile(uid);
+    try {
+      final Uint8List? compressedBytes = await FlutterImageCompress.compressWithFile(
+        imageFile.absolute.path,
+        minWidth: 1024,
+        minHeight: 1024,
+        quality: 85, 
+      );
+
+      if (compressedBytes == null) {
+        emit(DoctorError(error: "فشل ضغط الصورة"));
+        return;
+      }
+
+      final String fileExtension = p.extension(imageFile.path);
+      final String storagePath = 'profiles/$uid/profile$fileExtension';
+
+      final uploadResult = await doctorRepo.uploadFile(
+        compressedBytes, 
+        storagePath,
+        bucketName: 'images',
+      );
+
+      uploadResult.fold((error) => emit(DoctorError(error: error)), (
+        imageUrl,
+      ) async {
+        final updateResult = await doctorRepo.updateDoctorImage(uid, imageUrl);
+        updateResult.fold((error) => emit(DoctorError(error: error)), (_) {
+          getDoctorProfile(uid);
+        });
       });
-    });
+    } catch (e) {
+      emit(DoctorError(error: e.toString()));
+    }
+  }
+
+  // ✅✅✅ [إضافة جديدة] دالة رفع ملفات للأرشيف (بتخزن Array في الفايرستور)
+  Future<void> uploadArchiveFile({
+    required String uid,
+    required File file,
+    required String title,
+    required String description,
+    required String category,
+  }) async {
+    emit(DoctorLoading()); 
+
+    try {
+      // 1. قراءة الملف كـ Bytes
+      final fileBytes = await file.readAsBytes();
+      final String fileExtension = p.extension(file.path); 
+      
+      // 2. بناء المسار داخل البوكت
+      final String storagePath = 'archives/$uid/${DateTime.now().millisecondsSinceEpoch}$fileExtension';
+
+      // 3. رفع الملف على بوكت الـ files في السوبابيز
+      final uploadResult = await doctorRepo.uploadFile(
+        fileBytes,
+        storagePath,
+        bucketName: 'files',
+      );
+
+      uploadResult.fold(
+        (error) => emit(DoctorError(error: error)), 
+        (fileUrl) async {
+          // 4. تجهيز الـ Object اللي هيتحفظ في الفايرستور
+          final newFileData = {
+            'title': title,
+            'description': description,
+            'category': category,
+            'file_url': fileUrl,
+            'uploaded_at': FieldValue.serverTimestamp(), 
+          };
+
+          // 5. تحديث الفايرستور بإضافة الملف للستة (arrayUnion)
+          final updateResult = await doctorRepo.updateDoctorProfileData(uid, {
+            'digital_archive': FieldValue.arrayUnion([newFileData]),
+          });
+          
+          updateResult.fold(
+            (error) => emit(DoctorError(error: error)), 
+            (_) => getDoctorProfile(uid), 
+          );
+        },
+      );
+    } catch (e) {
+      emit(DoctorError(error: e.toString()));
+    }
   }
 
   // تحديث حالة الحساب

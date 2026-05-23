@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart'; // ✅ [إضافة]
+
 import 'package:optialeader/core/routing/routes.dart';
+import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 
 class CareerInfoPage extends StatelessWidget {
   const CareerInfoPage({super.key});
@@ -13,133 +19,178 @@ class CareerInfoPage extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        toolbarHeight: 90.h,
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go(Routes.user);
-            }
-          },
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: colorScheme.secondary, width: 1.5),
-              ),
-              child: CircleAvatar(
-                radius: 22.r,
-                backgroundColor: colorScheme.secondary.withOpacity(0.2),
-                child: const Icon(Icons.person, color: Colors.white, size: 20),
-              ),
+    // ✅ [تعديل] لفنا الصفحة بـ BlocBuilder
+    return BlocBuilder<DoctorDataCubit, DoctorDataState>(
+      builder: (context, state) {
+        DoctorProfileModel? doctor;
+        if (state is DoctorLoaded) {
+          doctor = state.doctor;
+        }
+
+        return Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          appBar: AppBar(
+            toolbarHeight: 90.h,
+            automaticallyImplyLeading: false,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(Routes.user);
+                }
+              },
             ),
-            SizedBox(width: 12.w),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+            title: Row(
               children: [
-                Text(
-                  'career.title'.tr(),
-                  style: textTheme.titleSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                // ✅ [تعديل] عرض الصورة من السوبابيز
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colorScheme.secondary,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    radius: 22.r,
+                    backgroundColor: colorScheme.secondary.withOpacity(0.2),
+                    backgroundImage: (doctor?.profileImage.isNotEmpty ?? false)
+                        ? CachedNetworkImageProvider(doctor!.profileImage)
+                        : null,
+                    child: (doctor?.profileImage.isEmpty ?? true)
+                        ? Icon(Icons.person, color: Colors.white, size: 20.sp)
+                        : null,
                   ),
                 ),
-                Text(
-                  'Dr. Mohamed Adel', // يمكن استبداله بمتغير من الـ Profile لاحقاً
-                  style: textTheme.bodySmall?.copyWith(color: Colors.white70),
+                SizedBox(width: 12.w),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'career.title'.tr(),
+                      style: textTheme.titleSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    // ✅ [تعديل] عرض اسم الدكتور من الموديل
+                    Text(
+                      context.locale.languageCode == 'ar'
+                          ? (doctor?.nameAr ?? '-')
+                          : (doctor?.nameEn ?? '-'),
+                      style: textTheme.bodySmall?.copyWith(
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                InkWell(
+                  onTap: () {
+                    // للذهاب لصفحة تعديل البيانات (الإعدادات)
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(8.w),
+                    decoration: BoxDecoration(
+                      color: colorScheme.secondary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(
+                        color: colorScheme.secondary.withOpacity(0.5),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.edit_note_rounded,
+                      color: colorScheme.secondary,
+                      size: 22.sp,
+                    ),
+                  ),
                 ),
               ],
             ),
-            const Spacer(),
-            InkWell(
-              onTap: () {},
-              child: Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: colorScheme.secondary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10.r),
-                  border: Border.all(
-                    color: colorScheme.secondary.withOpacity(0.5),
-                  ),
-                ),
-                child: Icon(
-                  Icons.edit_note_rounded,
-                  color: colorScheme.secondary,
-                  size: 22.sp,
-                ),
-              ),
+            bottom: PreferredSize(
+              preferredSize: Size.fromHeight(2.h),
+              child: Container(color: colorScheme.secondary, height: 2.h),
             ),
-          ],
-        ),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(2.h),
-          child: Container(color: colorScheme.secondary, height: 2.h),
+          ),
+          body: SingleChildScrollView(
+            padding: EdgeInsets.all(20.w),
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                _buildSectionHeader(
+                  context,
+                  Icons.school_outlined,
+                  'career.sections.credentials'.tr(),
+                ),
+
+                // ✅ [تعديل] عرض الشهادات ديناميكياً من الـ academicHistory
+                if (doctor?.academicHistory != null &&
+                    doctor!.academicHistory.isNotEmpty)
+                  ...doctor.academicHistory.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    Map<String, dynamic> cert = entry.value;
+                    bool isLast = index == doctor!.academicHistory.length - 1;
+
+                    // ⚠️ تأكد إن المفاتيح دي (degree_ar, spec_ar, institution, date) موجودة في الـ Map بتاعك في الفايرستور
+                    return _buildCredentialCard(
+                      context,
+                      cert['degree_ar'] ?? 'Degree',
+                      cert['spec_ar'] ?? 'Specialization',
+                      cert['institution'] ?? 'University',
+                      cert['date'] ?? '-',
+                      isLast: isLast,
+                    );
+                  }).toList()
+                else
+                  _buildEmptyCard(context, "No academic history added yet."),
+
+                SizedBox(height: 25.h),
+                _buildSectionHeader(
+                  context,
+                  Icons.history_edu_rounded,
+                  'career.sections.path'.tr(),
+                ),
+                _buildCareerPathCard(context, doctor),
+                SizedBox(height: 25.h),
+                _buildSectionHeader(
+                  context,
+                  Icons.badge_outlined,
+                  'career.sections.current_employment'.tr(),
+                ),
+                _buildCurrentInfoCard(context, doctor),
+                SizedBox(height: 30.h),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ✅ [إضافة] ويدجت عرض حالة الفاضي
+  Widget _buildEmptyCard(BuildContext context, String message) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(18.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(15.r)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20.w),
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            _buildSectionHeader(
-              context,
-              Icons.school_outlined,
-              'career.sections.credentials'.tr(),
-            ),
-            _buildCredentialCard(
-              context,
-              'career.degrees.phd'.tr(),
-              'career.specs.computer_eng'.tr(),
-              'Cairo University',
-              '15/06/2015',
-            ),
-            _buildCredentialCard(
-              context,
-              'career.degrees.msc'.tr(),
-              'career.specs.software_eng'.tr(),
-              'Cairo University',
-              '02/09/2010',
-            ),
-            _buildCredentialCard(
-              context,
-              'career.degrees.bsc'.tr(),
-              'career.specs.computer_science'.tr(),
-              'Cairo University',
-              '10/07/2007',
-              isLast: true,
-            ),
-            SizedBox(height: 25.h),
-            _buildSectionHeader(
-              context,
-              Icons.history_edu_rounded,
-              'career.sections.path'.tr(),
-            ),
-            _buildCareerPathCard(context),
-            SizedBox(height: 25.h),
-            _buildSectionHeader(
-              context,
-              Icons.badge_outlined,
-              'career.sections.current_employment'.tr(),
-            ),
-            _buildCurrentInfoCard(context),
-            SizedBox(height: 30.h),
-          ],
-        ),
+      child: Text(
+        message,
+        style: TextStyle(color: Colors.grey, fontSize: 13.sp),
+        textAlign: TextAlign.center,
       ),
     );
   }
 
-  // الـ Widgets الفرعية كما هي في الكود الخاص بكِ مع التأكد من ربط النصوص بـ .tr()
   Widget _buildSectionHeader(
     BuildContext context,
     IconData icon,
@@ -233,7 +284,11 @@ class CareerInfoPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCareerPathCard(BuildContext context) {
+  // ✅ [تعديل] إضافة Doctor parameter لربط الداتا
+  Widget _buildCareerPathCard(
+    BuildContext context,
+    DoctorProfileModel? doctor,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Container(
@@ -248,12 +303,14 @@ class CareerInfoPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'career.current_role'.tr(args: ['28/04/2018']),
+            'career.current_role'.tr(args: [doctor?.currentJobAr ?? '-']),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           SizedBox(height: 8.h),
           Text(
-            'career.experience'.tr(args: ['6']),
+            'career.experience'.tr(
+              args: ['0'],
+            ), // لو عندك حساب للسنوات حطه مكان 0
             style: TextStyle(
               color: colorScheme.secondary,
               fontWeight: FontWeight.w600,
@@ -265,12 +322,12 @@ class CareerInfoPage extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           SizedBox(height: 10.h),
+          // ممكن تعمل لوب هنا على الخبرات السابقة لو عندك List ليها في الموديل
           _buildHistoryItem(
             context,
             'career.roles.lecturer'.tr(),
-            '2011 – 2015',
+            '2020 – Present',
           ),
-          _buildHistoryItem(context, 'career.roles.ta'.tr(), '2007 – 2011'),
         ],
       ),
     );
@@ -296,7 +353,11 @@ class CareerInfoPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCurrentInfoCard(BuildContext context) {
+  // ✅ [تعديل] إضافة Doctor parameter لربط الداتا
+  Widget _buildCurrentInfoCard(
+    BuildContext context,
+    DoctorProfileModel? doctor,
+  ) {
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
@@ -312,21 +373,24 @@ class CareerInfoPage extends StatelessWidget {
             context,
             Icons.account_balance_rounded,
             'career.labels.dept'.tr(),
-            'Faculty of Engineering',
+            doctor?.addressAr ?? '-', // أو حقل القسم لو موجود في الموديل
           ),
           SizedBox(height: 12.h),
           _buildInfoRow(
             context,
             Icons.assignment_ind_rounded,
             'career.labels.type'.tr(),
-            'career.employment_type.permanent'.tr(),
+            (doctor?.hasPermanentPosition ?? false)
+                ? 'career.employment_type.permanent'.tr()
+                : 'Temporary',
           ),
           SizedBox(height: 12.h),
           _buildInfoRow(
             context,
             Icons.calendar_today_rounded,
             'career.labels.hire_date'.tr(),
-            '15/07/2007',
+            // مفيش حقل hire_date في الموديل اللي انت ابعتته، ممكن تضيفه لو محتاجه
+            '-',
           ),
         ],
       ),

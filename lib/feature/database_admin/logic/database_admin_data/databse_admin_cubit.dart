@@ -1,3 +1,4 @@
+import 'dart:io'; // ✅ [مهم] لاستخدام File
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:optialeader/feature/database_admin/data/repo/database_admin_repository/database_admin_repo.dart';
 import 'package:optialeader/feature/database_admin/logic/database_admin_data/database_admin_state.dart';
@@ -6,7 +7,7 @@ class DatabseAdminCubit extends Cubit<DatabaseAdminState> {
   final DatabaseAdminRepo _databaseAdminRepo;
   DatabseAdminCubit(this._databaseAdminRepo) : super(DatabaseAdminInitial());
 
-   Future<void> getProfile(String uid) async {
+  Future<void> getProfile(String uid) async {
     emit(DatabaseAdminLoading());
 
     final result = await _databaseAdminRepo.getAdminProfile(uid);
@@ -16,10 +17,8 @@ class DatabseAdminCubit extends Cubit<DatabaseAdminState> {
         emit(DatabaseAdminError(error));
       },
       (profile) async {
-        // ✅ بعد ما نجحنا في جلب البروفايل، نجلب العدادات
         final counts = await _databaseAdminRepo.getUserCounts();
         
-        // ✅ نemit حالة النجاح بالبروفايل والعدادات
         emit(DatabaseAdminSuccess(
           profile,
           doctorsCount: counts['doctors'] ?? 0,
@@ -29,6 +28,7 @@ class DatabseAdminCubit extends Cubit<DatabaseAdminState> {
       },
     );
   }
+
   Future<void> updateInfo({
     required String uid,
     required String phone,
@@ -51,18 +51,36 @@ class DatabseAdminCubit extends Cubit<DatabaseAdminState> {
     );
   }
 
+  // ✅ [تعديل] دالة تحديث الرابط في الفايرستور فقط (يتم استدعاؤها من الدالة اللي تحت)
   Future<void> updateImage({
     required String uid,
     required String imageUrl,
   }) async {
-    emit(DatabaseAdminLoading());
     final result = await _databaseAdminRepo.updateProfileImage(uid, imageUrl);
 
     result.fold(
       (error) => emit(DatabaseAdminError(error)),
       (_) {
         emit(DatabaseAdminUpdateSuccess());
-        getProfile(uid);
+        getProfile(uid); // تحديث البيانات في الشاشة
+      },
+    );
+  }
+
+  // ✅ [إضافة] دالة رفع الصورة لـ Supabase ثم تحديث الفايرستور
+  Future<void> updateProfileImageWithFile(String uid, File imageFile) async {
+    emit(DatabaseAdminLoading()); 
+
+    // 1. رفع الصورة إلى Supabase (نمرر المسار)
+    final uploadResult = await _databaseAdminRepo.uploadImageToSupabase(uid, imageFile.path);
+
+    uploadResult.fold(
+      (uploadError) {
+        emit(DatabaseAdminError(uploadError));
+      },
+      (imageUrl) async {
+        // 2. حفظ الرابط في Firebase Firestore باستخدام دالة updateImage الأصلية
+        await updateImage(uid: uid, imageUrl: imageUrl);
       },
     );
   }

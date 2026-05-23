@@ -1,13 +1,13 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:optialeader/feature/database_admin/data/repo/doctor_repository/doctor_repo.dart';
 import 'package:dartz/dartz.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:optialeader/feature/database_admin/data/repo/doctor_repository/doctor_repo.dart';
 
 class DoctorRepoImpl extends DoctorRepo {
   final FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
-  final FirebaseStorage firebaseStorage = FirebaseStorage.instance;
+
   CollectionReference get _usersCollection =>
       firebaseFirestore.collection('users');
 
@@ -87,16 +87,27 @@ class DoctorRepoImpl extends DoctorRepo {
     }
   }
 
+  // ✅ دالة رفع الملفات للسوبابيز
   @override
   Future<Either<String, String>> uploadFile(
-    File file,
-    String storagePath,
-  ) async {
+    Uint8List fileBytes,
+    String storagePath, {
+    required String bucketName,
+  }) async {
     try {
-      final ref = firebaseStorage.ref().child(storagePath);
-      await ref.putFile(file);
-      final url = await ref.getDownloadURL();
-      return right(url);
+      await Supabase.instance.client.storage
+          .from(bucketName)
+          .uploadBinary(
+            storagePath,
+            fileBytes,
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      final String publicUrl = Supabase.instance.client.storage
+          .from(bucketName)
+          .getPublicUrl(storagePath);
+
+      return right(publicUrl);
     } catch (e) {
       return left("فشل رفع الملف: ${e.toString()}");
     }
@@ -117,19 +128,57 @@ class DoctorRepoImpl extends DoctorRepo {
     }
   }
 
+  // ✅ دالة الحذف الشامل (الصور والملفات من السوبابيز + الفايرستور)
   @override
   Future<Either<String, Unit>> deleteDoctorAccount(String uid) async {
     try {
+      // 1. مسح صورة البروفايل
+      try {
+        final List<FileObject> images = await Supabase.instance.client.storage
+            .from('images')
+            .list(path: 'profiles/$uid');
+
+        if (images.isNotEmpty) {
+          final List<String> imagePaths = images
+              .map((img) => 'profiles/$uid/${img.name}')
+              .toList();
+          await Supabase.instance.client.storage
+              .from('images')
+              .remove(imagePaths);
+        }
+      } catch (e) {
+        print("خطأ في مسح صورة البروفايل: $e");
+      }
+
+      // 2. مسح ملفات الأرشيف
+      try {
+        final List<FileObject> archives = await Supabase.instance.client.storage
+            .from('files')
+            .list(path: 'archives/$uid');
+
+        if (archives.isNotEmpty) {
+          final List<String> archivePaths = archives
+              .map((arch) => 'archives/$uid/${arch.name}')
+              .toList();
+          await Supabase.instance.client.storage
+              .from('files')
+              .remove(archivePaths);
+        }
+      } catch (e) {
+        print("خطأ في مسح ملفات الأرشيف: $e");
+      }
+
+      // 3. مسح بيانات الدكتور من الفايرستور
       await _usersCollection.doc(uid).delete();
+
       return right(unit);
     } catch (e) {
       return left("فشل حذف الحساب: ${e.toString()}");
     }
   }
 
-  // ✅ [الإضافة الجديدة] دالة تحديث شاملة للدكتور (لما الدكتور يكمل بياناته)
+  // ✅✅✅ الدالة اللي كان بيطلع ليها الـ Error
   @override
-  
   Future<Either<String, Unit>> updateDoctorProfileData(
     String uid,
     Map<String, dynamic> updatedFields,

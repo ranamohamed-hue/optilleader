@@ -1,3 +1,4 @@
+import 'dart:io'; // ✅ [مهم] لإدارة كائن File
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart'; // ✅ [مهم] لاختيار الصور من المعرض
 import 'package:optialeader/feature/database_admin/data/models/admin_profile_model.dart';
 import 'package:optialeader/feature/database_admin/logic/admin_data/admin_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/admin_data/admin_data_state.dart';
@@ -16,7 +18,6 @@ import 'package:optialeader/core/theming/app_color.dart';
 
 /// ============================================================
 /// شاشة الداشبورد الخاصة بالأدمن العادي (Admin)
-/// تحتوي على شريط تنقل سفلي مخصص (Sidebar) وهيكل تبويبات (Tabs)
 /// ============================================================
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -26,13 +27,11 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  /// مؤشر التبويب النشط حالياً (0=الرئيسية، 1=البحث، 2=التنبيهات، 3=الإعدادات)
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    // جلب بيانات الأدمن بمجرد فتح الشاشة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
@@ -41,12 +40,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  /// قائمة بالتبويبات (الصفحات) المعروضة داخل الـ IndexedStack
   final List<Widget> _tabs = const [
-    _HomeTab(), // الصفحة الرئيسية (الترحيب والكروت)
-    _SearchTab(), // صفحة البحث عن الموظفين
-    _NotificationsTab(), // صفحة الإشعارات الخاصة بالأدمن
-    _SettingsTab(), // صفحة الإعدادات والتعديل بيانات الأدمن
+    _HomeTab(),
+    _SearchTab(),
+    _NotificationsTab(),
+    _SettingsTab(),
   ];
 
   @override
@@ -54,17 +52,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      /// الـ body بيستخدم IndexedStack عشان يبدل بين التبويبات من غير ما يفتح صفحات فوق بعضها
       body: IndexedStack(index: _currentIndex, children: _tabs),
-
-      /// الشريط السفلي المخصص (Sidebar) اللي طلبتيه
       bottomNavigationBar: Container(
         height: 70.h,
         color: colorScheme.primary,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            /// زرار الصفحة الرئيسية
             IconButton(
               icon: Icon(
                 Icons.home_outlined,
@@ -72,8 +66,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               onPressed: () => setState(() => _currentIndex = 0),
             ),
-
-            /// زرار البحث
             IconButton(
               icon: Icon(
                 Icons.search,
@@ -81,8 +73,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               onPressed: () => setState(() => _currentIndex = 1),
             ),
-
-            /// زرار التنبيهات
             IconButton(
               icon: Icon(
                 Icons.notifications_none_outlined,
@@ -90,8 +80,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               onPressed: () => setState(() => _currentIndex = 2),
             ),
-
-            /// زرار البروفايل/الإعدادات
             IconButton(
               icon: Icon(
                 Icons.person_outline,
@@ -99,8 +87,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               onPressed: () => setState(() => _currentIndex = 3),
             ),
-
-            /// زرار تسجيل الخروج (أحمر دايماً لأنه Action مش Tab)
             IconButton(
               icon: const Icon(Icons.logout, color: Colors.redAccent),
               onPressed: () async {
@@ -116,8 +102,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 /// ============================================================
-/// 1. تبويب الصفحة الرئيسية (Home Tab)
-/// بيعرض هيدر بالترحيب واسم الأدمن، وكروت للإجراءات السريعة
+/// 1. تبويب الصفحة الرئيسية (Home Tab) - تم تعديله لإضافة رفع الصورة
 /// ============================================================
 class _HomeTab extends StatelessWidget {
   const _HomeTab();
@@ -130,16 +115,13 @@ class _HomeTab extends StatelessWidget {
 
     return BlocBuilder<AdminDataCubit, AdminDataState>(
       builder: (context, state) {
-        /// حالة التحميل
         if (state is AdminLoading) {
           return Center(
             child: CircularProgressIndicator(color: colorScheme.secondary),
           );
         }
 
-        /// حالة نجاح جلب البيانات (عرض الواجهة)
         if (state is AdminLoaded) {
-          // ✅ شلنا علامة التعجب (!) عشان الـ state اللي عملناه مش Nullable
           final admin = state.admin!;
           bool isArabic = context.locale.languageCode == 'ar';
           String displayName = isArabic ? admin.nameAr : admin.nameEn;
@@ -190,22 +172,93 @@ class _HomeTab extends StatelessWidget {
                           ],
                         ),
                       ),
-                      CircleAvatar(
-                        radius: 28.r,
-                        backgroundColor: colorScheme.surface,
-                        child: ClipOval(
-                          child: admin.profileImage.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: admin.profileImage,
-                                  width: 56.r,
-                                  height: 56.r,
-                                  fit: BoxFit.cover,
-                                  placeholder: (_, __) =>
-                                      const CircularProgressIndicator(),
-                                  errorWidget: (_, __, ___) =>
-                                      const Icon(Icons.person),
-                                )
-                              : const Icon(Icons.person),
+
+                      // ✅ [تعديل] تحويل الصورة إلى زر قابل للنقر لرفع صورة جديدة
+                      GestureDetector(
+                        onTap: () async {
+                          // 1. فتح معرض الصور
+                          final ImagePicker picker = ImagePicker();
+                          final XFile? pickedFile = await picker.pickImage(
+                            source: ImageSource.gallery,
+                            requestFullMetadata: false,
+                          );
+
+                          // 2. إذا اختار صورة، نرفعها عبر الكيوبت
+                          if (pickedFile != null) {
+                            if (context.mounted) {
+                              context
+                                  .read<AdminDataCubit>()
+                                  .updateAdminProfileImage(
+                                    admin.uid,
+                                    File(pickedFile.path),
+                                  );
+                            }
+                          }
+                        },
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 28.r,
+                              backgroundColor: colorScheme.surface,
+                              child: ClipOval(
+                                child: admin.profileImage.isNotEmpty
+                                    ? CachedNetworkImage(
+                                        imageUrl: admin.profileImage,
+                                        width: 56.r,
+                                        height: 56.r,
+                                        fit: BoxFit.cover,
+                                        placeholder: (_, __) =>
+                                            const CircularProgressIndicator(),
+                                        errorWidget: (_, __, ___) =>
+                                            const Icon(Icons.person),
+                                      )
+                                    : const Icon(Icons.person),
+                              ),
+                            ),
+                            // ✅ أيقونة الكاميرا الصغيرة فوق الصورة
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: EdgeInsets.all(4.r),
+                                decoration: BoxDecoration(
+                                  color: AppColors.darkGold,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.camera_alt,
+                                  size: 14.r,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+
+                            // ✅ مؤشر تحميل يظهر فوق الصورة أثناء الرفع لـ Supabase
+                            if (state
+                                is AdminLoading) // يمكنك تعديل هذا إذا كان لديك State مخصص للتحميل
+                              Container(
+                                width: 56.r,
+                                height: 56.r,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 20.r,
+                                    height: 20.r,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.r,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ],
@@ -220,29 +273,22 @@ class _HomeTab extends StatelessWidget {
                     padding: EdgeInsets.symmetric(horizontal: 20.w),
                     child: Column(
                       children: [
-                        /// كارت الطلبات الجديدة (الرقم ديناميكي من الـ State)
                         _buildActionCard(
                           context,
                           title: 'dashboard.new_requests'.tr(),
                           icon: Icons.note_add_rounded,
-                          value: state.newRequestsCount
-                              .toString(), // ✅ ديناميكي
+                          value: state.newRequestsCount.toString(),
                           color: colorScheme.primary,
                         ),
                         SizedBox(height: 15.h),
-
-                        /// كارت الطلبات تحت المراجعة (الرقم ديناميكي من الـ State)
                         _buildActionCard(
                           context,
                           title: 'dashboard.under_review'.tr(),
                           icon: Icons.gavel_rounded,
-                          value: state.underReviewCount
-                              .toString(), // ✅ ديناميكي
+                          value: state.underReviewCount.toString(),
                           color: colorScheme.secondary,
                         ),
                         SizedBox(height: 15.h),
-
-                        /// كارت إضافة إعلان جديد
                         _buildActionCard(
                           context,
                           title: 'dashboard.add_announcement'.tr(),
@@ -259,7 +305,6 @@ class _HomeTab extends StatelessWidget {
           );
         }
 
-        /// حالة خطأ جلب البيانات
         if (state is AdminError) {
           return Center(
             child: Column(
@@ -284,7 +329,6 @@ class _HomeTab extends StatelessWidget {
     );
   }
 
-  /// ويدجت مساعدة لبناء كروت الإجراءات السريعة
   Widget _buildActionCard(
     BuildContext context, {
     required String title,

@@ -1,13 +1,16 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart'; 
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
+
 class EditAnnouncementPage extends StatefulWidget {
-  final AnnouncementModel?
-  announcement; // ✅ Nullable عشان نستخدمها في الإضافة والتعديل
+  final AnnouncementModel? announcement;
 
   const EditAnnouncementPage({super.key, this.announcement});
 
@@ -22,10 +25,12 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
   late String _selectedStatus;
   late DateTime _selectedDeadline;
 
+  XFile? _pickedImage;
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
-    // لو فيه announcement يبقى تعديل، لو مفيش يبقى إضافة جديدة
     _titleController = TextEditingController(
       text: widget.announcement?.title ?? '',
     );
@@ -34,7 +39,6 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
     );
     _selectedDeadline = widget.announcement?.deadline ?? DateTime.now();
     _selectedStatus = widget.announcement?.status ?? 'Active';
-
     _dateController = TextEditingController(
       text: DateFormat.yMd(
         context.locale.languageCode,
@@ -50,13 +54,21 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      requestFullMetadata: false,
+    );
+    if (pickedFile != null) setState(() => _pickedImage = pickedFile);
+  }
+
   @override
   Widget build(BuildContext context) {
-    // ✅ شيلنا الألوان الثابتة وخديناها من الثيم
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -65,13 +77,13 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
             backgroundColor: colorScheme.primary,
             centerTitle: true,
             leading: IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back_ios_new,
-                color: Colors.white,
+                color: colorScheme.onPrimary,
                 size: 20,
               ),
               onPressed: () => context.pop(),
-            ), // ✅ GoRouter
+            ),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
             ),
@@ -93,11 +105,11 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: colorScheme.surface, // ✅ من الثيم
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: colorScheme.primary.withOpacity(0.06),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -123,12 +135,84 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
                       colorScheme,
                     ),
                     _buildCustomTextField(
-                      _bodyController, // ✅ الصح: كنترولر الوصف
+                      _bodyController,
                       colorScheme,
                       hint: "edit_announcement.hint_desc".tr(),
                       maxLines: 4,
                     ),
                     const SizedBox(height: 25),
+
+                    // ✅ ويدجت الصورة مربوطة بالثيم
+                    _buildFieldLabel(
+                      "edit_announcement.field_image".tr(),
+                      Icons.image_outlined,
+                      colorScheme,
+                    ),
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: Container(
+                        height: 160,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest
+                              .withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(
+                            color: colorScheme.outline.withOpacity(0.2),
+                          ),
+                        ),
+                        child: _pickedImage != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(15),
+                                child: Image.file(
+                                  File(_pickedImage!.path),
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : (widget.announcement?.imageUrl != null &&
+                                  widget.announcement!.imageUrl!.isNotEmpty)
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(15),
+                                child: CachedNetworkImage(
+                                  imageUrl: widget.announcement!.imageUrl!,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => Center(
+                                    child: CircularProgressIndicator(
+                                      color: colorScheme.secondary,
+                                    ),
+                                  ),
+                                  errorWidget: (_, __, ___) => Icon(
+                                    Icons.broken_image,
+                                    color: colorScheme.error,
+                                    size: 40,
+                                  ),
+                                ),
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.add_photo_alternate_outlined,
+                                    size: 45,
+                                    color: colorScheme.secondary.withOpacity(
+                                      0.7,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    "edit_announcement.hint_image".tr(),
+                                    style: TextStyle(
+                                      color: colorScheme.onSurface.withOpacity(
+                                        0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 25),
+
                     Row(
                       children: [
                         Expanded(
@@ -168,10 +252,12 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
                             onPressed: () => context.pop(),
                             child: Text(
                               "common.cancel".tr(),
-                              style: TextStyle(color: Colors.grey[500]),
+                              style: TextStyle(
+                                color: colorScheme.onSurface.withOpacity(0.5),
+                              ),
                             ),
                           ),
-                        ), // ✅ GoRouter
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           flex: 2,
@@ -237,13 +323,11 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      style: TextStyle(color: colorScheme.primary),
+      style: TextStyle(color: colorScheme.onSurface),
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withOpacity(
-          0.3,
-        ), // ✅ من الثيم
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
@@ -286,7 +370,7 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
           children: [
             Text(
               _dateController.text,
-              style: TextStyle(fontSize: 13, color: colorScheme.primary),
+              style: TextStyle(fontSize: 13, color: colorScheme.onSurface),
             ),
             Icon(
               Icons.calendar_today_rounded,
@@ -316,12 +400,11 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
             color: colorScheme.secondary,
           ),
           style: TextStyle(
-            color: colorScheme.primary,
+            color: colorScheme.onSurface,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
           onChanged: (val) => setState(() => _selectedStatus = val!),
-          // ✅ الـ Status بيتحول لمفتاح ترجمة تلقائياً
           items: AnnouncementModel.statusList
               .map(
                 (v) =>
@@ -334,7 +417,6 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
   }
 
   void _handleUpdate(BuildContext context) {
-    // لو التعديل
     if (widget.announcement != null) {
       final updatedModel = widget.announcement!.copyWith(
         title: _titleController.text,
@@ -342,9 +424,11 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
         status: _selectedStatus,
         deadline: _selectedDeadline,
       );
-      context.read<AnnouncementCubit>().updateAnnouncement(updatedModel);
+      context.read<AnnouncementCubit>().updateAnnouncement(
+        updatedModel,
+        imagePath: _pickedImage?.path,
+      );
     } else {
-      // لو إضافة جديدة
       final newAnnouncement = AnnouncementModel(
         title: _titleController.text,
         description: _bodyController.text,
@@ -352,14 +436,17 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
         deadline: _selectedDeadline,
         createdAt: DateTime.now(),
       );
-      context.read<AnnouncementCubit>().addAnnouncement(newAnnouncement);
+      context.read<AnnouncementCubit>().addAnnouncement(
+        newAnnouncement,
+        imagePath: _pickedImage?.path,
+      );
     }
 
-    context.pop(); // ✅ GoRouter
+    context.pop();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("edit_announcement.success_msg".tr()),
-        backgroundColor: Colors.green[700],
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

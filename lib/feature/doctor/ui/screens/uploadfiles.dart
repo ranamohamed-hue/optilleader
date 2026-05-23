@@ -1,23 +1,31 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/routing/routes.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:file_picker/file_picker.dart'; // ✅ [إضافة] لاختيار الملفات
+import 'package:flutter_bloc/flutter_bloc.dart'; // ✅ [إضافة] عشان نكلم الكيوبت
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
 
 class UploadFilePage extends StatefulWidget {
-  const UploadFilePage({super.key});
+  final String doctorUid; // ✅ [إضافة] لازم نبعت الـ uid للصفحة دي
+
+  const UploadFilePage({super.key, required this.doctorUid});
 
   @override
   State<UploadFilePage> createState() => _UploadFilePageState();
 }
 
 class _UploadFilePageState extends State<UploadFilePage> {
-  // الكنترولرز دي هتحتاجي تبعتي الـ text بتاعها للـ Cubit لاحقاً
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
   String? _selectedCategory;
 
-  // القائمة دي ممكن برضه تخليها تيجي من الـ Constants في ملف منفصل
+  // ✅ [إضافة] متغيرات الملف اللي اترفع
+  File? _pickedFile;
+  String? _pickedFileName;
+
   final List<String> _categories = [
     'archive.folders.certificates',
     'archive.folders.id',
@@ -30,6 +38,21 @@ class _UploadFilePageState extends State<UploadFilePage> {
     _titleController.dispose();
     _descController.dispose();
     super.dispose();
+  }
+
+  // ✅ [إضافة] دالة اختيار الملف من الجهاز
+  Future<void> _pickFile() async {
+    FilePickerResult? result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'png', 'jpeg', 'doc', 'docx'],
+    );
+
+    if (result != null) {
+      setState(() {
+        _pickedFile = File(result.files.single.path!);
+        _pickedFileName = result.files.single.name;
+      });
+    }
   }
 
   @override
@@ -79,7 +102,6 @@ class _UploadFilePageState extends State<UploadFilePage> {
                 color: primaryDark,
               ),
             ),
-
             SizedBox(height: 30.h),
 
             // حقل العنوان
@@ -90,12 +112,10 @@ class _UploadFilePageState extends State<UploadFilePage> {
               primary: primaryDark,
               gold: accentGold,
             ),
-
             SizedBox(height: 15.h),
 
             // اختيار التصنيف (Dropdown)
             _buildCategoryDropdown(primaryDark, accentGold),
-
             SizedBox(height: 15.h),
 
             // حقل الوصف
@@ -107,18 +127,87 @@ class _UploadFilePageState extends State<UploadFilePage> {
               gold: accentGold,
               maxLines: 3,
             ),
+            
+            SizedBox(height: 25.h),
 
+            // ✅ [إضافة] منطقة اختيار وعرض الملف
+            _buildFilePickerArea(primaryDark, accentGold),
+            
             SizedBox(height: 40.h),
 
-            // زر الرفع (هنا هتربطي الـ Cubit.upload)
+            // ✅ [تعديل] زر الرفع مربوط بالكيوبت
             SPrimaryButton(
               text: "upload.btn_upload".tr(),
               color: primaryDark,
               textColor: accentGold,
               onPressed: () {
-                // TODO: اطلبي الـ function من الـ Cubit هنا
-                // context.read<UploadCubit>().uploadData(...);
+                // 1. التأكد إن المستخدم اختار ملف وكتب عنوان
+                if (_pickedFile == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("الرجاء اختيار ملف أولاً")),
+                  );
+                  return;
+                }
+                if (_titleController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("الرجاء كتابة عنوان الملف")),
+                  );
+                  return;
+                }
+
+                // 2. استدعاء دالة الرفع من الكيوبت
+                context.read<DoctorDataCubit>().uploadArchiveFile(
+                  uid: widget.doctorUid,
+                  file: _pickedFile!,
+                  title: _titleController.text,
+                  description: _descController.text,
+                  category: _selectedCategory ?? 'archive.folders.misc',
+                );
+
+                // 3. الرجوع لصفحة الأرشيف بعد الرفع
+                if (context.canPop()) {
+                  context.pop();
+                }
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ✅ [إضافة] ويدجت منطقة اختيار الملف
+  Widget _buildFilePickerArea(Color primary, Color gold) {
+    return InkWell(
+      onTap: _pickFile,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(20.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: _pickedFile != null ? gold : primary.withOpacity(0.3),
+            width: 1.5.w,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              _pickedFile != null ? Icons.check_circle_outline : Icons.cloud_upload_outlined,
+              color: _pickedFile != null ? Colors.green : primary,
+              size: 40.sp,
+            ),
+            SizedBox(height: 10.h),
+            Text(
+              _pickedFileName ?? "upload.hint_file".tr(), // لو مش عامل الترجمة دي، اكتب بدلها "اضغط لاختيار ملف"
+              style: TextStyle(
+                color: _pickedFile != null ? primary : Colors.grey,
+                fontSize: 13.sp,
+                fontWeight: _pickedFile != null ? FontWeight.bold : FontWeight.normal,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

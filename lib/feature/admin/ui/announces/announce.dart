@@ -1,11 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart'; // ✅ إضافة
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart'; // ✅
+import 'package:go_router/go_router.dart';
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_state.dart';
-import 'package:optialeader/feature/admin/ui/announces/announce_dateail.dart';
 
 class AnnouncementsPage extends StatelessWidget {
   const AnnouncementsPage({super.key});
@@ -49,7 +49,7 @@ class AnnouncementsPage extends StatelessWidget {
       return [_buildAnnouncementsList(state.announcements)];
     }
     if (state is AnnouncementError) {
-      return [_buildErrorState(state.message)]; // الـ message هيكون Error Code
+      return [_buildErrorState(state.message)];
     }
     return [
       SliverFillRemaining(
@@ -89,7 +89,7 @@ class AnnouncementsPage extends StatelessWidget {
                     size: 20,
                   ),
                   onPressed: () => context.pop(),
-                ), // ✅ GoRouter
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -138,12 +138,12 @@ class AnnouncementsPage extends StatelessWidget {
     AnnouncementModel announcement,
   ) {
     final theme = Theme.of(context);
-    final statusColor = announcement.getStatusColor(context); // ✅ بيوخد Context
+    final statusColor = announcement.getStatusColor(context);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
       decoration: BoxDecoration(
-        color: theme.cardColor, // ✅ من الثيم
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
@@ -157,81 +157,112 @@ class AnnouncementsPage extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
-          onTap: () => context.push(
-            '/admin/announcementDetails',
-            extra: announcement,
-          ), // ✅ GoRouter
+          onTap: () =>
+              context.push('/admin/announcementDetails', extra: announcement),
           child: Padding(
             padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              // ✅ [تعديل] تحويل الـ Column لـ Row عشان نحط الصورة جمب النص
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        announcement.title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              announcement.title,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            context.locale.languageCode == 'ar'
+                                ? Icons.arrow_back_ios
+                                : Icons.arrow_forward_ios,
+                            size: 12,
+                            color: Colors.grey,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        announcement.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
                         ),
                       ),
-                    ),
-                    Icon(
-                      context.locale.languageCode == 'ar'
-                          ? Icons.arrow_back_ios
-                          : Icons.arrow_forward_ios,
-                      size: 12,
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  announcement.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Divider(thickness: 0.6),
+                      ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.group_outlined,
+                            size: 18,
+                            color: statusColor,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            "${announcement.applicants} ${'announce.details.person_unit'.tr()}",
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              "announce.${announcement.status.toLowerCase()}"
+                                  .tr(),
+                              style: TextStyle(
+                                color: statusColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(thickness: 0.6),
-                ),
-                Row(
-                  children: [
-                    Icon(Icons.group_outlined, size: 18, color: statusColor),
-                    const SizedBox(width: 6),
-                    Text(
-                      "${announcement.applicants} ${'announce.details.person_unit'.tr()}",
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+
+                // ✅ [إضافة] عرض الصورة المصغرة لو موجودة
+                if (announcement.imageUrl != null &&
+                    announcement.imageUrl!.isNotEmpty) ...[
+                  const SizedBox(width: 15),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: CachedNetworkImage(
+                      imageUrl: announcement.imageUrl!,
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(
+                        color: Colors.grey[200],
+                        width: 70,
+                        height: 70,
                       ),
+                      errorWidget: (_, __, ___) =>
+                          const Icon(Icons.broken_image, size: 40),
                     ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        "announce.${announcement.status.toLowerCase()}"
-                            .tr(), // ✅ ترجمة الحالة
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -275,13 +306,11 @@ class AnnouncementsPage extends StatelessWidget {
         ),
       ),
     ),
-  ); // ✅ ترجمة كود الخطأ
+  );
 
   Widget _buildFAB(BuildContext context, ColorScheme colorScheme) {
     return FloatingActionButton.extended(
-      onPressed: () => context.push(
-        '/admin/editAnnountmentPage',
-      ), // ✅ GoRouter (مسار الإضافة)
+      onPressed: () => context.push('/admin/editAnnountmentPage'),
       backgroundColor: colorScheme.primary,
       icon: Icon(Icons.add_rounded, color: colorScheme.secondary),
       label: Text(

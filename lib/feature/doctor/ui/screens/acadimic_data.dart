@@ -1,281 +1,259 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:optialeader/core/routing/routes.dart';
+import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 
-class DoctorProfileDataPage extends StatefulWidget {
+// ✅ حولناها لـ StatelessWidget عشانها عرض فقط
+class DoctorProfileDataPage extends StatelessWidget {
   const DoctorProfileDataPage({super.key});
-
-  @override
-  State<DoctorProfileDataPage> createState() => _DoctorProfileDataPageState();
-}
-
-class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
-  // التجهيز لاستقبال البيانات والتحكم بها
-  late TextEditingController nameController;
-  late TextEditingController phoneController;
-  late TextEditingController statusController;
-  late TextEditingController birthDateController;
-  late TextEditingController jobController;
-  late TextEditingController emailController;
-  late TextEditingController addressController;
-
-  @override
-  void initState() {
-    super.initState();
-    // تهيئة الـ Controllers
-    nameController = TextEditingController();
-    phoneController = TextEditingController();
-    statusController = TextEditingController();
-    birthDateController = TextEditingController();
-    jobController = TextEditingController();
-    emailController = TextEditingController();
-    addressController = TextEditingController();
-
-    // هنا يمكنك استدعاء بيانات الطبيب من الـ Cubit وتعيين القيم للـ Controllers
-    // مثال: nameController.text = "د. سارة محمد";
-  }
-
-  @override
-  void dispose() {
-    // تنظيف الـ Controllers من الذاكرة
-    nameController.dispose();
-    phoneController.dispose();
-    statusController.dispose();
-    birthDateController.dispose();
-    jobController.dispose();
-    emailController.dispose();
-    addressController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // Header (SliverAppBar)
-          SliverAppBar(
-            expandedHeight: 180.0.h,
-            pinned: true,
-            backgroundColor: colorScheme.primary,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new,
-                size: 20.sp,
-                color: Colors.white,
-              ),
-              onPressed: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go(Routes.user);
-                }
-              },
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      colorScheme.primary,
-                      colorScheme.primary.withOpacity(0.85),
-                    ],
+    return BlocBuilder<DoctorDataCubit, DoctorDataState>(
+      builder: (context, state) {
+        // 1. حالة التحميل
+        if (state is DoctorLoading) {
+          return Scaffold(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // 2. حالة عرض البيانات
+        if (state is DoctorLoaded) {
+          final doctor = state.doctor;
+
+          return Scaffold(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            body: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  expandedHeight: 180.0.h,
+                  pinned: true,
+                  backgroundColor: colorScheme.primary,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios_new,
+                      size: 20.sp,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go(Routes.user);
+                      }
+                    },
                   ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(20.w, 80.h, 20.w, 0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: colorScheme.secondary,
-                            width: 2.w,
-                          ),
-                        ),
-                        child: CircleAvatar(
-                          radius: 35.r,
-                          backgroundColor: Colors.white12,
-                          child: Icon(
-                            Icons.person,
-                            color: colorScheme.secondary,
-                            size: 40.sp,
-                          ),
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            colorScheme.primary,
+                            colorScheme.primary.withOpacity(0.85),
+                          ],
                         ),
                       ),
-                      SizedBox(width: 15.w),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(20.w, 80.h, 20.w, 0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text(
-                              "Dr. Sara Mohamed", // يمكن استبدالها بـ Controller لاحقاً
-                              style: textTheme.titleMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18.sp,
+                            // ✅ عرض الصورة من السوبابيز فقط (بدون تعديل)
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: colorScheme.secondary,
+                                  width: 2.w,
+                                ),
                               ),
-                              overflow: TextOverflow.ellipsis,
+                              child: CircleAvatar(
+                                radius: 35.r,
+                                backgroundColor: Colors.white12,
+                                backgroundImage:
+                                    (doctor?.profileImage.isNotEmpty ?? false)
+                                    ? CachedNetworkImageProvider(
+                                        doctor!.profileImage,
+                                      )
+                                    : null,
+                                child: (doctor?.profileImage.isEmpty ?? true)
+                                    ? Icon(
+                                        Icons.person,
+                                        color: colorScheme.secondary,
+                                        size: 40.sp,
+                                      )
+                                    : null,
+                              ),
                             ),
-                            Text(
-                              "add_doctor.personal_section".tr(),
-                              style: textTheme.bodySmall?.copyWith(
-                                color: Colors.white70,
-                                fontSize: 13.sp,
+                            SizedBox(width: 15.w),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    context.locale.languageCode == 'ar'
+                                        ? (doctor?.nameAr ??
+                                              'dashboard.doctor_default'.tr())
+                                        : (doctor?.nameEn ??
+                                              'dashboard.doctor_default'.tr()),
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18.sp,
+                                        ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    doctor?.currentJobAr ??
+                                        "add_doctor.personal_section".tr(),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: Colors.white70,
+                                      fontSize: 13.sp,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
 
-          // Content Area
-          SliverList(
-            delegate: SliverChildListDelegate([
-              SizedBox(height: 10.h),
+                SliverList(
+                  delegate: SliverChildListDelegate([
+                    SizedBox(height: 10.h),
 
-              // 1. General Information Card
-              _buildSectionCard(
-                context,
-                icon: Icons.badge_outlined,
-                title: "add_doctor.personal_section".tr(),
-                children: [
-                  _buildField(
-                    context,
-                    label: "add_doctor.name_ar".tr(),
-                    controller: nameController,
-                    hint: "add_doctor.name_ar".tr(),
-                  ),
-                  _buildField(
-                    context,
-                    label: "add_doctor.phone".tr(),
-                    controller: phoneController,
-                    hint: "+20 123 456 789",
-                    keyboardType: TextInputType.phone,
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildField(
+                    // 1. General Information Card
+                    _buildSectionCard(
+                      context,
+                      icon: Icons.badge_outlined,
+                      title: "add_doctor.personal_section".tr(),
+                      children: [
+                        _buildInfoRow(
+                          context,
+                          label: "add_doctor.name_ar".tr(),
+                          value: doctor?.nameAr ?? '-',
+                        ),
+                        _buildInfoRow(
+                          context,
+                          label: "add_doctor.phone".tr(),
+                          value: doctor?.phone ?? '-',
+                        ),
+                        _buildInfoRow(
                           context,
                           label: "add_doctor.social_status".tr(),
-                          controller: statusController,
-                          hint: "...",
+                          value: doctor?.socialStatusAr ?? '-',
                         ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: _buildField(
+                        _buildInfoRow(
                           context,
                           label: "statuses.active".tr(),
-                          controller: TextEditingController(
-                            text: "Active",
-                          ), // حقل ثابت للعرض فقط
-                          enabled: false,
-                          hint: "Active",
+                          value: (doctor?.isActive ?? true)
+                              ? "Active"
+                              : "Inactive",
                         ),
-                      ),
-                    ],
-                  ),
-                  _buildField(
-                    context,
-                    label: "add_doctor.birth_date".tr(),
-                    controller: birthDateController,
-                    hint: "DD/MM/YYYY",
-                  ),
-                ],
-              ),
-
-              // 2. Academic & Career History
-              _buildSectionCard(
-                context,
-                icon: Icons.school_outlined,
-                title: "add_doctor.academic_section".tr(),
-                children: [
-                  _buildField(
-                    context,
-                    label: "add_doctor.job_ar".tr(),
-                    controller: jobController,
-                    hint: "Enter job...",
-                  ),
-                ],
-              ),
-
-              // 3. Contact Details
-              _buildSectionCard(
-                context,
-                icon: Icons.contact_mail_outlined,
-                title: "add_doctor.contact_section".tr(),
-                children: [
-                  _buildField(
-                    context,
-                    label: "add_doctor.email".tr(),
-                    controller: emailController,
-                    hint: "sara@university.edu.eg",
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  _buildField(
-                    context,
-                    label: "add_doctor.address_ar".tr(),
-                    controller: addressController,
-                    hint: "City, District, St.",
-                  ),
-                ],
-              ),
-
-              // Save Button
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 30.h),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // هنا نجمع البيانات من الـ controllers ونرسلها للـ Cubit
-                      // print(nameController.text);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 15.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
+                        _buildInfoRow(
+                          context,
+                          label: "add_doctor.birth_date".tr(),
+                          value: doctor?.birthDate != null
+                              ? "${doctor!.birthDate!.toLocal()}".split(' ')[0]
+                              : '-',
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      "add_doctor.save_btn".tr(),
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
+
+                    // 2. Academic & Career History
+                    _buildSectionCard(
+                      context,
+                      icon: Icons.school_outlined,
+                      title: "add_doctor.academic_section".tr(),
+                      children: [
+                        _buildInfoRow(
+                          context,
+                          label: "add_doctor.job_ar".tr(),
+                          value: doctor?.currentJobAr ?? '-',
+                        ),
+                      ],
                     ),
-                  ),
+
+                    // 3. Contact Details
+                    _buildSectionCard(
+                      context,
+                      icon: Icons.contact_mail_outlined,
+                      title: "add_doctor.contact_section".tr(),
+                      children: [
+                        _buildInfoRow(
+                          context,
+                          label: "add_doctor.email".tr(),
+                          value: doctor?.email ?? '-',
+                        ),
+                        _buildInfoRow(
+                          context,
+                          label: "add_doctor.address_ar".tr(),
+                          value: doctor?.addressAr ?? '-',
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 40.h),
+                  ]),
                 ),
+              ],
+            ),
+          );
+        }
+
+        // 3. حالة الخطأ
+        if (state is DoctorError) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red, size: 48.sp),
+                  SizedBox(height: 16.h),
+                  Text(
+                    state.error ?? 'error_message'.tr(),
+                    style: TextStyle(color: Colors.red, fontSize: 14.sp),
+                  ),
+                  SizedBox(height: 20.h),
+                  ElevatedButton(
+                    onPressed: () {
+                      // استدعاء دالة التحميل مرة أخرى
+                    },
+                    child: Text('retry'.tr()),
+                  ),
+                ],
               ),
-              SizedBox(height: 40.h),
-            ]),
-          ),
-        ],
-      ),
+            ),
+          );
+        }
+
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      },
     );
   }
 
+  // ✅ [تعديل] بطاقة القسم (شكلها فضل نفسه)
   Widget _buildSectionCard(
     BuildContext context, {
     required IconData icon,
@@ -325,17 +303,13 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
     );
   }
 
-  Widget _buildField(
+  // ✅ [جديد] سطر عرض البيانات (بدل الـ TextFormField)
+  Widget _buildInfoRow(
     BuildContext context, {
     required String label,
-    required TextEditingController controller,
-    String? hint,
-    bool enabled = true,
-    TextInputType? keyboardType,
+    required String value,
   }) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Padding(
       padding: EdgeInsets.only(bottom: 15.h),
       child: Column(
@@ -344,25 +318,22 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
           Text(
             label,
             style: theme.textTheme.labelMedium?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.bold,
-              fontSize: 12.sp,
+              color: theme.colorScheme.primary.withOpacity(0.7),
+              fontWeight: FontWeight.w600,
+              fontSize: 11.sp,
             ),
           ),
-          SizedBox(height: 8.h),
-          TextFormField(
-            controller: controller,
-            enabled: enabled,
-            keyboardType: keyboardType,
-            style: TextStyle(fontSize: 14.sp),
-            decoration: InputDecoration(
-              hintText: hint,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 15.w,
-                vertical: 12.h,
-              ),
+          SizedBox(height: 4.h),
+          Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
             ),
           ),
+          SizedBox(height: 10.h),
+          Divider(height: 1, color: theme.dividerColor.withOpacity(0.2)),
         ],
       ),
     );

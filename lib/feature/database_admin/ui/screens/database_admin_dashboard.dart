@@ -1,9 +1,12 @@
+import 'dart:io'; // ✅ [مهم] لإدارة كائن File
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:image_picker/image_picker.dart'; // ✅ لاختيار الصور من المعرض
+import 'package:cached_network_image/cached_network_image.dart'; // ✅ لعرض الصور بكفاءة
 import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/logic/database_admin_data/database_admin_state.dart';
 import 'package:optialeader/feature/database_admin/logic/database_admin_data/databse_admin_cubit.dart';
@@ -123,31 +126,70 @@ class _HomeTab extends StatelessWidget {
           return Scaffold(
             appBar: AppBar(
               toolbarHeight: 90.h,
-              // تم إزالة backgroundColor، سيأتي تلقائياً من الثيم (NavyDark في الفاتح)
               title: Row(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: colorScheme.secondary,
-                        width: 2,
-                      ), // DarkGold
-                    ),
-                    child: CircleAvatar(
-                      radius: 28.r,
-                      backgroundColor:
-                          colorScheme.primaryContainer, // NavyLight
-                      backgroundImage: admin.profileImage.isNotEmpty
-                          ? NetworkImage(admin.profileImage)
-                          : null,
-                      child: admin.profileImage.isEmpty
-                          ? Icon(
-                              Icons.person,
-                              color: colorScheme.onPrimary,
-                              size: 30.sp,
-                            )
-                          : null,
+                  // ✅ [تعديل] تحويل الصورة إلى زر قابل للنقر لرفع صورة جديدة
+                  GestureDetector(
+                    onTap: () async {
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? pickedFile = await picker.pickImage(
+                        source: ImageSource.gallery,
+                        requestFullMetadata: false,
+                      );
+
+                      if (pickedFile != null && context.mounted) {
+                        context.read<DatabseAdminCubit>().updateProfileImageWithFile(
+                              admin.uid,
+                              File(pickedFile.path),
+                            );
+                      }
+                    },
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: colorScheme.secondary,
+                              width: 2,
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 28.r,
+                            backgroundColor: colorScheme.primaryContainer,
+                            child: ClipOval(
+                              child: admin.profileImage.isNotEmpty
+                                  ? CachedNetworkImage( // ✅ استخدام CachedNetworkImage
+                                      imageUrl: admin.profileImage,
+                                      width: 56.r,
+                                      height: 56.r,
+                                      fit: BoxFit.cover,
+                                      placeholder: (_, __) => Icon(Icons.person, color: colorScheme.onPrimary, size: 30.sp),
+                                      errorWidget: (_, __, ___) => Icon(Icons.person, color: colorScheme.onPrimary, size: 30.sp),
+                                    )
+                                  : Icon(
+                                      Icons.person,
+                                      color: colorScheme.onPrimary,
+                                      size: 30.sp,
+                                    ),
+                            ),
+                          ),
+                        ),
+                        // ✅ أيقونة الكاميرا الصغيرة فوق الصورة
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: EdgeInsets.all(4.r),
+                            decoration: BoxDecoration(
+                              color: colorScheme.secondary, // DarkGold
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 1.5),
+                            ),
+                            child: Icon(Icons.camera_alt, size: 12.r, color: Colors.white),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   SizedBox(width: 12.w),
@@ -166,7 +208,7 @@ class _HomeTab extends StatelessWidget {
                           isArabic ? admin.nameAr : admin.nameEn,
                           overflow: TextOverflow.ellipsis,
                           style: textTheme.titleLarge?.copyWith(
-                            color: colorScheme.onPrimary, // White
+                            color: colorScheme.onPrimary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -184,7 +226,7 @@ class _HomeTab extends StatelessWidget {
               ],
             ),
             body: RefreshIndicator(
-              color: colorScheme.secondary, // DarkGold
+              color: colorScheme.secondary,
               onRefresh: () async =>
                   await context.read<DatabseAdminCubit>().getProfile(admin.uid),
               child: SingleChildScrollView(
@@ -214,7 +256,7 @@ class _HomeTab extends StatelessWidget {
                           "dashboard.judges".tr(),
                           state.judgesCount.toString(),
                           Icons.gavel,
-                          colorScheme.secondary, // DarkGold
+                          colorScheme.secondary,
                         ),
                         _buildStatCard(
                           context,
@@ -244,14 +286,14 @@ class _HomeTab extends StatelessWidget {
                       context,
                       "dashboard.add_doctor".tr(),
                       Icons.person_add_alt_1,
-                      colorScheme.primary, // NavyDark
+                      colorScheme.primary,
                       Routes.addDoctorPage,
                     ),
                     _buildActionCard(
                       context,
                       "dashboard.add_admin".tr(),
                       Icons.manage_accounts,
-                      colorScheme.primaryContainer, // NavyLight
+                      colorScheme.primaryContainer,
                       Routes.addAdminPage,
                     ),
                     _buildActionCard(
@@ -287,7 +329,6 @@ class _HomeTab extends StatelessWidget {
     final theme = Theme.of(context);
     return Expanded(
       child: Card(
-        // الـ Card هياخد شكله من cardTheme المعرف في AppTheme
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 15.h),
           child: Column(
@@ -328,11 +369,11 @@ class _HomeTab extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(15.r),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black12,
               blurRadius: 6,
-              offset: const Offset(0, 3),
+              offset: Offset(0, 3),
             ),
           ],
         ),
@@ -342,7 +383,7 @@ class _HomeTab extends StatelessWidget {
               icon,
               color: theme.colorScheme.secondary,
               size: 26.sp,
-            ), // DarkGold
+            ),
             SizedBox(width: 15.w),
             Text(
               title,
@@ -354,7 +395,7 @@ class _HomeTab extends StatelessWidget {
             const Spacer(),
             Icon(
               Icons.arrow_forward_ios,
-              color: theme.colorScheme.secondary, // DarkGold
+              color: theme.colorScheme.secondary,
               size: 14.sp,
             ),
           ],
@@ -364,21 +405,22 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
-// 2. تبويب التنبيهات (مربوط بالثيم)
+// 2. تبويب التنبيهات
 class _NotificationsTab extends StatelessWidget {
   const _NotificationsTab();
+  @override
   Widget build(BuildContext context) {
     final state = context.watch<DatabseAdminCubit>().state;
 
     if (state is DatabaseAdminSuccess) {
-      return NotificationsScreen();
+      return const NotificationsScreen();
     }
 
     return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 
-// 3. تبويب الإعدادات (مربوط بالصفحة الحقيقية)
+// 3. تبويب الإعدادات
 class _SettingsTab extends StatelessWidget {
   const _SettingsTab();
 

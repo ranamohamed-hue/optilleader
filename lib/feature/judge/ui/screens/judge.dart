@@ -1,8 +1,11 @@
+import 'dart:io'; // ✅ [مهم] لإدارة كائن File
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:image_picker/image_picker.dart'; // ✅ لاختيار الصور
+import 'package:cached_network_image/cached_network_image.dart'; // ✅ لعرض الصور بكفاءة
 import 'package:optialeader/feature/database_admin/logic/judge_data/judge_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/judge_data/judge_data_state.dart';
 
@@ -17,7 +20,7 @@ class MohakemDashboardHome extends StatelessWidget {
 
     return BlocBuilder<JudgeDataCubit, JudgeDataState>(
       builder: (context, state) {
-        // 1. حالة التحميل
+        // 1. حالة التحميل العامة
         if (state is JudgeLoading) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
@@ -36,7 +39,7 @@ class MohakemDashboardHome extends StatelessWidget {
           );
         }
 
-        // 3. الحالة الناجحة (تم استخدام else if أو إزالة الشرط لحل Dead Code)
+        // 3. الحالة الناجحة
         if (state is JudgeLoaded) {
           final judge = state.judge!;
           final isArabic = context.locale.languageCode == 'ar';
@@ -45,7 +48,6 @@ class MohakemDashboardHome extends StatelessWidget {
               ? (judge.nameAr.isNotEmpty ? judge.nameAr : "محكم")
               : (judge.nameEn.isNotEmpty ? judge.nameEn : "Judge");
 
-          // تم التصحيح إلى jobAr و jobEn (بالـ b) لتطابق الموديل
           final displayJob = isArabic
               ? (judge.jopAr.isNotEmpty ? judge.jopAr : "محكم معتمد")
               : (judge.jopEn.isNotEmpty ? judge.jopEn : "Certified Judge");
@@ -73,6 +75,7 @@ class MohakemDashboardHome extends StatelessWidget {
                           displayName,
                           displayJob,
                           judge.profileImage,
+                          judge.uid, // ✅ تمرير الـ uid لدالة الهيدر
                         ),
                         SizedBox(height: 15.h),
                         _buildGoldLine(colorGold),
@@ -154,14 +157,11 @@ class MohakemDashboardHome extends StatelessWidget {
           );
         }
 
-        // تم تغيير هذا السطر ليكون الخيار الافتراضي الوحيد المتبقي
-        // لمنع تحذير الـ Dead Code
         return const Scaffold(body: SizedBox.shrink());
       },
     );
   }
 
-  // --- Widgets المساعدة تظل كما هي ---
   Widget _buildAppBar(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 10.w),
@@ -180,12 +180,14 @@ class MohakemDashboardHome extends StatelessWidget {
     );
   }
 
+  // ✅ [تعديل] إضافة uid كـ Parameter لاستخدامه في رفع الصورة
   Widget _buildHeader(
     BuildContext context,
     Color gold,
     String name,
     String job,
     String? imageUrl,
+    String uid, 
   ) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 25.w),
@@ -195,15 +197,80 @@ class MohakemDashboardHome extends StatelessWidget {
           Expanded(
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 26.r,
-                  backgroundColor: Colors.white.withOpacity(0.15),
-                  backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
-                      ? NetworkImage(imageUrl)
-                      : null,
-                  child: (imageUrl == null || imageUrl.isEmpty)
-                      ? Icon(Icons.person, color: gold, size: 30.sp)
-                      : null,
+                // ✅ [تعديل] تحويل الصورة إلى زر قابل للنقر لرفع صورة جديدة
+                GestureDetector(
+                  onTap: () async {
+                    final ImagePicker picker = ImagePicker();
+                    final XFile? pickedFile = await picker.pickImage(
+                      source: ImageSource.gallery,
+                      requestFullMetadata: false,
+                    );
+
+                    if (pickedFile != null && context.mounted) {
+                      context.read<JudgeDataCubit>().updateJudgeProfileImage(
+                            uid,
+                            File(pickedFile.path),
+                          );
+                    }
+                  },
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 26.r,
+                        backgroundColor: Colors.white.withOpacity(0.15),
+                        child: ClipOval(
+                          child: (imageUrl != null && imageUrl.isNotEmpty)
+                              ? CachedNetworkImage( // ✅ استخدام CachedNetworkImage بدلاً من NetworkImage
+                                  imageUrl: imageUrl,
+                                  width: 52.r,
+                                  height: 52.r,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => Icon(Icons.person, color: gold, size: 30.sp),
+                                  errorWidget: (_, __, ___) => Icon(Icons.person, color: gold, size: 30.sp),
+                                )
+                              : Icon(Icons.person, color: gold, size: 30.sp),
+                        ),
+                      ),
+                      // ✅ أيقونة الكاميرا الصغيرة فوق الصورة
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: EdgeInsets.all(4.r),
+                          decoration: BoxDecoration(
+                            color: gold,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          child: Icon(Icons.camera_alt, size: 12.r, color: Colors.white),
+                        ),
+                      ),
+                      
+                      // ✅ مؤشر تحميل يظهر فوق الصورة أثناء الرفع لـ Supabase والضغط
+                      BlocBuilder<JudgeDataCubit, JudgeDataState>(
+                        builder: (context, state) {
+                          if (state is JudgeLoading) {
+                            return Container(
+                              width: 52.r,
+                              height: 52.r,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20.r,
+                                  height: 20.r,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.r),
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ],
+                  ),
                 ),
                 SizedBox(width: 15.w),
                 Expanded(

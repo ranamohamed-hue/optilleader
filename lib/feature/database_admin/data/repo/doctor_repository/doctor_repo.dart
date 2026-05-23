@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'dart:typed_data';
 import 'package:dartz/dartz.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
 
@@ -15,9 +14,12 @@ abstract class DoctorRepo {
     bool isOnVacation,
   );
 
-  //بتاخد الملف ومسار التخزين وبترجع لك الرابط
-  Future<Either<String, String>> uploadFile(File file, String storagePath);
-  // تحديث الصورة الشخصية مباشرة}
+  Future<Either<String, String>> uploadFile(
+    Uint8List fileBytes,
+    String storagePath, {
+    required String bucketName,
+  });
+
   Future<Either<String, Unit>> updateDoctorImage(String uid, String imageUrl);
   Future<Either<String, Unit>> deleteDoctorAccount(String uid);
   Future<Either<String, Unit>> updateDoctorProfileData(

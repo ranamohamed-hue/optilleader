@@ -1,7 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart'; // ✅ إضافة
 import 'package:easy_localization/easy_localization.dart';
+import 'package:go_router/go_router.dart'; // ✅ إضافة
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
+import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart';
 
 class AnnouncementDetailsPage extends StatelessWidget {
   final AnnouncementModel announcement;
@@ -16,10 +19,9 @@ class AnnouncementDetailsPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      // زر التعديل (FAB)
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // Navigator.push logic here
+          context.push('/admin/editAnnountmentPage', extra: announcement);
         },
         elevation: 4,
         backgroundColor: colorScheme.primary,
@@ -49,7 +51,12 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   color: Colors.white70,
                 ),
                 onPressed: () {
-                  // حذف الإعلان
+                  // ✅ [تعديل] استدعاء دالة الحذف من الـ Cubit وتمرير الرابط عشان يتمسح من سوبابيز
+                  context.read<AnnouncementCubit>().deleteAnnouncement(
+                    announcement.id!,
+                    announcement.imageUrl,
+                  );
+                  context.pop(); // الرجوع لشاشة الإعلانات بعد الحذف
                 },
               ),
               const SizedBox(width: 10),
@@ -104,7 +111,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
                             color: Colors.white,
                             size: 22,
                           ),
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => context.pop(),
                         ),
                         const SizedBox(width: 5),
                         Container(
@@ -228,7 +235,6 @@ class AnnouncementDetailsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Text(
-                    // نستخدم مفتاح الحالة الديناميكي (active, closed, pending)
                     "announce.${announcement.status.toLowerCase()}"
                         .tr()
                         .toUpperCase(),

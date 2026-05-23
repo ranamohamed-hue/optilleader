@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart'; // ✅ لسه محتاجينها عشان نفتح الملفات
+
 import 'package:optialeader/core/routing/routes.dart';
+import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 
 class DigitalArchivePage extends StatelessWidget {
   const DigitalArchivePage({super.key});
@@ -13,121 +20,140 @@ class DigitalArchivePage extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        appBar: AppBar(
-          backgroundColor: colorScheme.primary,
-          elevation: 0,
-          toolbarHeight: 80.h,
-          automaticallyImplyLeading: false,
-          // زر الرجوع الموحد
-          leading: IconButton(
-            icon: Icon(
-              Icons.arrow_back_ios_new,
-              size: 20.sp,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go(Routes.user);
-              }
-            },
-          ),
-          title: Row(
-            children: [
-              _buildAppBarProfile(colorScheme),
-              SizedBox(width: 12.w),
-              Text(
-                'archive.title'.tr(),
-                style: textTheme.titleMedium?.copyWith(
+    return BlocBuilder<DoctorDataCubit, DoctorDataState>(
+      builder: (context, state) {
+        DoctorProfileModel? doctor;
+        if (state is DoctorLoaded) {
+          doctor = state.doctor;
+        }
+
+        // ⚠️ افتراضية: لستة الملفات اللي الدكتور رفعها (لازم تربطها بحقل في الموديل بعدين)
+        final List<Map<String, String>> archivedFiles = [];
+
+        return DefaultTabController(
+          length: 3,
+          child: Scaffold(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            appBar: AppBar(
+              backgroundColor: colorScheme.primary,
+              elevation: 0,
+              toolbarHeight: 80.h,
+              automaticallyImplyLeading: false,
+              leading: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios_new,
+                  size: 20.sp,
                   color: Colors.white,
+                ),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(Routes.user);
+                  }
+                },
+              ),
+              title: Row(
+                children: [
+                  _buildAppBarProfile(colorScheme, doctor?.profileImage),
+                  SizedBox(width: 12.w),
+                  Text(
+                    'archive.title'.tr(),
+                    style: textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.sp,
+                    ),
+                  ),
+                ],
+              ),
+              bottom: TabBar(
+                indicatorColor: colorScheme.secondary,
+                indicatorWeight: 3,
+                labelColor: colorScheme.secondary,
+                unselectedLabelColor: Colors.white70,
+                labelStyle: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16.sp,
+                  fontSize: 13.sp,
                 ),
+                tabs: [
+                  Tab(text: "archive.tabs.research".tr()),
+                  Tab(text: "archive.tabs.conferences".tr()),
+                  Tab(text: "archive.tabs.others".tr()),
+                ],
               ),
-            ],
-          ),
-          bottom: TabBar(
-            indicatorColor: colorScheme.secondary,
-            indicatorWeight: 3,
-            labelColor: colorScheme.secondary,
-            unselectedLabelColor: Colors.white70,
-            labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp),
-            tabs: [
-              Tab(text: "archive.tabs.research".tr()),
-              Tab(text: "archive.tabs.conferences".tr()),
-              Tab(text: "archive.tabs.others".tr()),
-            ],
-          ),
-        ),
-        body: Padding(
-          padding: EdgeInsets.all(20.w),
-          child: Column(
-            children: [
-              _buildSearchAndSortBar(colorScheme),
-              SizedBox(height: 20.h),
-              Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 15.w,
-                  mainAxisSpacing: 15.h,
-                  childAspectRatio: 0.85,
-                  children: [
-                    _buildFolderCard(
-                      context,
-                      "archive.folders.certificates".tr(),
-                      "archive.folders.certificates_sub".tr(),
-                      Colors.teal.shade300,
-                      3,
-                    ),
-                    _buildFolderCard(
-                      context,
-                      "archive.folders.id".tr(),
-                      "archive.folders.id_sub".tr(),
-                      Colors.amber.shade400,
-                      4,
-                    ),
-                    _buildFolderCard(
-                      context,
-                      "archive.folders.decisions".tr(),
-                      "archive.folders.decisions_sub".tr(),
-                      Colors.blue.shade300,
-                      5,
-                    ),
-                    _buildFolderCard(
-                      context,
-                      "archive.folders.misc".tr(),
-                      "archive.folders.misc_sub".tr(),
-                      Colors.purple.shade300,
-                      3,
-                      badgeCount: 3,
-                    ),
-                  ],
-                ),
+            ),
+            body: Padding(
+              padding: EdgeInsets.all(20.w),
+              child: Column(
+                children: [
+                  _buildSearchAndSortBar(colorScheme),
+                  SizedBox(height: 20.h),
+                  Expanded(
+                    child: archivedFiles.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.folder_open,
+                                  size: 60.sp,
+                                  color: Colors.grey.shade400,
+                                ),
+                                SizedBox(height: 10.h),
+                                Text(
+                                  "archive.no_files".tr(),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 14.sp,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : GridView.builder(
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 15.w,
+                                  mainAxisSpacing: 15.h,
+                                  childAspectRatio: 0.85,
+                                ),
+                            itemCount: archivedFiles.length,
+                            itemBuilder: (context, index) {
+                              final file = archivedFiles[index];
+                              return _buildFileCard(context, file);
+                            },
+                          ),
+                  ),
+                ],
               ),
-            ],
+            ),
+                      // ✅ [تعديل] ربط الزرار بصفحة رفع الملفات وبعت الـ uid
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                if (doctor?.uid != null) {
+                  context.push('uploadFiles?uid=${doctor!.uid}');
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("حدث خطأ، لا يوجد معرف للمستخدم")),
+                  );
+                }
+              },
+              backgroundColor: colorScheme.secondary,
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.r),
+              ),
+              child: Icon(Icons.add, size: 28.sp, color: colorScheme.primary),
+            ),
           ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            // هنا يتم إضافة منطق رفع ملف جديد
-          },
-          backgroundColor: colorScheme.secondary,
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.r),
-          ),
-          child: Icon(Icons.add, size: 28.sp, color: colorScheme.primary),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildAppBarProfile(ColorScheme colorScheme) {
+  Widget _buildAppBarProfile(ColorScheme colorScheme, String? imageUrl) {
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
@@ -137,7 +163,12 @@ class DigitalArchivePage extends StatelessWidget {
       child: CircleAvatar(
         radius: 18.r,
         backgroundColor: colorScheme.secondary.withOpacity(0.2),
-        child: Icon(Icons.person, color: Colors.white, size: 18.sp),
+        backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
+            ? CachedNetworkImageProvider(imageUrl)
+            : null,
+        child: (imageUrl == null || imageUrl.isEmpty)
+            ? Icon(Icons.person, color: Colors.white, size: 18.sp)
+            : null,
       ),
     );
   }
@@ -157,9 +188,7 @@ class DigitalArchivePage extends StatelessWidget {
         ),
         const Spacer(),
         GestureDetector(
-          onTap: () {
-            // منطق البحث
-          },
+          onTap: () {},
           child: Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
@@ -173,20 +202,24 @@ class DigitalArchivePage extends StatelessWidget {
     );
   }
 
-  Widget _buildFolderCard(
-    BuildContext context,
-    String title,
-    String subtitle,
-    Color folderColor,
-    int filesCount, {
-    int badgeCount = 0,
-  }) {
+  Widget _buildFileCard(BuildContext context, Map<String, String> file) {
     final colorScheme = Theme.of(context).colorScheme;
+    String fileName = file['name'] ?? 'Unknown File';
+    String fileUrl = file['url'] ?? '';
+    String fileType = file['type'] ?? 'pdf';
+
+    IconData fileIcon = Icons.picture_as_pdf;
+    Color iconColor = Colors.red.shade400;
+    if (['jpg', 'png', 'jpeg'].contains(fileType.toLowerCase())) {
+      fileIcon = Icons.image_outlined;
+      iconColor = Colors.blue.shade400;
+    } else if (['doc', 'docx'].contains(fileType.toLowerCase())) {
+      fileIcon = Icons.description_outlined;
+      iconColor = Colors.blue.shade700;
+    }
 
     return InkWell(
-      onTap: () {
-        // الانتقال لفتح المجلد وعرض الملفات
-      },
+      onTap: () => _openFile(fileUrl),
       borderRadius: BorderRadius.circular(20.r),
       child: Container(
         decoration: BoxDecoration(
@@ -201,84 +234,63 @@ class DigitalArchivePage extends StatelessWidget {
             ),
           ],
         ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(16.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Icon(
-                      Icons.folder_rounded,
-                      size: 65.sp,
-                      color: folderColor.withOpacity(0.8),
-                    ),
-                  ),
-                  SizedBox(height: 12.h),
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12.sp,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    subtitle,
-                    style: TextStyle(color: Colors.grey, fontSize: 10.sp),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const Spacer(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Icon(
-                        Icons.description_outlined,
-                        size: 12.sp,
-                        color: Colors.grey.shade400,
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        "$filesCount",
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (badgeCount > 0)
-              PositionedDirectional(
-                top: 10.h,
-                end: 10.w,
-                child: Container(
-                  padding: EdgeInsets.all(6.w),
-                  decoration: const BoxDecoration(
-                    color: Colors.redAccent,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    "$badgeCount",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 9.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+        child: Padding(
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Icon(
+                  fileIcon,
+                  size: 65.sp,
+                  color: iconColor.withOpacity(0.8),
                 ),
               ),
-          ],
+              SizedBox(height: 12.h),
+              Text(
+                fileName,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.sp,
+                  color: colorScheme.primary,
+                ),
+              ),
+              SizedBox(height: 4.h),
+              Text(
+                fileType.toUpperCase(),
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 1,
+              ),
+              const Spacer(),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Icon(
+                  Icons.download_rounded,
+                  size: 18.sp,
+                  color: colorScheme.secondary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  // ✅ دالة فتح الملف هتفضل موجودة عشان دي مهمة عرض (Viewing) مش رفع
+  Future<void> _openFile(String url) async {
+    if (url.isEmpty) return;
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      debugPrint("Could not launch $url");
+    }
   }
 }
