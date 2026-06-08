@@ -43,16 +43,17 @@ class AppProviders {
     BlocProvider(create: (context) => ThemeCubit()),
     
     // كيوبيت المصادقة
-    BlocProvider(
+       // كيوبيت المصادقة
+       BlocProvider(
       create: (context) => AuthCubit(
         AuthRepoImpl(
           auth: FirebaseAuth.instance,
           firestore: FirebaseFirestore.instance,
           hiveService: hiveService,
         ),
+        context.read<NotificationRepoImpl>(), 
       ),
     ),
-    
     // كيوبيت الادمن
     BlocProvider(create: (context) => AdminDataCubit(AdminRepoImpl())),
     

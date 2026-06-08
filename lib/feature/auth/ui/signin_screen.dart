@@ -5,7 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_state.dart';
-import 'package:optialeader/core/routing/routes.dart'; // تأكد إن المسار صح
+import 'package:optialeader/core/routing/routes.dart'; 
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
@@ -50,10 +50,11 @@ class _SignInViewState extends State<SignInView> {
                   ),
                   SizedBox(height: 20.h),
 
-                  Text(
+                                   Text(
                     "OptiLeader",
                     style: theme.textTheme.displayLarge?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: const Color(0xFF000080), // ← نفس لون أزرق الصورة
                     ),
                   ),
 
@@ -61,7 +62,9 @@ class _SignInViewState extends State<SignInView> {
 
                   Text(
                     "login.subtitle".tr(),
-                    style: theme.textTheme.bodySmall,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF000080).withOpacity(0.7), // ← نفس الأزرق بس أخف شوية
+                    ),
                     textAlign: TextAlign.center,
                   ),
 

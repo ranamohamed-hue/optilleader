@@ -137,15 +137,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           _formatTimestamp(notification.timestamp),
           style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
         ),
-               onTap: () {
+                onTap: () {
           if (!notification.isRead) {
             context.read<NotificationCubit>().markAsRead(notification.id);
           }
           
-          // فتح الإعلان
+          // فتح الإعلان للدكتور
           if (notification.type == NotificationType.announcementCreated) {
-            if (notification.relatedId != null) {
-              context.push('${Routes.announcementDetails}?id=${notification.relatedId}');
+            // ✅ [تعديل] التأكد إن الـ ID موجود ومش فاضي
+            if (notification.relatedId != null && notification.relatedId!.isNotEmpty) {
+              print("DEBUG: Opening Announcement ID: ${notification.relatedId}"); // عشان نشوف في الـ Console
+              context.push('${Routes.announcementsDetailsDoctor}?id=${notification.relatedId}');
+            } else {
+              // لو الـ ID فاضي نعرض رسالة للمستخدم
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('عذراً، رابط الإعلان غير متاح')),
+              );
+              print("DEBUG: relatedId is null or empty!"); // عشان نشوف في الـ Console
             }
           }
         },

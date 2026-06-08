@@ -1,0 +1,10 @@
+{    "announce": {
+    "details": {
+      "apply_button": "Apply Now",
+      "apply_success": "Your application has been submitted successfully!",
+      "badge_title_user": "Opportunity Available",
+      "opportunity_badge": "Open Opportunity",
+      "deadline_label": "Application Deadline",
+      "posted_label": "Posted On"
+    }
+  }}
