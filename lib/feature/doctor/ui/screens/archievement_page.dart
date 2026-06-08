@@ -3,15 +3,21 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart'; // ✅ [إضافة]
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 
+import 'package:optialeader/feature/doctor/data/model/activities_model.dart';
+import 'package:optialeader/feature/doctor/data/model/research_paper_model.dart';
+import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
+
 class AchievementsLogPage extends StatelessWidget {
-  const AchievementsLogPage({super.key});
+  final String doctorUid;
+
+  const AchievementsLogPage({super.key, required this.doctorUid});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +25,6 @@ class AchievementsLogPage extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    // ✅ [تعديل] لفينا الصفحة بـ BlocBuilder عشان نصول لبيانات الدكتور
     return BlocBuilder<DoctorDataCubit, DoctorDataState>(
       builder: (context, state) {
         DoctorProfileModel? doctor;
@@ -37,30 +42,21 @@ class AchievementsLogPage extends StatelessWidget {
               leading: IconButton(
                 icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
                 onPressed: () {
-                  if (context.canPop()) {
-                    context.pop();
-                  } else {
-                    context.go(Routes.user);
-                  }
+                  if (context.canPop()) { context.pop(); } else { context.go(Routes.user); }
                 },
               ),
               title: Row(
                 children: [
-                  // ✅ [تعديل] عرض الصورة من السوبابيز
                   Container(
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: colorScheme.secondary,
-                        width: 1.5,
-                      ),
+                      border: Border.all(color: colorScheme.secondary, width: 1.5),
                     ),
                     child: CircleAvatar(
                       radius: 20.r,
                       backgroundColor: colorScheme.secondary.withOpacity(0.2),
-                      backgroundImage:
-                          (doctor?.profileImage.isNotEmpty ?? false)
+                      backgroundImage: (doctor?.profileImage.isNotEmpty ?? false)
                           ? CachedNetworkImageProvider(doctor!.profileImage)
                           : null,
                       child: (doctor?.profileImage.isEmpty ?? true)
@@ -69,10 +65,7 @@ class AchievementsLogPage extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 12.w),
-                  Text(
-                    'achievements.title'.tr(),
-                    style: theme.appBarTheme.titleTextStyle,
-                  ),
+                  Text('achievements.title'.tr(), style: theme.appBarTheme.titleTextStyle),
                   const Spacer(),
                   Icon(Icons.emoji_events, color: colorScheme.secondary),
                 ],
@@ -83,51 +76,55 @@ class AchievementsLogPage extends StatelessWidget {
                 indicatorWeight: 3,
                 labelColor: colorScheme.secondary,
                 unselectedLabelColor: Colors.white70,
-                labelStyle: textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
                 tabs: [
-                  Tab(text: "achievements.tabs.research".tr()),
-                  Tab(text: "achievements.tabs.conferences".tr()),
-                  Tab(text: "achievements.tabs.activities".tr()),
-                  Tab(text: "achievements.tabs.courses".tr()),
+                  Tab(text: "achievements.tabs.research".tr()), // ✅
+                  Tab(text: "achievements.tabs.conferences".tr()), // ✅
+                  Tab(text: "achievements.tabs.activities".tr()), // ✅
+                  Tab(text: "achievements.tabs.courses".tr()), // ✅
                 ],
               ),
             ),
-            body: TabBarView(
+            body: Column(
               children: [
-                // ✅ [تعديل] التاب الأول (الأبحاث) بيجيب الداتا من الموديل
-                _buildResearchList(context, doctor?.researchPapers ?? []),
-
-                // التاب التاني (المؤتمرات) - حالياً مفيش List مخصصة في الموديل، ممكن نربطه بالأنشطة أو نسيه فاضي
-                Center(child: Text("achievements.tabs.conferences".tr())),
-
-                // ✅ [تعديل] التاب التالت (الأنشطة)
-                _buildActivitiesList(context, doctor?.activities ?? []),
-
-                // ✅ [تعديل] التاب الرابع (الكورسات)
-                _buildCoursesList(context, doctor?.trainingCourses ?? []),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _buildResearchList(context, doctor?.researchPapers ?? []),
+                      _buildActivitiesList(context, (doctor?.activities ?? []).where((a) => a.type == 'conference').toList()),
+                      _buildActivitiesList(context, (doctor?.activities ?? []).where((a) => a.type != 'conference' && a.type != 'course').toList()),
+                      // ✅ [تعديل] استخدام trainingCourses من الموديل
+                      _buildActivitiesList(context, doctor?.trainingCourses ?? []),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 50.h,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        int currentIndex = DefaultTabController.of(context).index;
+                        if (currentIndex == 0) {
+                          // ✅ [تعديل] شيلت الـ / من أول اللينك عشان يشتغل كـ SubRoute
+                          context.push('addResearch?uid=$doctorUid');
+                        } else {
+                          context.push('addActivity?uid=$doctorUid');
+                        }
+                      },
+                      icon: Icon(Icons.add_circle_outline, color: colorScheme.primary),
+                      label: Text(
+                        'achievements.add_new'.tr(), // ✅
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.secondary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                      ),
+                    ),
+                  ),
+                ),
               ],
-            ),
-            // لو الصفحة للعرض فقط ممكن تشيلي الـ FAB ده، أو تربطيه بشاشة إضافة إنجاز
-            // ✅ [تعديل] ربط الزرار بالصفحة اللي عملناها وبعت الـ uid
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {
-                if (doctor?.uid != null) {
-                  // بنستخدم context.push عشان يفتح الصفحة فوق الصفحة الحالية ونقدر نرجع بسهولة
-                  context.push('uploadFiles?uid=${doctor!.uid}');
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("حدث خطأ، لا يوجد معرف للمستخدم")),
-                  );
-                }
-              },
-              backgroundColor: colorScheme.secondary,
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.r),
-              ),
-              child: Icon(Icons.add, size: 28.sp, color: colorScheme.primary),
             ),
           ),
         );
@@ -135,175 +132,119 @@ class AchievementsLogPage extends StatelessWidget {
     );
   }
 
-  // ✅ [إضافة] بناء لستة الأبحاث ديناميكياً
-  Widget _buildResearchList(
-    BuildContext context,
-    List<dynamic> researchPapers,
-  ) {
-    if (researchPapers.isEmpty) {
-      return Center(child: Text("No Research Papers Found"));
+  Widget _buildResearchList(BuildContext context, List<ResearchPaperModel> papers) {
+    if (papers.isEmpty) {
+      return Center(child: Text("achievements.no_research".tr(), style: TextStyle(color: Colors.grey))); // ✅
     }
     return ListView.builder(
-      padding: EdgeInsets.all(20.w),
-      physics: const BouncingScrollPhysics(),
-      itemCount: researchPapers.length,
+      padding: EdgeInsets.all(16.w),
+      itemCount: papers.length,
       itemBuilder: (context, index) {
-        final paper = researchPapers[index];
-        // ⚠️ تأكد إن الموديل بتاعك فيه المتغيرات دي (title, date, status) لو اسمها مختلف عدله هنا
-        return _buildAchievementCard(
-          context,
-          title: paper.title ?? "Untitled",
-          date: paper.date ?? "-",
-          status: paper.status ?? "achievements.status.under_review".tr(),
-          statusColor: _getStatusColor(paper.status),
-          icon: _getStatusIcon(paper.status),
+        final paper = papers[index];
+        return _buildItemCard(
+          title: paper.titleAr,
+          subtitle: paper.journalName,
+          date: paper.publicationYear.toString(),
+          status: paper.status,
         );
       },
     );
   }
 
-  Widget _buildActivitiesList(BuildContext context, List<dynamic> activities) {
+  Widget _buildActivitiesList(BuildContext context, List<ActivityModel> activities) {
     if (activities.isEmpty) {
-      return Center(child: Text("No Activities Found"));
+      return Center(child: Text("achievements.no_activities".tr(), style: TextStyle(color: Colors.grey))); // ✅
     }
     return ListView.builder(
-      padding: EdgeInsets.all(20.w),
+      padding: EdgeInsets.all(16.w),
       itemCount: activities.length,
       itemBuilder: (context, index) {
         final activity = activities[index];
-        return _buildAchievementCard(
-          context,
-          title: activity.title ?? "Untitled",
-          date: activity.date ?? "-",
-          status: activity.status ?? "-",
-          statusColor: _getStatusColor(activity.status),
-          icon: _getStatusIcon(activity.status),
+        return _buildItemCard(
+          title: activity.title,
+          subtitle: activity.organization,
+          date: activity.date,
+          status: activity.status,
         );
       },
     );
   }
 
-  Widget _buildCoursesList(BuildContext context, List<dynamic> courses) {
-    if (courses.isEmpty) {
-      return Center(child: Text("No Courses Found"));
-    }
-    return ListView.builder(
-      padding: EdgeInsets.all(20.w),
-      itemCount: courses.length,
-      itemBuilder: (context, index) {
-        final course = courses[index];
-        return _buildAchievementCard(
-          context,
-          title: course.title ?? "Untitled",
-          date: course.date ?? "-",
-          status: course.status ?? "-",
-          statusColor: _getStatusColor(course.status),
-          icon: _getStatusIcon(course.status),
-        );
-      },
-    );
-  }
-
-  // ✅ [إضافة] دوال مساعدة لتحديد لون وأيقونة الحالة
-  Color _getStatusColor(String? status) {
-    if (status == null) return Colors.grey;
-    if (status.toLowerCase().contains('accept') || status == 'مقبول')
-      return Colors.green.shade700;
-    if (status.toLowerCase().contains('reject') || status == 'مرفوض')
-      return Colors.red.shade700;
-    if (status.toLowerCase().contains('review') || status == 'تحت المراجعة')
-      return Colors.orange.shade800;
-    return Colors.grey;
-  }
-
-  IconData _getStatusIcon(String? status) {
-    if (status == null) return Icons.info_outline;
-    if (status.toLowerCase().contains('accept') || status == 'مقبول')
-      return Icons.check_circle_outline;
-    if (status.toLowerCase().contains('reject') || status == 'مرفوض')
-      return Icons.cancel_outlined;
-    if (status.toLowerCase().contains('review') || status == 'تحت المراجعة')
-      return Icons.hourglass_empty_rounded;
-    return Icons.info_outline;
-  }
-
-  Widget _buildAchievementCard(
-    BuildContext context, {
+  Widget _buildItemCard({
     required String title,
+    required String subtitle,
     required String date,
-    required String status,
-    required Color statusColor,
-    required IconData icon,
+    required VerificationStatus status,
   }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Card(
-      margin: EdgeInsets.only(bottom: 15.h),
-      elevation: theme.cardTheme.elevation,
-      shape: theme.cardTheme.shape,
-      color: theme.cardTheme.color,
+      margin: EdgeInsets.only(bottom: 12.h),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
       child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: EdgeInsets.all(14.w),
+        child: Row(
           children: [
-            Text(
-              title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  SizedBox(height: 4.h),
+                  Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 12.sp), maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
               ),
             ),
-            SizedBox(height: 12.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            SizedBox(width: 10.w),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 14.sp,
-                      color: colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                    SizedBox(width: 5.w),
-                    Text(date, style: theme.textTheme.bodySmall),
-                  ],
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 5.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10.r),
-                    border: Border.all(
-                      color: statusColor.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(icon, size: 14.sp, color: statusColor),
-                      SizedBox(width: 5.w),
-                      Text(
-                        status,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _buildStatusChip(status),
+                SizedBox(height: 4.h),
+                Text(date, style: TextStyle(color: Colors.grey, fontSize: 11.sp)),
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(VerificationStatus status) {
+    Color color;
+    IconData icon;
+    String text;
+
+    switch (status) {
+      case VerificationStatus.approved:
+        color = Colors.green;
+        icon = Icons.check_circle;
+        text = 'achievements.status.accepted'.tr(); // ✅
+        break;
+      case VerificationStatus.rejected:
+        color = Colors.red;
+        icon = Icons.cancel;
+        text = 'achievements.status.rejected'.tr(); // ✅
+        break;
+      case VerificationStatus.pending:
+        color = Colors.orange;
+        icon = Icons.hourglass_empty;
+        text = 'achievements.status.under_review'.tr(); // ✅
+        break;
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14.sp, color: color),
+          SizedBox(width: 4.w),
+          Text(text, style: TextStyle(color: color, fontSize: 11.sp, fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }

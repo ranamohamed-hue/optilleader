@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/routing/router_refresh_notifier.dart';
 import 'package:optialeader/feature/admin/admin_routes.dart';
@@ -10,6 +11,8 @@ import 'package:optialeader/feature/auth/ui/signin_screen.dart';
 import 'package:optialeader/feature/database_admin/routing/database_admin_routes.dart';
 import 'package:optialeader/feature/judge/routing/judge_rouring.dart';
 import 'package:optialeader/feature/judge/ui/screens/judge.dart';
+import 'package:optialeader/feature/notification/logic/app_notification_cubit.dart';
+import 'package:optialeader/feature/notification/ui/notification_page.dart';
 import 'package:optialeader/feature/setting/ui/setting.dart';
 import 'package:optialeader/feature/doctor/routing/user_routing.dart';
 import 'package:optialeader/feature/doctor/ui/screens/dashboard_user.dart';
@@ -18,7 +21,6 @@ import 'package:optialeader/feature/database_admin/ui/screens/database_admin_das
 import 'routes.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
 GoRouter createRouter(AuthCubit authCubit) {
   // دالة مساعدة لتحديد الصفحة الرئيسية بناءً على الدور
   String getHomeByRole(UserRole role) {
@@ -111,14 +113,31 @@ GoRouter createRouter(AuthCubit authCubit) {
         routes: userSubRoutes,
       ),
 
-      /// --- SETTINGS ---
+          /// --- SETTINGS ---
       GoRoute(
         path: Routes.settings,
         builder: (context, state) {
-          final args = state.extra as Map<String, dynamic>;
-          return SettingsScreen(uid: args['uid'], role: args['role']);
+          final args = state.extra as Map<String, dynamic>? ?? {};
+          return SettingsScreen(
+            uid: args['uid'] as String? ?? '', 
+            role: args['role'] as String? ?? 'user',
+          );
+
         },
       ),
+        ///Notification
+        ///Notification
+        GoRoute(
+          path: Routes.notification,
+          builder: (context, state) {
+            //  بنستدعي الـ Cubit وبنشغل جلب البيانات بمجرد فتح الصفحة
+            final notificationCubit = context.read<NotificationCubit>();
+            notificationCubit.fetchNotifications(); 
+            
+            return const NotificationsScreen();
+          },
+        )
     ],
   );
+
 }

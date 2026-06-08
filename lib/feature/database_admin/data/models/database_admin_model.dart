@@ -26,18 +26,28 @@ class DatabaseAdminProfileModel {
     required this.employee_id,
     this.isFirstLogin = true,
   });
-
   factory DatabaseAdminProfileModel.fromFirestore(Map<String, dynamic> json, String id) {
+    // بنعمل متغير عشان نسهل القراءة من جوا الماب
+    final profileData = json['profile'] as Map<String, dynamic>? ?? {};
+
     return DatabaseAdminProfileModel(
       uid: id,
       nameAr: json['display_name']?['ar'] ?? json['username_ar'] ?? '',
       nameEn: json['display_name']?['en'] ?? json['username_en'] ?? '',
       email: json['university_email'] ?? '',
-      addressAr: json['address']?['ar'] ?? '',
-      addressEn: json['address']?['en'] ?? '',
-      profileImage: json['profile_image_url'] ?? '',
+      
+      // ✅ قراءة العنوان من جوا ماب profile
+      addressAr: profileData['address']?['ar'] ?? '', 
+      addressEn: profileData['address']?['en'] ?? '',
+      
+      // ✅ قراءة الصورة من جوا ماب profile
+      profileImage: profileData['profile_image'] ?? '', 
+      
       role: json['role'] ?? 'database_admin',
-      phone: json['phone'] ?? '',
+      
+      // ✅ قراءة الموبايل من جوا ماب profile (لو متسجل كـ phone1)
+      phone: profileData['phone']?['phone1'] ?? '', 
+      
       national_id: json['national_id'] ?? '',
       employee_id: json['employee_id'] ?? '',
       isFirstLogin: json['isFirstLogin'] ?? true, 

@@ -1,16 +1,28 @@
 import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:optialeader/core/services/hive_service.dart';
+import 'package:optialeader/feature/auth/data/models/user_hive_model.dart';
 import 'package:optialeader/feature/auth/data/models/user_model.dart';
 import 'auth_repo.dart';
 
 class AuthRepoImpl implements AuthRepo {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
+  final HiveService hiveService;
 
-  AuthRepoImpl({required this.auth, required this.firestore});
+  AuthRepoImpl({
+    required this.auth,
+    required this.firestore,
+    required this.hiveService,
+  });
+  // دالة عشان الـ Cubit يجيب البيانات المحفوظة
+  UserModel? getCachedUser() {
+    final hiveUser = hiveService.getUser();
+    return hiveUser?.toUserModel(); // حولناه لـ UserModel عشان التطبيق يفهمه
+  }
 
-  // 1. تسجيل الدخول - هنا الباسورد هو الرقم القومي في أول مرة
+  //  تسجيل الدخول - هنا الباسورد هو الرقم القومي في أول مرة
   @override
   Future<Either<String, UserModel>> login({
     required String email,
@@ -32,6 +44,8 @@ class AuthRepoImpl implements AuthRepo {
       }
 
       final userModel = UserModel.fromFirestore(doc);
+      await hiveService.saveUser(UserHiveModel.fromUserModel(userModel));
+
       return Right(userModel);
     } on FirebaseAuthException catch (e) {
       return Left(_handleAuthError(e.code));
@@ -40,7 +54,7 @@ class AuthRepoImpl implements AuthRepo {
     }
   }
 
-  // 2. تحديث الباسورد وتحويل الرقم القومي لباسورد جديد خاص بالمستخدم
+  //  تحديث الباسورد وتحويل الرقم القومي لباسورد جديد خاص بالمستخدم
   @override
   Future<Either<String, String>> completeFirstLogin({
     required String newPassword,
@@ -51,16 +65,30 @@ class AuthRepoImpl implements AuthRepo {
         return const Left("الجلسة انتهت، يرجى تسجيل الدخول مجدداً");
       }
 
-      // 1. تحديث كلمة المرور في Firebase Auth
+      //  تحديث كلمة المرور في Firebase Auth
       await user.updatePassword(newPassword.trim());
 
-      // 2. تحديث حالة isFirstLogin في Firestore
+      //  تحديث حالة isFirstLogin في Firestore
       await firestore.collection('users').doc(user.uid).update({
         'isFirstLogin': false,
         // اختياري: ممكن تخزني وقت التحديث
         'passwordUpdatedAt': FieldValue.serverTimestamp(),
       });
+            // تحديث الـ Hive المحلي عشان يتعلم إن الباسورد اتغير وما يعرضش الشاشة دي تاني
 
+      final cachedUser = hiveService.getUser();
+      if (cachedUser != null) {
+        final updatedHiveUser = UserHiveModel(
+          uid: cachedUser.uid,
+          username: cachedUser.username,
+          universityEmail: cachedUser.universityEmail,
+          nationalId: cachedUser.nationalId,
+          employeeId: cachedUser.employeeId,
+          role: cachedUser.role,
+          isFirstLogin: false, 
+        );
+        await hiveService.saveUser(updatedHiveUser);
+      }
       return const Right("تم تعيين كلمة المرور بنجاح");
     } on FirebaseAuthException catch (e) {
       // إذا انتهت الجلسة (Requires recent login)
@@ -93,6 +121,8 @@ class AuthRepoImpl implements AuthRepo {
   Future<Either<String, void>> logout() async {
     try {
       await auth.signOut();
+      await hiveService.clearUser();
+
       return const Right(null);
     } catch (e) {
       return const Left("فشل تسجيل الخروج");

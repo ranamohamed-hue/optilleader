@@ -1,76 +1,56 @@
 import 'package:dartz/dartz.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:optialeader/feature/auth/data/models/user_model.dart';
+import 'package:optialeader/feature/database_admin/data/models/search_user_model.dart';
 
 class SearchRepo {
   final FirebaseFirestore _firestore;
   SearchRepo(this._firestore);
 
-  Future<Either<String, List<UserModel>>> searchUsers({
+  Future<Either<String, List<SearchUserModel>>> searchUsers({
     required String query,
     required String searchField,
-    String? role, // عشان يفلتر النتايج (مثلاً دكاترة بس)
   }) async {
     try {
-      if (searchField == 'employee_id') {
-        // 1. البحث بالرقم الوظيفي (مطابقة تامة)
-        var queryRef = _firestore
-            .collection('users')
-            .where('employeeId', isEqualTo: query); // تأكد أن اسم الحقل في الفايرستور employeeId أو employee_id
-            
-        if (role != null) {
-          queryRef = queryRef.where('role', isEqualTo: role);
-        }
-        final snapshot = await queryRef.get();
-        final users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
-        return Right(users);
+      // 1 جلب كل المستخدمين من الفايرستور مرة واحدة
+      final snapshot = await _firestore.collection('users').get();
 
-      } else {
-        // 2. البحث بالاسم (Prefix Search)
-        
-        // أ. بحث في حقل الاسم العربي
-        var arabicQueryRef = _firestore
-            .collection('users')
-            .where('nameAr', isGreaterThanOrEqualTo: query)
-            .where('nameAr', isLessThanOrEqualTo: '$query\uf8ff');
-            
-        if (role != null) {
-          arabicQueryRef = arabicQueryRef.where('role', isEqualTo: role);
-        }
-        final arabicSnapshot = await arabicQueryRef.get();
+      // 2 تحويلهم لـ SearchUserModel
+      final allUsers = snapshot.docs
+          .map((doc) => SearchUserModel.fromFirestore(doc))
+          .toList();
 
-        // ب. بحث في حقل الاسم الإنجليزي
-        var englishQueryRef = _firestore
-            .collection('users')
-            .where('nameEn', isGreaterThanOrEqualTo: query)
-            .where('nameEn', isLessThanOrEqualTo: '$query\uf8ff');
-            
-        if (role != null) {
-          englishQueryRef = englishQueryRef.where('role', isEqualTo: role);
-        }
-        final englishSnapshot = await englishQueryRef.get();
-
-        // ج. دمج النتائج وإزالة التكرار (باستخدام UID كمعرف فريد)
-        final Map<String, UserModel> usersMap = {};
-
-        for (var doc in arabicSnapshot.docs) {
-          final user = UserModel.fromFirestore(doc);
-          usersMap[user.uid] = user; // إضافة النتائج العربية
-        }
-        for (var doc in englishSnapshot.docs) {
-          final user = UserModel.fromFirestore(doc);
-          usersMap[user.uid] = user; // إضافة النتائج الإنجليزية (لو مكرر هيستبدله)
-        }
-
-        final users = usersMap.values.toList();
-        return Right(users);
+      // 3 لو الحقل فاضي، نرجع قائمة فاضية
+      if (query.trim().isEmpty) {
+        return const Right([]);
       }
-    } on FirebaseException catch (e) {
-      // ⚠️ ملاحظة هامة جداً: إذا ظهر لك خطأ يطلب منك إنشاء (Index) في الفايرستور،
-      // اذهب للخطأ في الـ Console واضغط على الرابط الذي سيظهر لإنشائه تلقائياً.
-      return Left("خطأ في البحث: ${e.message}");
+
+      //  [الحل السحري] تحويل كلمة البحث كلها لـ Small Letters
+      final lowerQuery = query.toLowerCase();
+
+      final List<SearchUserModel> filteredUsers;
+
+      if (searchField == 'employee_id') {
+        // البحث بالرقم الوظيفي
+        filteredUsers = allUsers.where((user) {
+          return user.employeeId.toLowerCase().contains(lowerQuery);
+        }).toList();
+      } else {
+        // البحث بالاسم (عربي أو إنجليزي)
+        filteredUsers = allUsers.where((user) {
+          //  [الحل السحري] تحويل الأسماء الموجودة في الداتابيز لـ Small قبل المقارنة
+          final nameArLower = user.nameAr.toLowerCase();
+          final nameEnLower = user.nameEn.toLowerCase();
+
+          // المقارنة دلوقتي هتتم بين Small و Small
+          return nameArLower.contains(lowerQuery) ||
+              nameEnLower.contains(lowerQuery);
+        }).toList();
+      }
+
+      return Right(filteredUsers);
     } catch (e) {
-      return Left("حدث خطأ غير متوقع: ${e.toString()}");
+      print(' خطأ في البحث المحلي: $e');
+      return Left("حدث خطأ أثناء جلب البيانات");
     }
   }
 }

@@ -1,6 +1,7 @@
 {
-  "digitalArchive": {
+  "archive": {
     "title": "Digital Archive",
+    "no_files": "No files added yet",
     "tabs": {
       "research": "Research",
       "conferences": "Conferences",

@@ -1,36 +1,37 @@
-
-
 import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 
 class ResearchPaperModel {
-  final String id; // استخدم uuid أو أي نص فريد
-  // 1. البيانات الأساسية للبحث
+  final String id;
+  
+  // 1. البيانات الأساسية
   final String titleAr;
   final String titleEn;
-  
   final String journalName;
   final String issn;
-  final String impactFactor; // Q1, Q2, Q3, Q4
+  final String impactFactor;
   final int publicationYear;
   final int authorOrder;
   final int totalAuthors;
-  final String? doi; // ✅ رقم الـ DOI (مهم جداً للأدمن عشان يبحث بيه)
+  final String? doi;
 
   // 2. تصنيف المجلة
   final JournalScope journalScope;
   final JournalLevel journalLevel;
   final IndexingDatabase indexingDatabase;
-  final String journalUrl; // الرابط الإلكتروني للمجلة
+  final String journalUrl;
 
-  // 3. الإثباتات والمصداقية
-  final String paperImageUrl; // ✅ صورة الصفحة الأولى للبحث (إجباري)
-  final String? indexingProofUrl; // إثبات تفهرس المجلة (سكرينة من سكوبس مثلاً)
+  // 3. الإثباتات والمصداقية (تم التعديل لدعم الصورة والـ PDF)
+  final String paperFileUrl;       
+  final String paperFileType;      // "image" أو "pdf"
+  final String? indexingProofUrl;  
+  final String? indexingProofType; // "image" أو "pdf"
 
   // 4. حالة الاعتماد
   final VerificationStatus status;
-  final String? rejectionReason; // سبب الرفض لو الأدمن رفضه (مفيد للدكتور يعرف إيه المشكلة)
+  final String? rejectionReason;
 
-  ResearchPaperModel({required this.id,
+  ResearchPaperModel({
+    required this.id,
     required this.titleAr,
     required this.titleEn,
     required this.journalName,
@@ -44,16 +45,17 @@ class ResearchPaperModel {
     required this.journalLevel,
     required this.indexingDatabase,
     required this.journalUrl,
-    required this.paperImageUrl,
+    required this.paperFileUrl,
+    this.paperFileType = 'image',
     this.indexingProofUrl,
+    this.indexingProofType,
     this.status = VerificationStatus.pending,
     this.rejectionReason,
   });
 
   factory ResearchPaperModel.fromJson(Map<String, dynamic> json) {
     return ResearchPaperModel(
-      id: json['id']??'',
-      // بيانات أساسية
+      id: json['id'] ?? '',
       titleAr: json['titleAr'] ?? '',
       titleEn: json['titleEn'] ?? '',
       journalName: json['journalName'] ?? '',
@@ -63,18 +65,14 @@ class ResearchPaperModel {
       authorOrder: json['authorOrder'] ?? 0,
       totalAuthors: json['totalAuthors'] ?? 0,
       doi: json['doi'],
-      
-      // تصنيف المجلة
       journalScope: enumFromString(JournalScope.values, json['journalScope']),
       journalLevel: enumFromString(JournalLevel.values, json['journalLevel']),
       indexingDatabase: enumFromString(IndexingDatabase.values, json['indexingDatabase']),
       journalUrl: json['journalUrl'] ?? '',
-      
-      // الإثباتات
-      paperImageUrl: json['paperImageUrl'] ?? '',
+      paperFileUrl: json['paperFileUrl'] ?? '',
+      paperFileType: json['paperFileType'] ?? 'image',
       indexingProofUrl: json['indexingProofUrl'],
-      
-      // الاعتماد
+      indexingProofType: json['indexingProofType'],
       status: parseVerificationStatus(json['status']),
       rejectionReason: json['rejectionReason'],
     );
@@ -82,7 +80,7 @@ class ResearchPaperModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'id':id,
+      'id': id,
       'titleAr': titleAr,
       'titleEn': titleEn,
       'journalName': journalName,
@@ -92,23 +90,21 @@ class ResearchPaperModel {
       'authorOrder': authorOrder,
       'totalAuthors': totalAuthors,
       'doi': doi,
-      
-      // تحويل الـ Enum إلى نصوص قبل الحفظ في Firebase
       'journalScope': journalScope.name,
       'journalLevel': journalLevel.name,
       'indexingDatabase': indexingDatabase.name,
       'journalUrl': journalUrl,
-      
-      'paperImageUrl': paperImageUrl,
+      'paperFileUrl': paperFileUrl,
+      'paperFileType': paperFileType,
       'indexingProofUrl': indexingProofUrl,
-      
+      'indexingProofType': indexingProofType,
       'status': status.name,
       'rejectionReason': rejectionReason,
     };
   }
 
   ResearchPaperModel copyWith({
-    String?id,
+    String? id,
     String? titleAr,
     String? titleEn,
     String? journalName,
@@ -122,13 +118,15 @@ class ResearchPaperModel {
     JournalLevel? journalLevel,
     IndexingDatabase? indexingDatabase,
     String? journalUrl,
-    String? paperImageUrl,
+    String? paperFileUrl,
+    String? paperFileType,
     String? indexingProofUrl,
+    String? indexingProofType,
     VerificationStatus? status,
     String? rejectionReason,
   }) {
     return ResearchPaperModel(
-      id: id ??this.id,
+      id: id ?? this.id,
       titleAr: titleAr ?? this.titleAr,
       titleEn: titleEn ?? this.titleEn,
       journalName: journalName ?? this.journalName,
@@ -142,8 +140,10 @@ class ResearchPaperModel {
       journalLevel: journalLevel ?? this.journalLevel,
       indexingDatabase: indexingDatabase ?? this.indexingDatabase,
       journalUrl: journalUrl ?? this.journalUrl,
-      paperImageUrl: paperImageUrl ?? this.paperImageUrl,
+      paperFileUrl: paperFileUrl ?? this.paperFileUrl,
+      paperFileType: paperFileType ?? this.paperFileType,
       indexingProofUrl: indexingProofUrl ?? this.indexingProofUrl,
+      indexingProofType: indexingProofType ?? this.indexingProofType,
       status: status ?? this.status,
       rejectionReason: rejectionReason ?? this.rejectionReason,
     );

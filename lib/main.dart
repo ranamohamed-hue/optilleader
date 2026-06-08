@@ -4,11 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:optialeader/core/services/hive_service.dart';
 import 'package:optialeader/core/services/folder_json_loader.dart';
+import 'package:optialeader/core/services/hive_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
-
 import 'package:optialeader/core/routing/app_router.dart';
 import 'package:optialeader/core/services/app_providers.dart';
 import 'package:optialeader/core/theming/app_theme.dart';
@@ -19,29 +19,24 @@ import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  /// 1. Firebase Primary App (الأساسي)
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  /// ✅ 2. [إضافة ضرورية] Firebase Secondary App (النسخة الخفية لإنشاء الحسابات)
+ 
   try {
     await Firebase.initializeApp(
       name: 'SecondaryApp',
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
-    // في حال كان التطبيق قد تم تهيئته مسبقاً (بسبب Hot Restart)، يتم تجاهل الخطأ بأمان
     debugPrint('SecondaryApp already initialized: $e');
   }
   await Supabase.initialize(
-    url: 'https://ybmeqikzcqmaudedzxif.supabase.com',
+    url: 'https://ybmeqikzcqmaudedzxif.supabase.co',
     anonKey: 'sb_publishable_sf2YFT0RYrAapmg5XfjY4A_37kNyqyF',
   );
-
-  /// App Check (معطل حالياً)
-  /*await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug,
-    appleProvider: AppleProvider.debug,
-  );*/
+ // تهيئة hiveوفتح صندوق التخزين
+  final hiveService = HiveService();
+  await hiveService.init();
 
   /// Localization
   await EasyLocalization.ensureInitialized();
@@ -54,7 +49,7 @@ void main() async {
       fallbackLocale: const Locale('ar'),
       startLocale: const Locale('ar'),
       child: MultiBlocProvider(
-        providers: AppProviders.providers,
+        providers: AppProviders.providers(hiveService:hiveService),
         child: const MyApp(),
       ),
     ),

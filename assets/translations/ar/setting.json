@@ -10,6 +10,15 @@
     "error": "حدث خطأ أثناء التحديث",
     "error_user_not_found": "لم يتم العثور على بيانات المستخدم في النظام",
     "error_db": "خطأ في الاتصال بقاعدة البيانات",
-    "error_unknown": "حدث خطأ غير متوقع"
+    "error_unknown": "حدث خطأ غير متوقع",
+    "personal_info": "البيانات الشخصية",
+    "app_settings": "إعدادات التطبيق",
+    "change_language": "تغيير اللغة (عربي / English)",
+    "dark_mode": "الوضع الداكن (Dark Mode)",
+    "enabled": "مفعّل",
+    "disabled": "مطفأ",
+     "logout": "تسجيل الخروج",
+    "logout_confirm": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+    "cancel": "إلغاء"
   }
 }

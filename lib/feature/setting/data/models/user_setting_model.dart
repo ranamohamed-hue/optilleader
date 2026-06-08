@@ -1,12 +1,12 @@
 import 'package:optialeader/feature/database_admin/data/models/database_admin_model.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
 import 'package:optialeader/feature/database_admin/data/models/judge_profile_model.dart';
-import 'package:optialeader/feature/database_admin/data/models/admin_profile_model.dart'; // تأكد من استيراد الـ Admin model
+import 'package:optialeader/feature/database_admin/data/models/admin_profile_model.dart';
 
 class UserSettingsModel {
   final String uid;
-  final String nameAr; // ✅ تم الاستبدال
-  final String nameEn; // ✅ تم الاستبدال
+  final String nameAr;
+  final String nameEn;
   final String email;
   final String addressAr;
   final String addressEn;
@@ -24,7 +24,6 @@ class UserSettingsModel {
     required this.profileImage,
   });
 
-  // ✅ تصحيح طريقة القراءة من Firestore لتتوافق مع الـ Nested Map
   factory UserSettingsModel.fromFirestore(
     Map<String, dynamic> json,
     String documentId,
@@ -41,12 +40,11 @@ class UserSettingsModel {
     );
   }
 
-  // التحويل من أدمن (AdminProfileModel)
   factory UserSettingsModel.fromAdmin(AdminProfileModel admin) {
     return UserSettingsModel(
       uid: admin.uid,
-      nameAr: admin.nameAr, // ✅
-      nameEn: admin.nameEn, // ✅
+      nameAr: admin.nameAr,
+      nameEn: admin.nameEn,
       email: admin.email,
       addressAr: admin.addressAr,
       addressEn: admin.addressEn,
@@ -55,12 +53,11 @@ class UserSettingsModel {
     );
   }
 
-  // التحويل من دكتور (DoctorProfileModel)
   factory UserSettingsModel.fromDoctor(DoctorProfileModel doctor) {
     return UserSettingsModel(
       uid: doctor.uid ?? '',
-      nameAr: doctor.nameAr, // ✅
-      nameEn: doctor.nameEn, // ✅
+      nameAr: doctor.nameAr,
+      nameEn: doctor.nameEn,
       email: doctor.email,
       addressAr: doctor.addressAr,
       addressEn: doctor.addressEn,
@@ -69,12 +66,11 @@ class UserSettingsModel {
     );
   }
 
-  // التحويل من محكم (JudgeProfileModel)
   factory UserSettingsModel.fromJudge(JudgeProfileModel judge) {
     return UserSettingsModel(
       uid: judge.uid,
-      nameAr: judge.nameAr, // ✅
-      nameEn: judge.nameEn, // ✅
+      nameAr: judge.nameAr,
+      nameEn: judge.nameEn,
       email: judge.email,
       addressAr: judge.addressAr,
       addressEn: judge.addressEn,
@@ -83,14 +79,11 @@ class UserSettingsModel {
     );
   }
 
-  // التحويل من أدمن قاعدة البيانات (DatabaseAdminProfileModel)
-  factory UserSettingsModel.fromDatabaseAdmin(
-    DatabaseAdminProfileModel dbAdmin,
-  ) {
+  factory UserSettingsModel.fromDatabaseAdmin(DatabaseAdminProfileModel dbAdmin) {
     return UserSettingsModel(
       uid: dbAdmin.uid,
-      nameAr: dbAdmin.nameAr, // ✅
-      nameEn: dbAdmin.nameEn, // ✅
+      nameAr: dbAdmin.nameAr,
+      nameEn: dbAdmin.nameEn,
       email: dbAdmin.email,
       addressAr: dbAdmin.addressAr,
       addressEn: dbAdmin.addressEn,
@@ -121,13 +114,13 @@ class UserSettingsModel {
     );
   }
 
+  // [تعديل حرج] استخدام Dot Notation عشان نمسحش باقي الـ profile في الفايرستور
   Map<String, dynamic> toUpdateMap() {
     return {
-      'profile': {
-        'phone': {'phone1': phone},
-        'address': {'ar': addressAr, 'en': addressEn},
-        'profile_image': profileImage,
-      },
+      'profile.phone.phone1': phone,
+      'profile.address.ar': addressAr,
+      'profile.address.en': addressEn,
+      'profile.profile_image': profileImage,
     };
   }
 }

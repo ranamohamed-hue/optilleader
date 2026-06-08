@@ -1,0 +1,44 @@
+{
+  "validation": {
+    "required": "مطلوب"
+  },
+  "addActivity": {
+    "title": "إضافة نشاط / إنجاز",
+    "success": "تم إرسال النشاط بنجاح، وهو قيد المراجعة",
+    "type": "نوع النشاط *",
+    "typeConference": "مؤتمر",
+    "typeWorkshop": "ورشة عمل",
+    "typeCourse": "دورة تدريبية",
+    "activityTitle": "عنوان النشاط *",
+    "organization": "الجهة المنظمة *",
+    "date": "تاريخ النشاط *",
+    "proofFile": "إثبات المشاركة / الشهادة",
+    "submit": "إرسال للمراجعة"
+  },
+  "addResearch": {
+    "title": "إضافة بحث علمي",
+    "success": "تم إرسال البحث بنجاح، وهو قيد المراجعة",
+    "fileRequired": "يجب اختيار ملف البحث",
+    "titleAr": "عنوان البحث بالعربي *",
+    "titleEn": "عنوان البحث بالإنجليزي *",
+    "journalName": "اسم المجلة *",
+    "issn": "ISSN *",
+    "publicationYear": "سنة النشر *",
+    "journalUrl": "رابط المجلة *",
+    "paperFile": "ملف البحث (صورة أو PDF)",
+    "indexingProof": "إثبات تفهرس المجلة (اختياري)",
+    "submit": "إرسال للمراجعة"
+  },
+  
+  "file_picker": {
+    "select_file": "اضغط لاختيار ملف",
+    "image_or_pdf": "صورة أو ملف PDF",
+    "image_only": "صورة فقط",
+    "pdf_only": "ملف PDF فقط",
+    "choose_upload_method": "اختر طريقة الرفع",
+    "take_photo": "التقاط صورة بالكاميرا",
+    "choose_from_gallery": "اختيار من المعرض",
+    "choose_pdf": "اختيار ملف PDF"
+  }
+
+}

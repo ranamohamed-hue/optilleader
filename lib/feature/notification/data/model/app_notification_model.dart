@@ -1,29 +1,34 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// ✅ أنواع الإشعارات مقسمة حسب الدور والوظيفة
 enum NotificationType {
-  // 🔵 أدمن القاعدة (Database Admin)
-  userLogin,            // ✅ [جديد] تسجيل دخول مستخدم
-  userLogout,           // ✅ [جديد] تسجيل خروج مستخدم
-  profileDataUpdated,   // تحديث بيانات مستخدم (عنوان/اتصال)
-  accountSuspended,     // تعليق حساب
+  //  أدمن القاعدة (Database Admin)
+  userLogin,
+  userLogout,
+  profileDataUpdated,
+  accountSuspended,
 
-  // 🟢 أدمن عادي (Admin)
-  welcomeAdmin,             // رسالة ترحيبية عند أول تسجيل دخول
-  announcementCreated,      // إنشاء إعلان جديد
-  announcementExpired,      // انتهاء إعلان
-  newDoctorRequest,         // طلب جديد من الدكتور
-  judgeRequestCompleted,    // المحكم أنهى التحكيم وأرسل الطلب
+  //  أدمن عادي (Admin)
+  welcomeAdmin,
+  announcementCreated,
+  announcementExpired,
+  newDoctorRequest,
+  judgeRequestCompleted,
+  
+  //  إشعارات الأبحاث والأنشطة
+  newResearchSubmitted,      // دكتور رفع بحث جديد
+  newActivitySubmitted,      // دكتور رفع نشاط جديد
+  researchStatusUpdated,     // أدمن وافق/رفض البحث
+  activityStatusUpdated,     // أدمن وافق/رفض النشاط
 
-  // 🟠 دكتور (Doctor)
-  welcomeDoctor,            // رسالة ترحيبية
-  newCompetition,           // مسابقة جديدة
-  competitionResult,        // نتيجة مسابقة
-  requestStatusUpdate,      // تحديث حالة الطلب (قبول/رفض)
+  //  دكتور (Doctor)
+  welcomeDoctor,
+  newCompetition,
+  competitionResult,
+  requestStatusUpdate,
 
-  // 🟣 محكم (Judge)
-  welcomeJudge,             // رسالة ترحيبية
-  newArbitrationRequest,    // طلب تحكيم جديد من الأدمن
+  //  محكم (Judge)
+  welcomeJudge,
+  newArbitrationRequest,
 
   // عام
   general,
@@ -36,7 +41,9 @@ class AppNotificationModel {
   final NotificationType type;
   final bool isRead;
   final Timestamp timestamp;
-  final String? relatedId; // ID للطلب أو المسابقة (لو فيه)
+  final String? relatedId;     
+  final String receiverId;     
+  final String? senderName;    
 
   AppNotificationModel({
     required this.id,
@@ -46,9 +53,10 @@ class AppNotificationModel {
     this.isRead = false,
     required this.timestamp,
     this.relatedId,
+    required this.receiverId,
+    this.senderName,
   });
 
-  // ✅ دالة لتحويل البيانات القادمة من Firestore لكائن
   factory AppNotificationModel.fromFirestore(Map<String, dynamic> json, String docId) {
     return AppNotificationModel(
       id: docId,
@@ -58,28 +66,46 @@ class AppNotificationModel {
       isRead: json['is_read'] ?? false,
       timestamp: json['timestamp'] ?? Timestamp.now(),
       relatedId: json['related_id'],
+      receiverId: json['receiver_id'] ?? '', 
+      senderName: json['sender_name'],       
     );
+  }
+
+  //  دالة لتحويل الموديل لـ Map عشان نحفظه في الفايرستور
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'message': message,
+      'type': type.name, // بنحفظ الـ Enum كـ String
+      'is_read': isRead,
+      'timestamp': timestamp,
+      'related_id': relatedId,
+      'receiver_id': receiverId,
+      'sender_name': senderName,
+    };
   }
 
   static NotificationType _parseType(String type) {
     switch (type) {
-      // أدمن القاعدة
       case 'userLogin': return NotificationType.userLogin;
       case 'userLogout': return NotificationType.userLogout;
       case 'profileDataUpdated': return NotificationType.profileDataUpdated;
       case 'accountSuspended': return NotificationType.accountSuspended;
-      // أدمن عادي
       case 'welcomeAdmin': return NotificationType.welcomeAdmin;
       case 'announcementCreated': return NotificationType.announcementCreated;
       case 'announcementExpired': return NotificationType.announcementExpired;
       case 'newDoctorRequest': return NotificationType.newDoctorRequest;
       case 'judgeRequestCompleted': return NotificationType.judgeRequestCompleted;
-      // دكتور
+     
+      case 'newResearchSubmitted': return NotificationType.newResearchSubmitted;
+      case 'newActivitySubmitted': return NotificationType.newActivitySubmitted;
+      case 'researchStatusUpdated': return NotificationType.researchStatusUpdated;
+      case 'activityStatusUpdated': return NotificationType.activityStatusUpdated;
+
       case 'welcomeDoctor': return NotificationType.welcomeDoctor;
       case 'newCompetition': return NotificationType.newCompetition;
       case 'competitionResult': return NotificationType.competitionResult;
       case 'requestStatusUpdate': return NotificationType.requestStatusUpdate;
-      // محكم
       case 'welcomeJudge': return NotificationType.welcomeJudge;
       case 'newArbitrationRequest': return NotificationType.newArbitrationRequest;
       

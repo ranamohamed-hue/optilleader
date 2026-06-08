@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_state.dart';
-import 'package:optialeader/core/routing/routes.dart';
 
 class ChangePasswordView extends StatefulWidget {
   const ChangePasswordView({super.key});
@@ -66,20 +64,20 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
       ),
       body: SafeArea(
         child: BlocConsumer<AuthCubit, AuthState>(
-         listener: (context, state) {
-  if (state is UpdatePasswordErrorState) {
-    _showErrorSnackBar(state.error);
-  } else if (state is UpdatePasswordSuccessState) {
-    // بنعرض رسالة النجاح بس
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("change_password.success_msg".tr()),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-},
+          listener: (context, state) {
+            if (state is UpdatePasswordErrorState) {
+              _showErrorSnackBar(state.error);
+            } else if (state is UpdatePasswordSuccessState) {
+              //  بنعرض رسالة النجاح بس، والـ Router هينقله للداشبورد لوحده
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("change_password.success_msg".tr()),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          },
           builder: (context, state) {
             return SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -109,6 +107,7 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
 
                     SizedBox(height: 12.h),
 
+                    //  ممكن تضيف نص هنا يوضح للمستخدم إن الباسورد القديم كان الرقم القومي
                     Text(
                       "change_password.subtitle".tr(),
                       style: theme.textTheme.bodyMedium?.copyWith(
@@ -188,12 +187,8 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
         ),
       ),
       validator: (v) {
-        if (v == null || v.isEmpty) {
-          return "validation.required".tr();
-        }
-        if (v.length < 8) {
-          return "validation.password_short".tr();
-        }
+        if (v == null || v.isEmpty) return "validation.required".tr();
+        if (v.length < 8) return "validation.password_short".tr();
         return null;
       },
     );

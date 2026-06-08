@@ -30,7 +30,7 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
 
   @override
   void initState() {
-    super.initState();
+    super.initState(); // ✅ لازم تكون أول سطر دايماً
     _titleController = TextEditingController(
       text: widget.announcement?.title ?? '',
     );
@@ -39,11 +39,21 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
     );
     _selectedDeadline = widget.announcement?.deadline ?? DateTime.now();
     _selectedStatus = widget.announcement?.status ?? 'Active';
-    _dateController = TextEditingController(
-      text: DateFormat.yMd(
+    
+    // ✅ شلنا كود التاريخ من هنا لأننا مش نقدر نستخدم context.locale في initState
+    _dateController = TextEditingController(); 
+  }
+
+  // ✅ ضفنا الدالة دي عشان نقدر نستخدم الـ context بأمان بعد ما الشاشة تتبني
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // هنا الـ context جاهزة ومش هتسبب الشاشة الحمراء
+    if (_dateController.text.isEmpty) {
+      _dateController.text = DateFormat.yMd(
         context.locale.languageCode,
-      ).format(_selectedDeadline),
-    );
+      ).format(_selectedDeadline);
+    }
   }
 
   @override

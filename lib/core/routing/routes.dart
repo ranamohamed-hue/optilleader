@@ -31,4 +31,9 @@ class Routes {
   static const careerInfo = '/user/careerInfo';
   static const digitalArchieve = '/user/digitalArchieve';
   static const uploadFiles = '/user/uploadFiles';
+
+  // \ مسارات صفحات رفع الأبحاث والأنشطة
+  static const addResearch = '/user/addResearch';
+  static const addActivity = '/user/addActivity';
+  static const notification = '/notification';
 }

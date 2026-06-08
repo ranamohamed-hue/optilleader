@@ -26,4 +26,5 @@ abstract class DoctorRepo {
     String uid,
     Map<String, dynamic> updatedFields,
   );
+    Future<Either<String, List<DoctorProfileModel>>> getAllDoctorsOnce();
 }

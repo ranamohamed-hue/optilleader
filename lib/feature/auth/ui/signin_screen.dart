@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_state.dart';
-import 'package:optialeader/feature/auth/data/models/user_model.dart';
-import 'package:optialeader/core/routing/routes.dart';
+import 'package:optialeader/core/routing/routes.dart'; // تأكد إن المسار صح
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
@@ -55,14 +53,12 @@ class _SignInViewState extends State<SignInView> {
                   Text(
                     "OptiLeader",
                     style: theme.textTheme.displayLarge?.copyWith(
-                      color: const Color(0xFF000080),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
 
                   SizedBox(height: 8.h),
 
-                  /// Subtitle (NEW)
                   Text(
                     "login.subtitle".tr(),
                     style: theme.textTheme.bodySmall,
@@ -83,12 +79,8 @@ class _SignInViewState extends State<SignInView> {
                       ),
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) {
-                        return "validation.required".tr();
-                      }
-                      if (!v.contains('@')) {
-                        return "validation.invalid_email".tr();
-                      }
+                      if (v == null || v.isEmpty) return "validation.required".tr();
+                      if (!v.contains('@')) return "validation.invalid_email".tr();
                       return null;
                     },
                   ),
@@ -100,25 +92,20 @@ class _SignInViewState extends State<SignInView> {
                     controller: passwordController,
                     obscureText: isObscure,
                     decoration: InputDecoration(
-                      labelText: "fields.password".tr(),
+                      //  توضيح للمستخدم إن الباسورد الأولاني هو الرقم القومي
+                      labelText: "كلمة المرور (الرقم القومي لأول مرة)",
                       prefixIcon: const Icon(Icons.lock_outline),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                       suffixIcon: IconButton(
-                        icon: Icon(
-                          isObscure ? Icons.visibility_off : Icons.visibility,
-                        ),
+                        icon: Icon(isObscure ? Icons.visibility_off : Icons.visibility),
                         onPressed: () => setState(() => isObscure = !isObscure),
                       ),
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) {
-                        return "validation.required".tr();
-                      }
-                      if (v.length < 8) {
-                        return "validation.password_short".tr();
-                      }
+                      if (v == null || v.isEmpty) return "validation.required".tr();
+                      if (v.length < 6) return "validation.password_short".tr(); 
                       return null;
                     },
                   ),
@@ -128,27 +115,15 @@ class _SignInViewState extends State<SignInView> {
                   /// Login Button
                   BlocConsumer<AuthCubit, AuthState>(
                     listener: (context, state) {
-                      if (state is LoginSuccessState) {
-                        final role = state.userModel.role;
-
-                        if (role == UserRole.admin) {
-                          context.go(Routes.admin);
-                        } else if (role == UserRole.judge) {
-                          context.go(Routes.judge);
-                        } else if (role == UserRole.database_admin) {
-                          context.go(Routes.databaseAdmin);
-                        } else {
-                          context.go(Routes.user);
-                        }
-                      } else if (state is LoginErrorState) {
+                      // شيلنا كل أكواد context.go() و LoginSuccessState
+                      // الـ Router هيوجه المستخدم لوحده بناءً على الـ State
+                      if (state is LoginErrorState) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(state.error),
                             backgroundColor: Colors.red,
                           ),
                         );
-                      } else if (state is NewUserFirstLoginState) {
-                        context.go(Routes.changePassword);
                       }
                     },
                     builder: (context, state) {
@@ -175,7 +150,6 @@ class _SignInViewState extends State<SignInView> {
                         child: Text(
                           "login.button".tr(),
                           style: const TextStyle(
-                            color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),

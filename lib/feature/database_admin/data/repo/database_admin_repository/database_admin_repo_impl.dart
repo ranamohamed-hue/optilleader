@@ -1,6 +1,7 @@
 import 'dart:typed_data'; // ✅ [مهم جداً] عشان نقدر نتعامل مع البايتات بعد الضغط
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
+import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // ✅ Supabase
 import 'package:flutter_image_compress/flutter_image_compress.dart'; // ✅ مكتبة الضغط
 import 'package:optialeader/feature/database_admin/data/models/database_admin_model.dart';
@@ -102,8 +103,9 @@ class DatabaseAdminRepoImpl implements DatabaseAdminRepo {
 
       return Right(imageUrl);
     } catch (e) {
-      return const Left("ERROR_IMAGE_UPLOAD_SUPABASE");
-    }
+  debugPrint("🔥 Supabase Upload Error: ${e.toString()}"); // عشان تشوفي الخطأ في الـ Console
+  return Left("ERROR_IMAGE_UPLOAD: ${e.toString()}"); // ❌ رجعي الخطأ الحقيقي عشان يظهر في الـ UI
+}
   }
 
   @override

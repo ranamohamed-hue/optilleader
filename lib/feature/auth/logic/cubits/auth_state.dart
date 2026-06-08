@@ -42,7 +42,7 @@ class UpdatePasswordSuccessState extends AuthState {
   final UserModel userModel; // أضيفي هذا السطر
   const UpdatePasswordSuccessState(this.message,this.userModel);
   @override
-  List<Object> get props => [message];
+  List<Object> get props => [message,userModel];
 }
 class UpdatePasswordErrorState extends AuthState {
   final String error;

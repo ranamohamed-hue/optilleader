@@ -1,0 +1,43 @@
+{
+  "validation": {
+    "required": "Required"
+  },
+  "addActivity": {
+    "title": "Add Activity / Achievement",
+    "success": "Activity submitted successfully, it's under review",
+    "type": "Activity Type *",
+    "typeConference": "Conference",
+    "typeWorkshop": "Workshop",
+    "typeCourse": "Training Course",
+    "activityTitle": "Activity Title *",
+    "organization": "Organization *",
+    "date": "Activity Date *",
+    "proofFile": "Participation Proof / Certificate",
+    "submit": "Submit for Review"
+  },
+  "addResearch": {
+    "title": "Add Research Paper",
+    "success": "Research submitted successfully, it's under review",
+    "fileRequired": "Paper file is required",
+    "titleAr": "Title in Arabic *",
+    "titleEn": "Title in English *",
+    "journalName": "Journal Name *",
+    "issn": "ISSN *",
+    "publicationYear": "Publication Year *",
+    "journalUrl": "Journal URL *",
+    "paperFile": "Paper File (Image or PDF)",
+    "indexingProof": "Indexing Proof (Optional)",
+    "submit": "Submit for Review"
+  },
+  "file_picker": {
+    "select_file": "Click to select a file",
+    "image_or_pdf": "Image or PDF file",
+    "image_only": "Image only",
+    "pdf_only": "PDF file only",
+    "choose_upload_method": "Choose Upload Method",
+    "take_photo": "Take a Photo",
+    "choose_from_gallery": "Choose from Gallery",
+    "choose_pdf": "Choose PDF File"
+  }
+
+}

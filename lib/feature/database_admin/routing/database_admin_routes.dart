@@ -9,7 +9,7 @@ final List<RouteBase> databaseAdminSubRoutes = [
   // 🟢 مسار البحث
   GoRoute(
     path: 'searchPage',
-    builder: (context, state) => const EmployeeSearchScreen(),
+    builder: (context, state) => const UserSearchScreen(),
   ),
   
   GoRoute(

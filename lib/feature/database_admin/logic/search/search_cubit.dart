@@ -10,7 +10,6 @@ class SearchCubit extends Cubit<SearchState> {
   Future<void> searchUsers({
     required String query,
     required String searchField,
-    String? role,
   }) async {
     if (query.trim().isEmpty) {
       emit(SearchInitial());
@@ -22,15 +21,11 @@ class SearchCubit extends Cubit<SearchState> {
     final result = await _searchRepo.searchUsers(
       query: query.trim(),
       searchField: searchField,
-      role: role,
     );
 
     result.fold(
-      (error) => emit(
-        SearchError("ERROR_SEARCH_FAILED"),
-      ), // ✅ إرسال كود خطأ بدل النص العربي
-      (users) =>
-          emit(SearchSuccess(users)), // ✅ إرجاع القائمة حتى لو كانت فارغة
+      (error) => emit(SearchError("ERROR_SEARCH_FAILED")),
+      (users) => emit(SearchSuccess(users)),
     );
   }
 }

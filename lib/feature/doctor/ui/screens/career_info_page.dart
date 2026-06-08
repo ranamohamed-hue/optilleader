@@ -3,15 +3,28 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart'; // ✅ [إضافة]
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 
-class CareerInfoPage extends StatelessWidget {
-  const CareerInfoPage({super.key});
+class CareerInfoPage extends StatefulWidget {
+  final String doctorUid;
+
+  const CareerInfoPage({super.key, required this.doctorUid});
+
+  @override
+  State<CareerInfoPage> createState() => _CareerInfoPageState();
+}
+
+class _CareerInfoPageState extends State<CareerInfoPage> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<DoctorDataCubit>().getDoctorProfile(widget.doctorUid);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +32,6 @@ class CareerInfoPage extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    // ✅ [تعديل] لفنا الصفحة بـ BlocBuilder
     return BlocBuilder<DoctorDataCubit, DoctorDataState>(
       builder: (context, state) {
         DoctorProfileModel? doctor;
@@ -44,7 +56,6 @@ class CareerInfoPage extends StatelessWidget {
             ),
             title: Row(
               children: [
-                // ✅ [تعديل] عرض الصورة من السوبابيز
                 Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
@@ -77,7 +88,6 @@ class CareerInfoPage extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    // ✅ [تعديل] عرض اسم الدكتور من الموديل
                     Text(
                       context.locale.languageCode == 'ar'
                           ? (doctor?.nameAr ?? '-')
@@ -91,7 +101,7 @@ class CareerInfoPage extends StatelessWidget {
                 const Spacer(),
                 InkWell(
                   onTap: () {
-                    // للذهاب لصفحة تعديل البيانات (الإعدادات)
+                    // للذهاب لصفحة تعديل البيانات
                   },
                   child: Container(
                     padding: EdgeInsets.all(8.w),
@@ -127,7 +137,6 @@ class CareerInfoPage extends StatelessWidget {
                   'career.sections.credentials'.tr(),
                 ),
 
-                // ✅ [تعديل] عرض الشهادات ديناميكياً من الـ academicHistory
                 if (doctor?.academicHistory != null &&
                     doctor!.academicHistory.isNotEmpty)
                   ...doctor.academicHistory.asMap().entries.map((entry) {
@@ -135,7 +144,6 @@ class CareerInfoPage extends StatelessWidget {
                     Map<String, dynamic> cert = entry.value;
                     bool isLast = index == doctor!.academicHistory.length - 1;
 
-                    // ⚠️ تأكد إن المفاتيح دي (degree_ar, spec_ar, institution, date) موجودة في الـ Map بتاعك في الفايرستور
                     return _buildCredentialCard(
                       context,
                       cert['degree_ar'] ?? 'Degree',
@@ -146,7 +154,7 @@ class CareerInfoPage extends StatelessWidget {
                     );
                   }).toList()
                 else
-                  _buildEmptyCard(context, "No academic history added yet."),
+                  _buildEmptyCard(context, 'career.no_history'.tr()),
 
                 SizedBox(height: 25.h),
                 _buildSectionHeader(
@@ -171,7 +179,6 @@ class CareerInfoPage extends StatelessWidget {
     );
   }
 
-  // ✅ [إضافة] ويدجت عرض حالة الفاضي
   Widget _buildEmptyCard(BuildContext context, String message) {
     return Container(
       width: double.infinity,
@@ -284,7 +291,6 @@ class CareerInfoPage extends StatelessWidget {
     );
   }
 
-  // ✅ [تعديل] إضافة Doctor parameter لربط الداتا
   Widget _buildCareerPathCard(
     BuildContext context,
     DoctorProfileModel? doctor,
@@ -303,7 +309,13 @@ class CareerInfoPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'career.current_role'.tr(args: [doctor?.currentJobAr ?? '-']),
+            'career.current_role'.tr(
+              args: [
+                context.locale.languageCode == 'ar'
+                    ? (doctor?.currentJobAr ?? '-')
+                    : (doctor?.currentJobEn ?? '-'),
+              ],
+            ),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           SizedBox(height: 8.h),
@@ -322,7 +334,6 @@ class CareerInfoPage extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           SizedBox(height: 10.h),
-          // ممكن تعمل لوب هنا على الخبرات السابقة لو عندك List ليها في الموديل
           _buildHistoryItem(
             context,
             'career.roles.lecturer'.tr(),
@@ -353,7 +364,6 @@ class CareerInfoPage extends StatelessWidget {
     );
   }
 
-  // ✅ [تعديل] إضافة Doctor parameter لربط الداتا
   Widget _buildCurrentInfoCard(
     BuildContext context,
     DoctorProfileModel? doctor,
@@ -373,7 +383,7 @@ class CareerInfoPage extends StatelessWidget {
             context,
             Icons.account_balance_rounded,
             'career.labels.dept'.tr(),
-            doctor?.addressAr ?? '-', // أو حقل القسم لو موجود في الموديل
+            doctor?.addressAr ?? '-',
           ),
           SizedBox(height: 12.h),
           _buildInfoRow(
@@ -382,14 +392,13 @@ class CareerInfoPage extends StatelessWidget {
             'career.labels.type'.tr(),
             (doctor?.hasPermanentPosition ?? false)
                 ? 'career.employment_type.permanent'.tr()
-                : 'Temporary',
+                : 'career.employment_type.temporary'.tr(),
           ),
           SizedBox(height: 12.h),
           _buildInfoRow(
             context,
             Icons.calendar_today_rounded,
             'career.labels.hire_date'.tr(),
-            // مفيش حقل hire_date في الموديل اللي انت ابعتته، ممكن تضيفه لو محتاجه
             '-',
           ),
         ],

@@ -1,16 +1,31 @@
-import 'dart:io'; // ✅ [مهم] لإدارة كائن File
+import 'dart:ui' as ui; 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:image_picker/image_picker.dart'; // ✅ لاختيار الصور
-import 'package:cached_network_image/cached_network_image.dart'; // ✅ لعرض الصور بكفاءة
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:optialeader/core/routing/routes.dart'; 
 import 'package:optialeader/feature/database_admin/logic/judge_data/judge_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/judge_data/judge_data_state.dart';
 
-class MohakemDashboardHome extends StatelessWidget {
+class MohakemDashboardHome extends StatefulWidget {
   const MohakemDashboardHome({super.key});
+
+  @override
+  State<MohakemDashboardHome> createState() => _MohakemDashboardHomeState();
+}
+
+class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
+  @override
+  void initState() {
+    super.initState();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      context.read<JudgeDataCubit>().getJudgeProfile(uid);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,14 +35,14 @@ class MohakemDashboardHome extends StatelessWidget {
 
     return BlocBuilder<JudgeDataCubit, JudgeDataState>(
       builder: (context, state) {
-        // 1. حالة التحميل العامة
-        if (state is JudgeLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+        if (state is JudgeInitial || state is JudgeLoading) {
+          return Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(color: colorGold),
+            ),
           );
         }
 
-        // 2. حالة الخطأ
         if (state is JudgeError) {
           return Scaffold(
             body: Center(
@@ -39,7 +54,6 @@ class MohakemDashboardHome extends StatelessWidget {
           );
         }
 
-        // 3. الحالة الناجحة
         if (state is JudgeLoaded) {
           final judge = state.judge!;
           final isArabic = context.locale.languageCode == 'ar';
@@ -48,52 +62,47 @@ class MohakemDashboardHome extends StatelessWidget {
               ? (judge.nameAr.isNotEmpty ? judge.nameAr : "محكم")
               : (judge.nameEn.isNotEmpty ? judge.nameEn : "Judge");
 
-          final displayJob = isArabic
-              ? (judge.jopAr.isNotEmpty ? judge.jopAr : "محكم معتمد")
-              : (judge.jopEn.isNotEmpty ? judge.jopEn : "Certified Judge");
-
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
             body: Column(
               children: [
+                // 1 الهيدر الكحلي
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: colorPrimary,
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(30),
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(30.r),
                     ),
                   ),
                   child: SafeArea(
                     bottom: false,
                     child: Column(
                       children: [
-                        _buildAppBar(context),
-                        _buildHeader(
-                          context,
-                          colorGold,
-                          displayName,
-                          displayJob,
-                          judge.profileImage,
-                          judge.uid, // ✅ تمرير الـ uid لدالة الهيدر
-                        ),
-                        SizedBox(height: 15.h),
-                        _buildGoldLine(colorGold),
+                        _buildHeaderRow(context, colorGold, displayName, judge.profileImage),
                         SizedBox(height: 20.h),
                       ],
                     ),
                   ),
                 ),
+                
+                // 2 الخط الدهبي الفاصل
+                Container(
+                  width: double.infinity,
+                  height: 3.0,
+                  color: colorGold,
+                ),
+
+                // 3 محتوى الصفحة
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 25.h),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(height: 25.h),
                         Text(
-                          'dashboard.system_overview'.tr(),
+                          'dashboardJudge.system_overview'.tr(),
                           style: TextStyle(
                             fontSize: 17.sp,
                             fontWeight: FontWeight.bold,
@@ -107,7 +116,7 @@ class MohakemDashboardHome extends StatelessWidget {
                             Expanded(
                               child: _buildStatCard(
                                 context,
-                                'dashboard.cards.under_review'.tr(),
+                                'dashboardJudge.cards.under_review'.tr(),
                                 "24",
                                 Icons.pending_actions,
                                 true,
@@ -134,13 +143,13 @@ class MohakemDashboardHome extends StatelessWidget {
                         SizedBox(height: 12.h),
                         _buildApplicantItem(
                           context,
-                          'سعود صالح القحطاني',
-                          displayJob,
+                          isArabic ? 'سعود صالح القحطاني' : 'Saud Al-Qahtani',
+                          isArabic ? judge.jopAr : judge.jopEn,
                           true,
                         ),
                         _buildApplicantItem(
                           context,
-                          'نورة عبد الرحمن',
+                          isArabic ? 'نورة عبد الرحمن' : 'Noura Abdulrahman',
                           isArabic
                               ? 'قسم الفيزياء التطبيقية'
                               : 'Applied Physics Dept',
@@ -153,7 +162,8 @@ class MohakemDashboardHome extends StatelessWidget {
                 ),
               ],
             ),
-            bottomNavigationBar: _buildBottomNav(colorPrimary, colorGold),
+            //  تمرير الـ uid والـ role للـ BottomNav
+            bottomNavigationBar: _buildBottomNav(colorPrimary, colorGold, judge.uid, judge.role),
           );
         }
 
@@ -162,11 +172,21 @@ class MohakemDashboardHome extends StatelessWidget {
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  //  Row موحد للسهم والاسم في جهة، والصورة في الجهة التانية
+  Widget _buildHeaderRow(
+    BuildContext context,
+    Color gold,
+    String name,
+    String? imageUrl,
+  ) {
+    final isArabic = context.locale.languageCode == 'ar';
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 10.w),
       child: Row(
+        textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
         children: [
+          // الجهة الأولى: السهم + النص
           IconButton(
             icon: Icon(
               Icons.arrow_back_ios_new,
@@ -175,154 +195,47 @@ class MohakemDashboardHome extends StatelessWidget {
             ),
             onPressed: () => context.canPop() ? context.pop() : null,
           ),
-        ],
-      ),
-    );
-  }
-
-  // ✅ [تعديل] إضافة uid كـ Parameter لاستخدامه في رفع الصورة
-  Widget _buildHeader(
-    BuildContext context,
-    Color gold,
-    String name,
-    String job,
-    String? imageUrl,
-    String uid, 
-  ) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 25.w),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
+          SizedBox(width: 5.w),
           Expanded(
-            child: Row(
-              children: [
-                // ✅ [تعديل] تحويل الصورة إلى زر قابل للنقر لرفع صورة جديدة
-                GestureDetector(
-                  onTap: () async {
-                    final ImagePicker picker = ImagePicker();
-                    final XFile? pickedFile = await picker.pickImage(
-                      source: ImageSource.gallery,
-                      requestFullMetadata: false,
-                    );
-
-                    if (pickedFile != null && context.mounted) {
-                      context.read<JudgeDataCubit>().updateJudgeProfileImage(
-                            uid,
-                            File(pickedFile.path),
-                          );
-                    }
-                  },
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 26.r,
-                        backgroundColor: Colors.white.withOpacity(0.15),
-                        child: ClipOval(
-                          child: (imageUrl != null && imageUrl.isNotEmpty)
-                              ? CachedNetworkImage( // ✅ استخدام CachedNetworkImage بدلاً من NetworkImage
-                                  imageUrl: imageUrl,
-                                  width: 52.r,
-                                  height: 52.r,
-                                  fit: BoxFit.cover,
-                                  placeholder: (_, __) => Icon(Icons.person, color: gold, size: 30.sp),
-                                  errorWidget: (_, __, ___) => Icon(Icons.person, color: gold, size: 30.sp),
-                                )
-                              : Icon(Icons.person, color: gold, size: 30.sp),
-                        ),
-                      ),
-                      // ✅ أيقونة الكاميرا الصغيرة فوق الصورة
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: EdgeInsets.all(4.r),
-                          decoration: BoxDecoration(
-                            color: gold,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1.5),
-                          ),
-                          child: Icon(Icons.camera_alt, size: 12.r, color: Colors.white),
-                        ),
-                      ),
-                      
-                      // ✅ مؤشر تحميل يظهر فوق الصورة أثناء الرفع لـ Supabase والضغط
-                      BlocBuilder<JudgeDataCubit, JudgeDataState>(
-                        builder: (context, state) {
-                          if (state is JudgeLoading) {
-                            return Container(
-                              width: 52.r,
-                              height: 52.r,
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.5),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: SizedBox(
-                                  width: 20.r,
-                                  height: 20.r,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.r),
-                                ),
-                              ),
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 15.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'dashboard.welcome'.tr(args: [name]),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        job,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11.sp,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            child: Text(
+              'dashboardJudge.welcome'.tr(args: [name]),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Tajawal',
+              ),
             ),
           ),
-          const Icon(
-            Icons.notifications_none_rounded,
-            color: Colors.white,
-            size: 30,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGoldLine(Color gold) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 45.w),
-      height: 2.5,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [gold.withOpacity(0.1), gold, gold.withOpacity(0.1)],
-        ),
+          SizedBox(width: 15.w),
+          
+          // الجهة الثانية: الصورة الشخصية
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: gold, width: 3.w),
+            ),
+            child: CircleAvatar(
+              radius: 28.r,
+              backgroundColor: Colors.white.withOpacity(0.15),
+              child: ClipOval(
+                child: (imageUrl != null && imageUrl.isNotEmpty)
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        width: 56.r,
+                        height: 56.r,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) =>
+                            Icon(Icons.person, color: gold, size: 30.sp),
+                        errorWidget: (_, __, ___) =>
+                            Icon(Icons.person, color: gold, size: 30.sp),
+                      )
+                    : Icon(Icons.person, color: gold, size: 30.sp),
+              ),
+            ),
+          ),     ],
       ),
     );
   }
@@ -460,25 +373,47 @@ class MohakemDashboardHome extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomNav(Color navy, Color gold) {
+  //  BottomNavigationBar مع التنقل
+  Widget _buildBottomNav(Color navy, Color gold, String uid, String role) {
+    final isArabic = context.locale.languageCode == 'ar';
+    
     return BottomNavigationBar(
       selectedItemColor: gold,
       unselectedItemColor: navy.withOpacity(0.4),
       type: BottomNavigationBarType.fixed,
       currentIndex: 0,
       selectedLabelStyle: const TextStyle(fontFamily: 'Tajawal', fontSize: 11),
-      unselectedLabelStyle: const TextStyle(
-        fontFamily: 'Tajawal',
-        fontSize: 11,
-      ),
+      unselectedLabelStyle: const TextStyle(fontFamily: 'Tajawal', fontSize: 11),
+      onTap: (index) {
+        switch (index) {
+          case 0:
+            // الرئيسية (هو بالفعل عليها)
+            break;
+          case 1:
+            // التنبيهات
+            context.push(Routes.notification);
+            break;
+          case 2:
+            // الطلبات
+            context.push('/judge/orders-list');
+            break;
+          case 3:
+            // الإعدادات
+            context.push(Routes.settings, extra: {
+              'uid': uid,
+              'role': role,
+            });
+            break;
+        }
+      },
       items: [
         BottomNavigationBarItem(
           icon: const Icon(Icons.grid_view_rounded),
-          label: 'dashboard.tooltips.profile'.tr(),
+          label: 'dashboardJudge.tooltips.profile'.tr(),
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.notifications_active_outlined),
-          label: 'التنبيهات',
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.notifications_active_outlined),
+          label: isArabic ? 'التنبيهات' : 'Notifications',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.assignment_outlined),
@@ -486,7 +421,7 @@ class MohakemDashboardHome extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.settings_outlined),
-          label: 'dashboard.tooltips.logout'.tr(),
+          label: 'dashboardJudge.tooltips.logout'.tr(),
         ),
       ],
     );

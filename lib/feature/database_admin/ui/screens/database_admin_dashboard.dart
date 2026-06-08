@@ -1,12 +1,11 @@
-import 'dart:io'; // ✅ [مهم] لإدارة كائن File
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:image_picker/image_picker.dart'; // ✅ لاختيار الصور من المعرض
-import 'package:cached_network_image/cached_network_image.dart'; // ✅ لعرض الصور بكفاءة
+// ✅ شلنا import dart:io و image_picker لأنهم مش محتاجين هنا
+import 'package:cached_network_image/cached_network_image.dart'; 
 import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/logic/database_admin_data/database_admin_state.dart';
 import 'package:optialeader/feature/database_admin/logic/database_admin_data/databse_admin_cubit.dart';
@@ -128,68 +127,34 @@ class _HomeTab extends StatelessWidget {
               toolbarHeight: 90.h,
               title: Row(
                 children: [
-                  // ✅ [تعديل] تحويل الصورة إلى زر قابل للنقر لرفع صورة جديدة
-                  GestureDetector(
-                    onTap: () async {
-                      final ImagePicker picker = ImagePicker();
-                      final XFile? pickedFile = await picker.pickImage(
-                        source: ImageSource.gallery,
-                        requestFullMetadata: false,
-                      );
-
-                      if (pickedFile != null && context.mounted) {
-                        context.read<DatabseAdminCubit>().updateProfileImageWithFile(
-                              admin.uid,
-                              File(pickedFile.path),
-                            );
-                      }
-                    },
-                    child: Stack(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: colorScheme.secondary,
-                              width: 2,
-                            ),
-                          ),
-                          child: CircleAvatar(
-                            radius: 28.r,
-                            backgroundColor: colorScheme.primaryContainer,
-                            child: ClipOval(
-                              child: admin.profileImage.isNotEmpty
-                                  ? CachedNetworkImage( // ✅ استخدام CachedNetworkImage
-                                      imageUrl: admin.profileImage,
-                                      width: 56.r,
-                                      height: 56.r,
-                                      fit: BoxFit.cover,
-                                      placeholder: (_, __) => Icon(Icons.person, color: colorScheme.onPrimary, size: 30.sp),
-                                      errorWidget: (_, __, ___) => Icon(Icons.person, color: colorScheme.onPrimary, size: 30.sp),
-                                    )
-                                  : Icon(
-                                      Icons.person,
-                                      color: colorScheme.onPrimary,
-                                      size: 30.sp,
-                                    ),
-                            ),
-                          ),
-                        ),
-                        // ✅ أيقونة الكاميرا الصغيرة فوق الصورة
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: EdgeInsets.all(4.r),
-                            decoration: BoxDecoration(
-                              color: colorScheme.secondary, // DarkGold
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 1.5),
-                            ),
-                            child: Icon(Icons.camera_alt, size: 12.r, color: Colors.white),
-                          ),
-                        ),
-                      ],
+                  // ✅ [تعديل] الصورة بقيت للعرض فقط بدون GestureDetector وأيقونة الكاميرا
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: colorScheme.secondary,
+                        width: 2,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 28.r,
+                      backgroundColor: colorScheme.primaryContainer,
+                      child: ClipOval(
+                        child: admin.profileImage.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: admin.profileImage,
+                                width: 56.r,
+                                height: 56.r,
+                                fit: BoxFit.cover,
+                                placeholder: (_, __) => Icon(Icons.person, color: colorScheme.onPrimary, size: 30.sp),
+                                errorWidget: (_, __, ___) => Icon(Icons.person, color: colorScheme.onPrimary, size: 30.sp),
+                              )
+                            : Icon(
+                                Icons.person,
+                                color: colorScheme.onPrimary,
+                                size: 30.sp,
+                              ),
+                      ),
                     ),
                   ),
                   SizedBox(width: 12.w),

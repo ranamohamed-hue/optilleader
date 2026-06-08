@@ -87,7 +87,7 @@ class DoctorRepoImpl extends DoctorRepo {
     }
   }
 
-  // ✅ دالة رفع الملفات للسوبابيز
+  //  دالة رفع الملفات للسوبابيز
   @override
   Future<Either<String, String>> uploadFile(
     Uint8List fileBytes,
@@ -188,6 +188,18 @@ class DoctorRepoImpl extends DoctorRepo {
       return right(unit);
     } catch (e) {
       return left("فشل تحديث بيانات الدكتور: ${e.toString()}");
+    }
+  }
+    @override
+  Future<Either<String, List<DoctorProfileModel>>> getAllDoctorsOnce() async {
+    try {
+      final snapshot = await _usersCollection.where('role', isEqualTo: 'doctor').get();
+      final doctors = snapshot.docs.map((doc) {
+        return DoctorProfileModel.fromJson(doc.data() as Map<String, dynamic>, doc.id);
+      }).toList();
+      return right(doctors);
+    } catch (e) {
+      return left("فشل جلب الدكاترة: ${e.toString()}");
     }
   }
 }

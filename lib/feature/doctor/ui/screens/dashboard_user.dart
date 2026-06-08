@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,8 +8,23 @@ import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-class DashboardUserPage extends StatelessWidget {
+
+class DashboardUserPage extends StatefulWidget {
   const DashboardUserPage({super.key});
+
+  @override
+  State<DashboardUserPage> createState() => _DashboardUserPageState();
+}
+
+class _DashboardUserPageState extends State<DashboardUserPage> {
+  @override
+  void initState() {
+    super.initState();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      context.read<DoctorDataCubit>().getDoctorProfile(uid);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,24 +35,25 @@ class DashboardUserPage extends StatelessWidget {
 
     return BlocBuilder<DoctorDataCubit, DoctorDataState>(
       builder: (context, state) {
-        // 1. حالة التحميل
-        if (state is DoctorLoading) {
+        if (state is DoctorInitial || state is DoctorLoading) {
           return Scaffold(
             backgroundColor: scaffoldBg,
-            body: const Center(child: CircularProgressIndicator()),
+            body: Center(child: CircularProgressIndicator(color: goldAccent)),
           );
         }
 
-        // 2. حالة عرض البيانات (DoctorLoaded)
         if (state is DoctorLoaded) {
           final doctor = state.doctor;
+          final String uid =
+              doctor?.uid ?? FirebaseAuth.instance.currentUser?.uid ?? '';
+          final String role = doctor?.role ?? 'doctor';
 
           return Scaffold(
             backgroundColor: scaffoldBg,
             appBar: AppBar(
               backgroundColor: primaryNavy,
               elevation: 0,
-              toolbarHeight: 85.h,
+              toolbarHeight: 80.h,
               automaticallyImplyLeading: false,
               leading: IconButton(
                 icon: Icon(
@@ -52,6 +69,20 @@ class DashboardUserPage extends StatelessWidget {
                   }
                 },
               ),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    Icons.settings_outlined,
+                    size: 22.sp,
+                    color: Colors.white,
+                  ),
+                  onPressed: () => context.push(
+                    Routes.settings,
+                    extra: {'uid': uid, 'role': role},
+                  ),
+                ),
+                SizedBox(width: 5.w),
+              ],
               title: Row(
                 children: [
                   _buildProfileAvatar(goldAccent, doctor?.profileImage),
@@ -64,23 +95,21 @@ class DashboardUserPage extends StatelessWidget {
                 ],
               ),
               bottom: PreferredSize(
-                preferredSize: Size.fromHeight(4.h),
+                preferredSize: Size.fromHeight(3.h),
                 child: Container(color: goldAccent, height: 3.h),
               ),
             ),
             body: RefreshIndicator(
               onRefresh: () async {
-                if (doctor?.uid != null) {
-                  await context.read<DoctorDataCubit>().getDoctorProfile(
-                    doctor!.uid!,
-                  );
+                if (uid.isNotEmpty) {
+                  await context.read<DoctorDataCubit>().getDoctorProfile(uid);
                 }
               },
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
-                padding: EdgeInsets.all(20.w),
+                padding: EdgeInsets.all(16.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -88,9 +117,9 @@ class DashboardUserPage extends StatelessWidget {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisCount: 2,
-                      crossAxisSpacing: 15.w,
-                      mainAxisSpacing: 15.h,
-                      childAspectRatio: 1.1,
+                      crossAxisSpacing: 12.w,
+                      mainAxisSpacing: 12.h,
+                      childAspectRatio: 1.15,
                       children: [
                         _buildStatCard(
                           'dashboard.achievements'.tr(),
@@ -102,7 +131,11 @@ class DashboardUserPage extends StatelessWidget {
                             ],
                           ),
                           primaryNavy,
+                          onTap: () => context.push(
+                            '${Routes.archievementPage}?uid=$uid',
+                          ),
                         ),
+                        // ✅ [تعديل] ربط كلمة "لا يوجد مؤهل" بالترجمة
                         _buildStatCard(
                           'dashboard.academic_data'.tr(),
                           Icons.school_outlined,
@@ -113,30 +146,35 @@ class DashboardUserPage extends StatelessWidget {
                                     ? (doctor
                                               .academicHistory
                                               .first['degree_ar'] ??
-                                          'لا يوجد مؤهل')
+                                          'dashboard.no_credentials'.tr())
                                     : (doctor
                                               .academicHistory
                                               .first['degree_en'] ??
-                                          'No Degree'))
+                                          'dashboard.no_credentials'.tr()))
                               : 'dashboard.no_credentials'.tr(),
                           primaryNavy,
+                          onTap: () =>
+                              context.push('${Routes.acadiminData}?uid=$uid'),
                         ),
                         _buildStatusCard(
                           'dashboard.requests_status'.tr(),
-                          '3', // يمكن ربطها بـ doctor?.notifications.length
+                          '3',
                           'dashboard.pending'.tr(),
                           Colors.red.shade50,
                           Colors.red.shade900,
+                          onTap: () => context.push(Routes.notification),
                         ),
                         _buildProgressCard(
                           'dashboard.career_path'.tr(),
                           0.75,
                           primaryNavy,
                           goldAccent,
+                          onTap: () =>
+                              context.push('${Routes.careerInfo}?uid=$uid'),
                         ),
                       ],
                     ),
-                    SizedBox(height: 30.h),
+                    SizedBox(height: 25.h),
                     _buildSectionTitle(
                       primaryNavy,
                       goldAccent,
@@ -151,7 +189,7 @@ class DashboardUserPage extends StatelessWidget {
                       primaryNavy,
                       goldAccent,
                     ),
-                    SizedBox(height: 12.h),
+                    SizedBox(height: 10.h),
                     _buildOpportunityItem(
                       'dashboard.opp2_title'.tr(),
                       'dashboard.opp2_desc'.tr(),
@@ -160,15 +198,20 @@ class DashboardUserPage extends StatelessWidget {
                       primaryNavy,
                       goldAccent,
                     ),
+                    SizedBox(height: 20.h),
                   ],
                 ),
               ),
             ),
-            bottomNavigationBar: _buildBottomNav(primaryNavy, goldAccent),
+            bottomNavigationBar: _buildBottomNav(
+              primaryNavy,
+              goldAccent,
+              uid,
+              role,
+            ),
           );
         }
 
-        // 3. حالة الخطأ
         if (state is DoctorError) {
           return Scaffold(
             body: Center(
@@ -183,7 +226,11 @@ class DashboardUserPage extends StatelessWidget {
                   ),
                   SizedBox(height: 20.h),
                   ElevatedButton(
-                    onPressed: () {}, // استدعاء دالة التحميل مرة أخرى هنا
+                    onPressed: () {
+                      final uid = FirebaseAuth.instance.currentUser?.uid;
+                      if (uid != null)
+                        context.read<DoctorDataCubit>().getDoctorProfile(uid);
+                    },
                     child: Text('retry'.tr()),
                   ),
                 ],
@@ -204,17 +251,16 @@ class DashboardUserPage extends StatelessWidget {
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: gold, width: 1.5),
+        border: Border.all(color: gold, width: 2),
       ),
       child: CircleAvatar(
-        radius: 22.r,
+        radius: 20.r,
         backgroundColor: Colors.white10,
-        // ✅ [تعديل] استخدام CachedNetworkImageProvider بدل NetworkImage
         backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
-            ? CachedNetworkImageProvider(imageUrl) 
+            ? CachedNetworkImageProvider(imageUrl)
             : null,
         child: (imageUrl == null || imageUrl.isEmpty)
-            ? Icon(Icons.person, color: gold, size: 26.sp)
+            ? Icon(Icons.person, color: gold, size: 24.sp)
             : null,
       ),
     );
@@ -227,15 +273,16 @@ class DashboardUserPage extends StatelessWidget {
       children: [
         Text(
           'dashboard.welcome'.tr(),
-          style: TextStyle(color: Colors.white70, fontSize: 10.sp),
+          style: TextStyle(color: Colors.white70, fontSize: 11.sp),
         ),
         Text(
           name,
           style: TextStyle(
             color: Colors.white,
-            fontSize: 14.sp,
+            fontSize: 15.sp,
             fontWeight: FontWeight.bold,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -249,7 +296,7 @@ class DashboardUserPage extends StatelessWidget {
           children: [
             Container(
               width: 4.w,
-              height: 18.h,
+              height: 16.h,
               decoration: BoxDecoration(
                 color: gold,
                 borderRadius: BorderRadius.circular(2.r),
@@ -259,7 +306,7 @@ class DashboardUserPage extends StatelessWidget {
             Text(
               title,
               style: TextStyle(
-                fontSize: 16.sp,
+                fontSize: 15.sp,
                 fontWeight: FontWeight.bold,
                 color: navy,
               ),
@@ -273,7 +320,7 @@ class DashboardUserPage extends StatelessWidget {
             style: TextStyle(
               color: gold,
               fontWeight: FontWeight.bold,
-              fontSize: 12.sp,
+              fontSize: 11.sp,
             ),
           ),
         ),
@@ -286,50 +333,55 @@ class DashboardUserPage extends StatelessWidget {
     IconData icon,
     Color gold,
     String content,
-    Color navy,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(15.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(color: gold.withOpacity(0.3), width: 1.2),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: gold, size: 18.sp),
-              SizedBox(width: 5.w),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: navy,
-                    fontSize: 12.sp,
+    Color navy, {
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15.r),
+      child: Container(
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15.r),
+          border: Border.all(color: gold.withOpacity(0.3), width: 1.2),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: gold, size: 16.sp),
+                SizedBox(width: 5.w),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: navy,
+                      fontSize: 11.sp,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Text(
-            content,
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontSize: 10.sp,
-              height: 1.4,
+              ],
             ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const Spacer(),
+            Text(
+              content,
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontSize: 10.sp,
+                height: 1.3,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -339,55 +391,60 @@ class DashboardUserPage extends StatelessWidget {
     String count,
     String label,
     Color bgColor,
-    Color textColor,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(15.w),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(color: textColor.withOpacity(0.3), width: 1.2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: textColor,
-              fontSize: 11.sp,
+    Color textColor, {
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15.r),
+      child: Container(
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(15.r),
+          border: Border.all(color: textColor.withOpacity(0.3), width: 1.2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: textColor,
+                fontSize: 11.sp,
+              ),
             ),
-          ),
-          const Spacer(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    count,
-                    style: TextStyle(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      count,
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
                     ),
-                  ),
-                  Text(
-                    label,
-                    style: TextStyle(color: textColor, fontSize: 9.sp),
-                  ),
-                ],
-              ),
-              Icon(
-                Icons.notifications_active_outlined,
-                color: textColor.withOpacity(0.4),
-                size: 22.sp,
-              ),
-            ],
-          ),
-        ],
+                    Text(
+                      label,
+                      style: TextStyle(color: textColor, fontSize: 9.sp),
+                    ),
+                  ],
+                ),
+                Icon(
+                  Icons.notifications_active_outlined,
+                  color: textColor.withOpacity(0.4),
+                  size: 20.sp,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -396,48 +453,53 @@ class DashboardUserPage extends StatelessWidget {
     String title,
     double progress,
     Color navy,
-    Color gold,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(15.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(color: navy.withOpacity(0.1), width: 1.2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: navy,
-              fontSize: 12.sp,
+    Color gold, {
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15.r),
+      child: Container(
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15.r),
+          border: Border.all(color: navy.withOpacity(0.1), width: 1.2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: navy,
+                fontSize: 11.sp,
+              ),
             ),
-          ),
-          const Spacer(),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10.r),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: navy.withOpacity(0.05),
-              color: gold,
-              minHeight: 6.h,
+            const Spacer(),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10.r),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: navy.withOpacity(0.05),
+                color: gold,
+                minHeight: 5.h,
+              ),
             ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'dashboard.completed_percent'.tr(
-              args: ['${(progress * 100).toInt()}%'],
+            SizedBox(height: 6.h),
+            Text(
+              'dashboard.completed_percent'.tr(
+                args: ['${(progress * 100).toInt()}%'],
+              ),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 10.sp,
+                color: navy,
+              ),
             ),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 11.sp,
-              color: navy,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -451,7 +513,7 @@ class DashboardUserPage extends StatelessWidget {
     Color gold,
   ) {
     return Container(
-      padding: EdgeInsets.all(12.w),
+      padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15.r),
@@ -460,14 +522,14 @@ class DashboardUserPage extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(10.w),
+            padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
               color: iconBg,
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(10.r),
             ),
-            child: Icon(icon, color: navy, size: 22.sp),
+            child: Icon(icon, color: navy, size: 20.sp),
           ),
-          SizedBox(width: 15.w),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -476,7 +538,7 @@ class DashboardUserPage extends StatelessWidget {
                   title,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14.sp,
+                    fontSize: 13.sp,
                     color: navy,
                   ),
                 ),
@@ -494,7 +556,7 @@ class DashboardUserPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomNav(Color navy, Color gold) {
+  Widget _buildBottomNav(Color navy, Color gold, String uid, String role) {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       selectedItemColor: gold,
@@ -504,6 +566,21 @@ class DashboardUserPage extends StatelessWidget {
       elevation: 25,
       selectedFontSize: 10.sp,
       unselectedFontSize: 10.sp,
+      onTap: (index) {
+        switch (index) {
+          case 0:
+            context.push(Routes.settings, extra: {'uid': uid, 'role': role});
+            break;
+          case 1:
+            context.push(Routes.notification);
+            break;
+          case 2:
+            context.push('${Routes.digitalArchieve}?uid=$uid');
+            break;
+          case 3:
+            break;
+        }
+      },
       items: [
         BottomNavigationBarItem(
           icon: const Icon(Icons.settings_outlined),

@@ -6,7 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 class FolderJsonLoader extends AssetLoader {
   const FolderJsonLoader();
 
-  // 🟢 أسماء ملفات الترجمة اللي جوه فولدر ar و en (من غير .json)
+  //  أسماء ملفات الترجمة اللي جوه فولدر ar و en (من غير .json)
   final List<String> fileNames = const [
     'acadimic_data',
     'add_admin',
@@ -29,7 +29,8 @@ class FolderJsonLoader extends AssetLoader {
     'search',
     'setting',
     'upload_files',
-    'employee_search'
+    'employee_search',
+    'add_files'
   ];
 
   @override

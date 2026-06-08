@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart'; // ✅ إضافة
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -8,7 +8,9 @@ import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_state.dart';
 
 class AnnouncementsPage extends StatelessWidget {
-  const AnnouncementsPage({super.key});
+  final VoidCallback? onBack; // ✅ استقبال دالة الرجوع
+
+  const AnnouncementsPage({super.key, this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +90,14 @@ class AnnouncementsPage extends StatelessWidget {
                     color: Colors.white,
                     size: 20,
                   ),
-                  onPressed: () => context.pop(),
+                  // ✅ لو الدالة موجودة (جوا الـ Dashboard) يرجع للرئيسية، غير كده يعمل Pop عادي
+                  onPressed: () {
+                    if (onBack != null) {
+                      onBack!();
+                    } else {
+                      context.pop();
+                    }
+                  },
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -162,7 +171,6 @@ class AnnouncementsPage extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: Row(
-              // ✅ [تعديل] تحويل الـ Column لـ Row عشان نحط الصورة جمب النص
               children: [
                 Expanded(
                   child: Column(
@@ -241,8 +249,6 @@ class AnnouncementsPage extends StatelessWidget {
                     ],
                   ),
                 ),
-
-                // ✅ [إضافة] عرض الصورة المصغرة لو موجودة
                 if (announcement.imageUrl != null &&
                     announcement.imageUrl!.isNotEmpty) ...[
                   const SizedBox(width: 15),

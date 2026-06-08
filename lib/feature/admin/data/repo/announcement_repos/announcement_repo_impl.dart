@@ -15,7 +15,9 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
   CollectionReference get _collection => _firestore.collection('announcements');
 
   @override
-  Future<Either<String, Unit>> addAnnouncement(AnnouncementModel announcement) async {
+  Future<Either<String, Unit>> addAnnouncement(
+    AnnouncementModel announcement,
+  ) async {
     try {
       await _collection.add(announcement.toMap());
       return const Right(unit);
@@ -26,15 +28,22 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
 
   @override
   Stream<List<AnnouncementModel>> getAnnouncements() {
-    return _collection.orderBy('createdAt', descending: true).snapshots().map((snapshot) {
+    return _collection.orderBy('createdAt', descending: true).snapshots().map((
+      snapshot,
+    ) {
       return snapshot.docs.map((doc) {
-        return AnnouncementModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+        return AnnouncementModel.fromMap(
+          doc.data() as Map<String, dynamic>,
+          doc.id,
+        );
       }).toList();
     });
   }
 
   @override
-  Future<Either<String, Unit>> updateAnnouncement(AnnouncementModel announcement) async {
+  Future<Either<String, Unit>> updateAnnouncement(
+    AnnouncementModel announcement,
+  ) async {
     try {
       if (announcement.id != null) {
         await _collection.doc(announcement.id).update(announcement.toMap());
@@ -48,7 +57,10 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
 
   // ✅ [تعديل] حذف الإعلان مع حذف الصورة من Supabase
   @override
-  Future<Either<String, Unit>> deleteAnnouncement(String id, String? imageUrl) async {
+  Future<Either<String, Unit>> deleteAnnouncement(
+    String id,
+    String? imageUrl,
+  ) async {
     try {
       // 1. حذف الصورة من Supabase إذا وجدت
       if (imageUrl != null && imageUrl.contains('supabase.co')) {
@@ -56,13 +68,15 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
           final uri = Uri.parse(imageUrl);
           final pathSegments = uri.pathSegments;
           final bucketIndex = pathSegments.indexOf('images');
-          
+
           if (bucketIndex != -1 && bucketIndex + 1 < pathSegments.length) {
             final storagePath = pathSegments.sublist(bucketIndex + 1).join('/');
             await _supabase.storage.from('images').remove([storagePath]);
           }
         } catch (storageError) {
-          print('Failed to delete announcement image from Supabase: $storageError');
+          print(
+            'Failed to delete announcement image from Supabase: $storageError',
+          );
           // نكمل عملية الحذف حتى لو فشل حذف الصورة عشان ما نقفش العملية
         }
       }
@@ -77,37 +91,44 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
 
   // ✅ [إضافة] دالة ضغط ورفع صورة الإعلان
   @override
-  Future<Either<String, String>> uploadAnnouncementImage(String filePath) async {
+  Future<Either<String, String>> uploadAnnouncementImage(
+    String filePath,
+  ) async {
     try {
-      final fileExtension = filePath.split('.').last.toLowerCase();
-
-      final Uint8List? compressedBytes = await FlutterImageCompress.compressWithFile(
-        filePath,
-        minHeight: 800, // الإعلانات ممكن تحتاج حجم أكتر شوية
-        minWidth: 800,
-        quality: 85,
-      );
+      final Uint8List? compressedBytes =
+          await FlutterImageCompress.compressWithFile(
+            filePath,
+            minHeight: 800, // الإعلانات ممكن تحتاج حجم أكتر شوية
+            minWidth: 800,
+            quality: 85,
+          );
 
       if (compressedBytes == null) {
         return const Left("ERROR_IMAGE_COMPRESS_FAILED");
       }
 
-      // استخدام Timestamp عشان اسم الصورة يكون فريد (لأن الإعلان لسه مالهوش ID قبل ما يتسيف)
-      final storagePath = 'announcements/${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-      
-      await _supabase.storage.from('images').uploadBinary(
+      // ✅ تثبيت الامتداد بـ jpg لأن المكتبة بترجع jpeg دائماً
+      final storagePath =
+          'announcements/${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      await _supabase.storage
+          .from('images')
+          .uploadBinary(
             storagePath,
             compressedBytes,
-            fileOptions: FileOptions(
+            fileOptions: const FileOptions(
               upsert: true,
-              contentType: 'image/$fileExtension',
+              contentType: 'image/jpeg', 
             ),
           );
 
-      final imageUrl = _supabase.storage.from('images').getPublicUrl(storagePath);
+      final imageUrl = _supabase.storage
+          .from('images')
+          .getPublicUrl(storagePath);
       return Right(imageUrl);
     } catch (e) {
-      return const Left("ERROR_IMAGE_UPLOAD_SUPABASE");
+      print(" Supabase Announcement Upload Error: ${e.toString()}");
+      return Left("ERROR_IMAGE_UPLOAD_SUPABASE: ${e.toString()}");
     }
   }
 }

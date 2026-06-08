@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:optialeader/feature/auth/data/models/user_model.dart';
 
 abstract class AuthRepo {
+   UserModel? getCachedUser();
   Future<Either<String, UserModel>> login({
     required String email,
     required String password,

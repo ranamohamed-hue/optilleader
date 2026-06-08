@@ -1,8 +1,13 @@
 {
   "statuses": {
-    "active": "نشط"
+    "active": "نشط",
+    "inactive": "غير نشط"
+  },
+  "dashboard": {
+    "doctor_default": "الدكتور"
   },
   "acadimicData": {
+    "title": "البيانات الأكاديمية",
     "personal_section": "المعلومات الشخصية",
     "academic_section": "السجل الأكاديمي والمهني",
     "contact_section": "معلومات الاتصال",

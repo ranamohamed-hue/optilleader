@@ -73,7 +73,7 @@ class UserModel extends Equatable {
     }
   }
 
-  /// 🔥 Model → Firestore
+  ///  Model → Firestore
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
@@ -86,7 +86,7 @@ class UserModel extends Equatable {
     };
   }
 
-  /// 🔥 Copy
+  ///  Copy
   UserModel copyWith({
     String? uid,
     String? username,

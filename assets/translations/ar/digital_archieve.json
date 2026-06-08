@@ -1,6 +1,7 @@
 {
-  "digitalArchive": {
+  "archive": {
     "title": "الأرشيف الرقمي",
+    "no_files": "لا توجد ملفات مضافة حالياً",
     "tabs": {
       "research": "الأبحاث",
       "conferences": "المؤتمرات",
