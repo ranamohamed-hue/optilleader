@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:easy_localization/easy_localization.dart'; // ✅ [إضافة]
+import 'package:easy_localization/easy_localization.dart'; 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:optialeader/core/services/file_halper.dart';
 import 'package:optialeader/feature/doctor/data/model/research_paper_model.dart';
@@ -49,7 +50,7 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     if (!_formKey.currentState!.validate()) return;
     if (_paperFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-         SnackBar(content: Text('addResearch.fileRequired'.tr()), backgroundColor: Colors.red), // ✅
+         SnackBar(content: Text('addResearch.fileRequired'.tr()), backgroundColor: Colors.red), 
       );
       return;
     }
@@ -86,9 +87,9 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     return BlocConsumer<ResearchCubit, ResearchState>(
       listener: (context, state) {
         if (state is ResearchSuccess) {
-          Navigator.pop(context);
+          context.pop(); 
           ScaffoldMessenger.of(context).showSnackBar(
-             SnackBar(content: Text('addResearch.success'.tr()), backgroundColor: Colors.green), // ✅
+             SnackBar(content: Text('addResearch.success'.tr()), backgroundColor: Colors.green), 
           );
         } else if (state is ResearchError) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -99,7 +100,7 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
       builder: (context, state) {
         final isLoading = state is ResearchLoading;
         return Scaffold(
-          appBar: AppBar(title: Text('addResearch.title'.tr()), centerTitle: true), // ✅
+          appBar: AppBar(title: Text('addResearch.title'.tr()), centerTitle: true), 
           body: SingleChildScrollView(
             padding: EdgeInsets.all(16.w),
             child: Form(
@@ -108,20 +109,20 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                 children: [
                   TextFormField(
                     controller: _titleArController, 
-                    decoration: InputDecoration(labelText: 'addResearch.titleAr'.tr()), // ✅
-                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null // ✅
+                    decoration: InputDecoration(labelText: 'addResearch.titleAr'.tr()), 
+                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null 
                   ),
                   SizedBox(height: 12.h),
                   TextFormField(
                     controller: _titleEnController, 
-                    decoration: InputDecoration(labelText: 'addResearch.titleEn'.tr()), // ✅
-                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null // ✅
+                    decoration: InputDecoration(labelText: 'addResearch.titleEn'.tr()), 
+                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null 
                   ),
                   SizedBox(height: 12.h),
                   TextFormField(
                     controller: _journalNameController, 
-                    decoration: InputDecoration(labelText: 'addResearch.journalName'.tr()), // ✅
-                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null // ✅
+                    decoration: InputDecoration(labelText: 'addResearch.journalName'.tr()), 
+                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null 
                   ),
                   SizedBox(height: 12.h),
                   Row(
@@ -129,17 +130,17 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                       Expanded(
                         child: TextFormField(
                           controller: _issnController, 
-                          decoration: InputDecoration(labelText: 'addResearch.issn'.tr()), // ✅
-                          validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null // ✅
+                          decoration: InputDecoration(labelText: 'addResearch.issn'.tr()), 
+                          validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null 
                         ),
                       ),
                       SizedBox(width: 10.w),
                       Expanded(
                         child: TextFormField(
                           controller: _publicationYearController, 
-                          decoration: InputDecoration(labelText: 'addResearch.publicationYear'.tr()), // ✅
+                          decoration: InputDecoration(labelText: 'addResearch.publicationYear'.tr()), 
                           keyboardType: TextInputType.number, 
-                          validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null // ✅
+                          validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null 
                         ),
                       ),
                     ],
@@ -147,21 +148,21 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                   SizedBox(height: 12.h),
                   TextFormField(
                     controller: _journalUrlController, 
-                    decoration: InputDecoration(labelText: 'addResearch.journalUrl'.tr()), // ✅
-                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null // ✅
+                    decoration: InputDecoration(labelText: 'addResearch.journalUrl'.tr()), 
+                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null 
                   ),
                   SizedBox(height: 20.h),
                   
                   // رفع الملفات
                   FilePickerField(
-                    label: 'addResearch.paperFile'.tr(), // ✅
+                    label: 'addResearch.paperFile'.tr(), 
                     selectedFile: _paperFile,
                     onFileSelected: (file) => setState(() => _paperFile = file),
                     isRequired: true,
                   ),
                   SizedBox(height: 12.h),
                   FilePickerField(
-                    label: 'addResearch.indexingProof'.tr(), // ✅
+                    label: 'addResearch.indexingProof'.tr(), 
                     selectedFile: _indexingProofFile,
                     onFileSelected: (file) => setState(() => _indexingProofFile = file),
                   ),
@@ -180,7 +181,7 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                       ),
                       child: isLoading
                           ? CircularProgressIndicator(color: Colors.white)
-                          : Text('addResearch.submit'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)), // ✅
+                          : Text('addResearch.submit'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)), 
                     ),
                   ),
                 ],

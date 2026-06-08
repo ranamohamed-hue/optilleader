@@ -25,7 +25,6 @@ class AnnouncementCubit extends Cubit<AnnouncementState> {
       onError: (error) => emit(AnnouncementError("ERROR_FETCH_ANNOUNCEMENTS")),
     );
   }
-
   Future<void> addAnnouncement(AnnouncementModel announcement, {String? imagePath}) async {
     emit(AnnouncementLoading());
     
@@ -50,15 +49,49 @@ class AnnouncementCubit extends Cubit<AnnouncementState> {
     final result = await _repository.addAnnouncement(announcement);
     result.fold(
       (error) => emit(AnnouncementError(error)),
-      (_) {
+      (generatedId) { 
         emit(AnnouncementActionSuccess("SUCCESS_ADD_ANNOUNCEMENT"));
         
-        //  إرسال إشعار جماعي بعد الحفظ بنجاح
-        _broadcastAnnouncementNotification(announcement);
+        _broadcastAnnouncementNotification(announcement.copyWith(id: generatedId));
       },
     );
   }
 
+  //  دالة الإشعار الجماعي للإعلانات والمسابقات
+  Future<void> _broadcastAnnouncementNotification(AnnouncementModel announcement) async {
+    try {
+      // 1. جلب كل الـ UIDs بتوع الدكاترة من الفايرستور
+      final snapshot = await _firebaseFirestore
+          .collection('users')
+          .where('role', isEqualTo: 'doctor')
+          .get();
+      
+      final doctorUids = snapshot.docs.map((doc) => doc.id).toList();
+
+      if (doctorUids.isEmpty) return; // مفيش دكاترة نبعتهم
+
+      // 2. تحديد نوع الإشعار
+      NotificationType type = NotificationType.announcementCreated;
+
+      // 3. بناء الإشعار
+      final notification = AppNotificationModel(
+        id: '',
+        title: 'إعلان جديد: ${announcement.title}', 
+        message: announcement.description ?? 'تم نشر إعلان جديد يرجى المتابعة', 
+        type: type,
+        timestamp: Timestamp.now(),
+        receiverId: '', 
+        relatedId: announcement.id, 
+      );
+
+      // 4. إرسال الإشعار الجماعي
+      await _notificationRepo.broadcastNotification(doctorUids, notification);
+      
+    } catch (e) {
+      print("فشل إرسال إشعار الإعلان: $e");
+    }
+  }
+  
   Future<void> updateAnnouncement(AnnouncementModel announcement, {String? imagePath}) async {
     emit(AnnouncementLoading());
     
@@ -93,46 +126,5 @@ class AnnouncementCubit extends Cubit<AnnouncementState> {
     );
   }
 
-  //  دالة الإشعار الجماعي للإعلانات والمسابقات
-  Future<void> _broadcastAnnouncementNotification(AnnouncementModel announcement) async {
-    try {
-      // 1. جلب كل الـ UIDs بتوع الدكاترة من الفايرستور
-      final snapshot = await _firebaseFirestore
-          .collection('users')
-          .where('role', isEqualTo: 'doctor')
-          .get();
-      
-      final doctorUids = snapshot.docs.map((doc) => doc.id).toList();
-
-      if (doctorUids.isEmpty) return; // مفيش دكاترة نبعتهم
-
-      // 2. تحديد نوع الإشعار بناءً على نوع الإعلان (افتراضياً عندك حقل type أو بنشوف العنوان)
-      NotificationType type = NotificationType.announcementCreated;
-      
-      // لو الـ Model بتاعك فيه حقل type أو category، مممند نعمل بناءً عليه
-      // هنا بافتراض إنك بتحددي نوع الإعلان كـ String
-      // if (announcement.type == 'competition') {
-      //   type = NotificationType.newCompetition;
-      // } else if (announcement.type == 'result') {
-      //   type = NotificationType.competitionResult;
-      // }
-
-      // 3. بناء الإشعار
-      final notification = AppNotificationModel(
-        id: '',
-        title: 'إعلان جديد: ${announcement.title}', // افتراض إن الموديل فيه title
-        message: announcement.description ?? 'تم نشر إعلان جديد يرجى المتابعة', // افتراض إن فيه description
-        type: type,
-        timestamp: Timestamp.now(),
-        receiverId: '', // هيتتجاهل في دالة الـ broadcast
-      );
-
-      // 4. إرسال الإشعار الجماعي
-      await _notificationRepo.broadcastNotification(doctorUids, notification);
-      
-    } catch (e) {
-      print("فشل إرسال إشعار الإعلان: $e");
-      // مش هنعمل emit Error عشان الإعلان اتحفظ، الإشعار ده حاجة إضافية
-    }
-  }
+ 
 }

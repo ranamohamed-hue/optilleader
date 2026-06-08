@@ -42,7 +42,11 @@ class AchievementsLogPage extends StatelessWidget {
               leading: IconButton(
                 icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
                 onPressed: () {
-                  if (context.canPop()) { context.pop(); } else { context.go(Routes.user); }
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(Routes.user);
+                  }
                 },
               ),
               title: Row(
@@ -51,12 +55,16 @@ class AchievementsLogPage extends StatelessWidget {
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: colorScheme.secondary, width: 1.5),
+                      border: Border.all(
+                        color: colorScheme.secondary,
+                        width: 1.5,
+                      ),
                     ),
                     child: CircleAvatar(
                       radius: 20.r,
                       backgroundColor: colorScheme.secondary.withOpacity(0.2),
-                      backgroundImage: (doctor?.profileImage.isNotEmpty ?? false)
+                      backgroundImage:
+                          (doctor?.profileImage.isNotEmpty ?? false)
                           ? CachedNetworkImageProvider(doctor!.profileImage)
                           : null,
                       child: (doctor?.profileImage.isEmpty ?? true)
@@ -65,7 +73,10 @@ class AchievementsLogPage extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 12.w),
-                  Text('achievements.title'.tr(), style: theme.appBarTheme.titleTextStyle),
+                  Text(
+                    'achievements.title'.tr(),
+                    style: theme.appBarTheme.titleTextStyle,
+                  ),
                   const Spacer(),
                   Icon(Icons.emoji_events, color: colorScheme.secondary),
                 ],
@@ -77,10 +88,10 @@ class AchievementsLogPage extends StatelessWidget {
                 labelColor: colorScheme.secondary,
                 unselectedLabelColor: Colors.white70,
                 tabs: [
-                  Tab(text: "achievements.tabs.research".tr()), // ✅
-                  Tab(text: "achievements.tabs.conferences".tr()), // ✅
-                  Tab(text: "achievements.tabs.activities".tr()), // ✅
-                  Tab(text: "achievements.tabs.courses".tr()), // ✅
+                  Tab(text: "achievements.tabs.research".tr()),
+                  Tab(text: "achievements.tabs.conferences".tr()),
+                  Tab(text: "achievements.tabs.activities".tr()),
+                  Tab(text: "achievements.tabs.courses".tr()),
                 ],
               ),
             ),
@@ -90,38 +101,71 @@ class AchievementsLogPage extends StatelessWidget {
                   child: TabBarView(
                     children: [
                       _buildResearchList(context, doctor?.researchPapers ?? []),
-                      _buildActivitiesList(context, (doctor?.activities ?? []).where((a) => a.type == 'conference').toList()),
-                      _buildActivitiesList(context, (doctor?.activities ?? []).where((a) => a.type != 'conference' && a.type != 'course').toList()),
-                      // ✅ [تعديل] استخدام trainingCourses من الموديل
-                      _buildActivitiesList(context, doctor?.trainingCourses ?? []),
+                      _buildActivitiesList(
+                        context,
+                        (doctor?.activities ?? [])
+                            .where((a) => a.type == 'conference')
+                            .toList(),
+                      ),
+                      _buildActivitiesList(
+                        context,
+                        (doctor?.activities ?? [])
+                            .where(
+                              (a) =>
+                                  a.type != 'conference' && a.type != 'course',
+                            )
+                            .toList(),
+                      ),
+                      _buildActivitiesList(
+                        context,
+                        doctor?.trainingCourses ?? [],
+                      ),
                     ],
                   ),
                 ),
+                // ✅✅✅ التعديل هنا: إضافة Builder لحل مشكلة الـ Context واستخدام Routes
                 Padding(
                   padding: EdgeInsets.all(16.w),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 50.h,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        int currentIndex = DefaultTabController.of(context).index;
-                        if (currentIndex == 0) {
-                          // ✅ [تعديل] شيلت الـ / من أول اللينك عشان يشتغل كـ SubRoute
-                          context.push('addResearch?uid=$doctorUid');
-                        } else {
-                          context.push('addActivity?uid=$doctorUid');
-                        }
-                      },
-                      icon: Icon(Icons.add_circle_outline, color: colorScheme.primary),
-                      label: Text(
-                        'achievements.add_new'.tr(), // ✅
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colorScheme.secondary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-                      ),
-                    ),
+                  child: Builder(
+                    builder: (innerContext) {
+                      return SizedBox(
+                        width: double.infinity,
+                        height: 50.h,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            int currentIndex = DefaultTabController.of(
+                              innerContext,
+                            ).index;
+                            if (currentIndex == 0) {
+                              context.push(
+                                '${Routes.addResearch}?uid=$doctorUid',
+                              );
+                            } else {
+                              context.push(
+                                '${Routes.addActivity}?uid=$doctorUid',
+                              );
+                            }
+                          },
+                          icon: Icon(
+                            Icons.add_circle_outline,
+                            color: colorScheme.primary,
+                          ),
+                          label: Text(
+                            'achievements.add_new'.tr(),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.sp,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colorScheme.secondary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -132,9 +176,17 @@ class AchievementsLogPage extends StatelessWidget {
     );
   }
 
-  Widget _buildResearchList(BuildContext context, List<ResearchPaperModel> papers) {
+  Widget _buildResearchList(
+    BuildContext context,
+    List<ResearchPaperModel> papers,
+  ) {
     if (papers.isEmpty) {
-      return Center(child: Text("achievements.no_research".tr(), style: TextStyle(color: Colors.grey))); // ✅
+      return Center(
+        child: Text(
+          "achievements.no_research".tr(),
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
     }
     return ListView.builder(
       padding: EdgeInsets.all(16.w),
@@ -151,9 +203,17 @@ class AchievementsLogPage extends StatelessWidget {
     );
   }
 
-  Widget _buildActivitiesList(BuildContext context, List<ActivityModel> activities) {
+  Widget _buildActivitiesList(
+    BuildContext context,
+    List<ActivityModel> activities,
+  ) {
     if (activities.isEmpty) {
-      return Center(child: Text("achievements.no_activities".tr(), style: TextStyle(color: Colors.grey))); // ✅
+      return Center(
+        child: Text(
+          "achievements.no_activities".tr(),
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
     }
     return ListView.builder(
       padding: EdgeInsets.all(16.w),
@@ -188,9 +248,25 @@ class AchievementsLogPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14.sp,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   SizedBox(height: 4.h),
-                  Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 12.sp), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 12.sp,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
@@ -200,7 +276,10 @@ class AchievementsLogPage extends StatelessWidget {
               children: [
                 _buildStatusChip(status),
                 SizedBox(height: 4.h),
-                Text(date, style: TextStyle(color: Colors.grey, fontSize: 11.sp)),
+                Text(
+                  date,
+                  style: TextStyle(color: Colors.grey, fontSize: 11.sp),
+                ),
               ],
             ),
           ],
@@ -218,17 +297,17 @@ class AchievementsLogPage extends StatelessWidget {
       case VerificationStatus.approved:
         color = Colors.green;
         icon = Icons.check_circle;
-        text = 'achievements.status.accepted'.tr(); // ✅
+        text = 'achievements.status.accepted'.tr();
         break;
       case VerificationStatus.rejected:
         color = Colors.red;
         icon = Icons.cancel;
-        text = 'achievements.status.rejected'.tr(); // ✅
+        text = 'achievements.status.rejected'.tr();
         break;
       case VerificationStatus.pending:
         color = Colors.orange;
         icon = Icons.hourglass_empty;
-        text = 'achievements.status.under_review'.tr(); // ✅
+        text = 'achievements.status.under_review'.tr();
         break;
     }
 
@@ -243,7 +322,14 @@ class AchievementsLogPage extends StatelessWidget {
         children: [
           Icon(icon, size: 14.sp, color: color),
           SizedBox(width: 4.w),
-          Text(text, style: TextStyle(color: color, fontSize: 11.sp, fontWeight: FontWeight.bold)),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontSize: 11.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );

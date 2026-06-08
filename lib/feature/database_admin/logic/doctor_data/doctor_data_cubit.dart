@@ -89,6 +89,7 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
   }
 
   // ✅✅✅ [إضافة جديدة] دالة رفع ملفات للأرشيف (بتخزن Array في الفايرستور)
+  // ✅✅✅ دالة رفع ملفات للأرشيف (معدلة بدون كراش الـ Timestamp)
   Future<void> uploadArchiveFile({
     required String uid,
     required File file,
@@ -116,13 +117,13 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
       uploadResult.fold(
         (error) => emit(DoctorError(error: error)), 
         (fileUrl) async {
-          // 4. تجهيز الـ Object اللي هيتحفظ في الفايرستور
+          // 4. تجهيز الـ Object (تم استبدال serverTimestamp بـ ISO String لتجنب كراش arrayUnion)
           final newFileData = {
             'title': title,
             'description': description,
             'category': category,
             'file_url': fileUrl,
-            'uploaded_at': FieldValue.serverTimestamp(), 
+            'uploaded_at': DateTime.now().toIso8601String(), // ✅ تعديل آمن للـ Array
           };
 
           // 5. تحديث الفايرستور بإضافة الملف للستة (arrayUnion)

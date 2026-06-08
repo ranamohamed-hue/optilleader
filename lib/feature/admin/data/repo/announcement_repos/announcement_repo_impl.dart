@@ -1,26 +1,25 @@
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // ✅ إضافة Supabase
-import 'package:flutter_image_compress/flutter_image_compress.dart'; // ✅ إضافة ضغط الصور
+import 'package:supabase_flutter/supabase_flutter.dart'; 
+import 'package:flutter_image_compress/flutter_image_compress.dart'; 
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 import 'package:optialeader/feature/admin/data/repo/announcement_repos/announcement_repo.dart';
 
 class AnnouncementRepositoryImpl implements IAnnouncementRepository {
   final FirebaseFirestore _firestore;
-  final SupabaseClient _supabase = Supabase.instance.client; // ✅ تعريف Supabase
+  final SupabaseClient _supabase = Supabase.instance.client; 
 
   AnnouncementRepositoryImpl(this._firestore);
 
   CollectionReference get _collection => _firestore.collection('announcements');
-
   @override
-  Future<Either<String, Unit>> addAnnouncement(
+  Future<Either<String, String>> addAnnouncement( 
     AnnouncementModel announcement,
   ) async {
     try {
-      await _collection.add(announcement.toMap());
-      return const Right(unit);
+      final docRef = await _collection.add(announcement.toMap());
+      return Right(docRef.id); 
     } catch (e) {
       return const Left("ERROR_ADD_ANNOUNCEMENT");
     }
@@ -55,7 +54,7 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
     }
   }
 
-  // ✅ [تعديل] حذف الإعلان مع حذف الصورة من Supabase
+  //   حذف الإعلان مع حذف الصورة من Supabase
   @override
   Future<Either<String, Unit>> deleteAnnouncement(
     String id,
@@ -89,7 +88,7 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
     }
   }
 
-  // ✅ [إضافة] دالة ضغط ورفع صورة الإعلان
+  // دالة ضغط ورفع صورة الإعلان
   @override
   Future<Either<String, String>> uploadAnnouncementImage(
     String filePath,
@@ -107,7 +106,7 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
         return const Left("ERROR_IMAGE_COMPRESS_FAILED");
       }
 
-      // ✅ تثبيت الامتداد بـ jpg لأن المكتبة بترجع jpeg دائماً
+      //  تثبيت الامتداد بـ jpg لأن المكتبة بترجع jpeg دائماً
       final storagePath =
           'announcements/${DateTime.now().millisecondsSinceEpoch}.jpg';
 

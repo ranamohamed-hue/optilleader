@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:go_router/go_router.dart';
+import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/core/theming/app_color.dart';
 import 'package:optialeader/feature/notification/data/model/app_notification_model.dart';
 import 'package:optialeader/feature/notification/logic/app_notification_cubit.dart';
@@ -135,16 +137,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           _formatTimestamp(notification.timestamp),
           style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
         ),
-        onTap: () {
+               onTap: () {
           if (!notification.isRead) {
             context.read<NotificationCubit>().markAsRead(notification.id);
+          }
+          
+          // فتح الإعلان
+          if (notification.type == NotificationType.announcementCreated) {
+            if (notification.relatedId != null) {
+              context.push('${Routes.announcementDetails}?id=${notification.relatedId}');
+            }
           }
         },
       ),
     );
   }
 
-  // ✅ [تعديل] إضافة الأيقونات للحالات الجديدة
+  // إضافة الأيقونات للحالات الجديدة
   IconData _getIconForType(NotificationType type) {
     switch (type) {
       case NotificationType.userLogin:
@@ -177,7 +186,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.waving_hand;
       case NotificationType.newArbitrationRequest:
         return Icons.assignment_ind;
-      // ✅ الحالات الجديدة
       case NotificationType.newResearchSubmitted:
         return Icons.science_outlined;
       case NotificationType.newActivitySubmitted:
@@ -191,7 +199,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  // ✅ [تعديل] إضافة الألوان للحالات الجديدة
+  //  إضافة الألوان للحالات الجديدة
   Color _getColorForType(NotificationType type) {
     switch (type) {
       case NotificationType.userLogin:
@@ -237,8 +245,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Colors.grey;
     }
   }
-
-  // ✅ [تعديل] تحسين دالة الوقت
+//دالة الوقت
   String _formatTimestamp(Timestamp timestamp) {
     final date = timestamp.toDate();
     final now = DateTime.now();

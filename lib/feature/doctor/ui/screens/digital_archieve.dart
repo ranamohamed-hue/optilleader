@@ -107,7 +107,7 @@ class DigitalArchivePage extends StatelessWidget {
             ),
             floatingActionButton: FloatingActionButton(
               onPressed: () {
-                context.push('uploadFiles?uid=$doctorUid');
+                context.push('/user/uploadFiles?uid=$doctorUid');
               },
               backgroundColor: colorScheme.secondary,
               elevation: 4,

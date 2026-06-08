@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:easy_localization/easy_localization.dart'; // ✅ [إضافة]
+import 'package:easy_localization/easy_localization.dart'; 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/services/file_halper.dart';
 import 'package:uuid/uuid.dart';
 import 'package:optialeader/feature/doctor/data/model/activities_model.dart';
@@ -53,9 +54,9 @@ class _AddActivityPageState extends State<AddActivityPage> {
     return BlocConsumer<ActivityCubit, ActivityState>(
       listener: (context, state) {
         if (state is ActivitySuccess) {
-          Navigator.pop(context);
+          context.pop(); 
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('addActivity.success'.tr()), backgroundColor: Colors.green), // ✅
+            SnackBar(content: Text('addActivity.success'.tr()), backgroundColor: Colors.green), 
           );
         } else if (state is ActivityError) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -66,7 +67,7 @@ class _AddActivityPageState extends State<AddActivityPage> {
       builder: (context, state) {
         final isLoading = state is ActivityLoading;
         return Scaffold(
-          appBar: AppBar(title: Text('addActivity.title'.tr()), centerTitle: true), // ✅
+          appBar: AppBar(title: Text('addActivity.title'.tr()), centerTitle: true), 
           body: SingleChildScrollView(
             padding: EdgeInsets.all(16.w),
             child: Form(
@@ -75,36 +76,36 @@ class _AddActivityPageState extends State<AddActivityPage> {
                 children: [
                   DropdownButtonFormField<String>(
                     value: _selectedType,
-                    decoration: InputDecoration(labelText: 'addActivity.type'.tr()), // ✅
+                    decoration: InputDecoration(labelText: 'addActivity.type'.tr()), 
                     items: [
-                      DropdownMenuItem(value: 'conference', child: Text('addActivity.typeConference'.tr())), // ✅
-                      DropdownMenuItem(value: 'workshop', child: Text('addActivity.typeWorkshop'.tr())), // ✅
-                      DropdownMenuItem(value: 'course', child: Text('addActivity.typeCourse'.tr())), // ✅
+                      DropdownMenuItem(value: 'conference', child: Text('addActivity.typeConference'.tr())), 
+                      DropdownMenuItem(value: 'workshop', child: Text('addActivity.typeWorkshop'.tr())), 
+                      DropdownMenuItem(value: 'course', child: Text('addActivity.typeCourse'.tr())), 
                     ],
                     onChanged: (v) => setState(() => _selectedType = v!),
                   ),
                   SizedBox(height: 12.h),
                   TextFormField(
                     controller: _titleController,
-                    decoration: InputDecoration(labelText: 'addActivity.activityTitle'.tr()), // ✅
-                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null, // ✅
+                    decoration: InputDecoration(labelText: 'addActivity.activityTitle'.tr()), 
+                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null, 
                   ),
                   SizedBox(height: 12.h),
                   TextFormField(
                     controller: _organizationController,
-                    decoration: InputDecoration(labelText: 'addActivity.organization'.tr()), // ✅
-                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null, // ✅
+                    decoration: InputDecoration(labelText: 'addActivity.organization'.tr()), 
+                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null, 
                   ),
                   SizedBox(height: 12.h),
                   TextFormField(
                     controller: _dateController,
-                    decoration: InputDecoration(labelText: 'addActivity.date'.tr()), // ✅
+                    decoration: InputDecoration(labelText: 'addActivity.date'.tr()), 
                     validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null, 
                   ),
                   SizedBox(height: 20.h),
                   
                   FilePickerField(
-                    label: 'addActivity.proofFile'.tr(), // ✅
+                    label: 'addActivity.proofFile'.tr(), 
                     selectedFile: _proofFile,
                     onFileSelected: (file) => setState(() => _proofFile = file),
                   ),
@@ -122,7 +123,7 @@ class _AddActivityPageState extends State<AddActivityPage> {
                       ),
                       child: isLoading
                           ? CircularProgressIndicator(color: Colors.white)
-                          : Text('addActivity.submit'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)), // ✅
+                          : Text('addActivity.submit'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)), 
                     ),
                   ),
                 ],

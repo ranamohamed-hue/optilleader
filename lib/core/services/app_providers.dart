@@ -21,6 +21,8 @@ import 'package:optialeader/feature/database_admin/logic/judge_data/judge_data_c
 import 'package:optialeader/feature/database_admin/logic/search/search_cubit.dart';
 import 'package:optialeader/feature/doctor/data/repo/activities/activity_repo_impl.dart';
 import 'package:optialeader/feature/doctor/data/repo/research_paper/research_paper_repo_impl.dart';
+import 'package:optialeader/feature/doctor/logic/activities/activity_cubit.dart';
+import 'package:optialeader/feature/doctor/logic/research_paper/research_paper_cubit.dart';
 import 'package:optialeader/feature/notification/data/repo/notification_repo_impl.dart';
 import 'package:optialeader/feature/notification/logic/app_notification_cubit.dart';
 import 'package:optialeader/feature/setting/data/repo/setting_repo_impl.dart';
@@ -31,6 +33,12 @@ class AppProviders {
   static List<SingleChildWidget> providers({
     required HiveService hiveService,
   }) => [
+    
+    //  الـ Repos لازم تتسجل الأول كـ RepositoryProvider عشان الكيوبيتات تقدر تقرأهم
+    RepositoryProvider(create: (context) => ResearchPaperRepoImpl()),
+    RepositoryProvider(create: (context) => ActivityRepoImpl()),
+    RepositoryProvider(create: (context) => NotificationRepoImpl()),
+
     // كيوبيت الثيم
     BlocProvider(create: (context) => ThemeCubit()),
     
@@ -59,15 +67,14 @@ class AppProviders {
       create: (context) => DatabseAdminCubit(DatabaseAdminRepoImpl(FirebaseFirestore.instance)),
     ),
     
-    // كيوبيت الاعلانات
-   // كيوبيت الاعلانات
-BlocProvider(
-  create: (context) => AnnouncementCubit(
-    AnnouncementRepositoryImpl(FirebaseFirestore.instance),
-    context.read<NotificationRepoImpl>(), 
-    FirebaseFirestore.instance,           
-  )..fetchAnnouncements(),
-),
+    //  كيوبيت الاعلانات - إضافة الـ 2 باراميتر اللي ناقصين
+    BlocProvider(
+      create: (context) => AnnouncementCubit(
+        AnnouncementRepositoryImpl(FirebaseFirestore.instance),
+        context.read<NotificationRepoImpl>(), //  الإشعارات
+        FirebaseFirestore.instance,           //  الفايرستور
+      )..fetchAnnouncements(),
+    ),
     
     // كيوبيت الاعدادات
     BlocProvider(create: (context) => SettingCubit(SettingRepoImpl())),
@@ -76,13 +83,23 @@ BlocProvider(
     BlocProvider(
       create: (context) => SearchCubit(SearchRepo(FirebaseFirestore.instance)),
     ),
-    
-    // توفير الـ Repos باستخدام RepositoryProvider
-    RepositoryProvider(create: (context) => ResearchPaperRepoImpl()),
-    RepositoryProvider(create: (context) => ActivityRepoImpl()),
-    RepositoryProvider(create: (context) => NotificationRepoImpl()),
 
-    // كيوبيت الإشعارات (بناخد الـ Repo من الـ RepositoryProvider)
+    //  الـ Cubits بتاعة الأبحاث والأنشطة
+    BlocProvider(
+      create: (context) => ActivityCubit(
+        context.read<ActivityRepoImpl>(),
+        context.read<NotificationRepoImpl>(), 
+      ),
+    ),
+
+    BlocProvider(
+      create: (context) => ResearchCubit(
+        context.read<ResearchPaperRepoImpl>(),
+        context.read<NotificationRepoImpl>(), 
+      ),
+    ),
+
+    //  كيوبيت الإشعارات
     BlocProvider(
       create: (context) {
         final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
@@ -93,7 +110,7 @@ BlocProvider(
       },
     ),
 
-    //  كيوبيت الموافقات للأدمن (بناخد الـ Repos من الـ RepositoryProvider)
+    //  كيوبيت الموافقات للأدمن
     BlocProvider(
       create: (context) => AdminApprovalCubit(
         adminApprovalRepo: AdminApprovalRepoImpl(

@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
+import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart'; 
+import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_state.dart'; 
 import 'package:cached_network_image/cached_network_image.dart';
 
 class DashboardUserPage extends StatefulWidget {
@@ -69,31 +71,33 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                   }
                 },
               ),
-              actions: [
-                IconButton(
-                  icon: Icon(
-                    Icons.settings_outlined,
-                    size: 22.sp,
-                    color: Colors.white,
-                  ),
-                  onPressed: () => context.push(
-                    Routes.settings,
-                    extra: {'uid': uid, 'role': role},
-                  ),
-                ),
-                SizedBox(width: 5.w),
-              ],
-              title: Row(
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildProfileAvatar(goldAccent, doctor?.profileImage),
-                  SizedBox(width: 12.w),
-                  _buildWelcomeText(
+                  Text(
+                    'dashboard.welcome'.tr(),
+                    style: TextStyle(color: Colors.white70, fontSize: 11.sp),
+                  ),
+                  Text(
                     context.locale.languageCode == 'ar'
                         ? (doctor?.nameAr ?? 'dashboard.doctor_default'.tr())
                         : (doctor?.nameEn ?? 'dashboard.doctor_default'.tr()),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
+              actions: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w),
+                  child: _buildProfileAvatar(goldAccent, doctor?.profileImage),
+                ),
+              ],
               bottom: PreferredSize(
                 preferredSize: Size.fromHeight(3.h),
                 child: Container(color: goldAccent, height: 3.h),
@@ -135,7 +139,6 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                             '${Routes.archievementPage}?uid=$uid',
                           ),
                         ),
-                        // ✅ [تعديل] ربط كلمة "لا يوجد مؤهل" بالترجمة
                         _buildStatCard(
                           'dashboard.academic_data'.tr(),
                           Icons.school_outlined,
@@ -143,13 +146,9 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                           (doctor?.academicHistory != null &&
                                   doctor!.academicHistory.isNotEmpty)
                               ? (context.locale.languageCode == 'ar'
-                                    ? (doctor
-                                              .academicHistory
-                                              .first['degree_ar'] ??
+                                    ? (doctor.academicHistory.first['degree_ar'] ??
                                           'dashboard.no_credentials'.tr())
-                                    : (doctor
-                                              .academicHistory
-                                              .first['degree_en'] ??
+                                    : (doctor.academicHistory.first['degree_en'] ??
                                           'dashboard.no_credentials'.tr()))
                               : 'dashboard.no_credentials'.tr(),
                           primaryNavy,
@@ -181,23 +180,52 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                       'dashboard.latest_opportunities'.tr(),
                     ),
                     SizedBox(height: 10.h),
-                    _buildOpportunityItem(
-                      'dashboard.opp1_title'.tr(),
-                      'dashboard.opp1_desc'.tr(),
-                      Icons.campaign_outlined,
-                      primaryNavy.withOpacity(0.05),
-                      primaryNavy,
-                      goldAccent,
+                    
+                    //  استبدال الكود الاستاتيك بالكود الديناميكي بتاع الإعلانات
+                    BlocBuilder<AnnouncementCubit, AnnouncementState>(
+                      builder: (context, announceState) {
+                        if (announceState is AnnouncementLoaded) {
+                          if (announceState.announcements.isEmpty) {
+                            return Center(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 20.h),
+                                child: Text(
+                                  'لا توجد فرص أو إعلانات متاحة حالياً',
+                                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13.sp),
+                                ),
+                              ),
+                            );
+                          }
+                          
+                          // عرض أول 3 إعلانات بس عشان الداشبورد متتكدسش
+                          final displayAnnouncements = announceState.announcements.take(3).toList();
+                          
+                          return Column(
+                            children: displayAnnouncements.map((ann) {
+                              return Padding(
+                                padding: EdgeInsets.only(bottom: 10.h),
+                                child: _buildOpportunityItem(
+                                  ann.title ?? 'إعلان جديد', // لو الـ model بتاعك فيه titleAr استخدمها بدل title
+                                  ann.description ?? '', // لو فيه descriptionAr استخدمها
+                                  Icons.campaign_outlined,
+                                  primaryNavy.withOpacity(0.05),
+                                  primaryNavy,
+                                  goldAccent,
+                                  onTap: () {
+                                    // فتح صفحة تفاصيل الإعلان للدكتور
+                                    context.push('${Routes.announcementDetails}?id=${ann.id}');
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        }
+                        // لو لسه بيحمل أو في خطأ نعرض انديكاتور صغير أو نسيبه فاضي
+                        return const SizedBox.shrink(); 
+                      },
                     ),
-                    SizedBox(height: 10.h),
-                    _buildOpportunityItem(
-                      'dashboard.opp2_title'.tr(),
-                      'dashboard.opp2_desc'.tr(),
-                      Icons.analytics_outlined,
-                      primaryNavy.withOpacity(0.05),
-                      primaryNavy,
-                      goldAccent,
-                    ),
+                    //  نهاية التعديل
+                    
                     SizedBox(height: 20.h),
                   ],
                 ),
@@ -244,7 +272,6 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
     );
   }
 
-  // --- المكونات الفرعية (Widgets) ---
 
   Widget _buildProfileAvatar(Color gold, String? imageUrl) {
     return Container(
@@ -263,28 +290,6 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
             ? Icon(Icons.person, color: gold, size: 24.sp)
             : null,
       ),
-    );
-  }
-
-  Widget _buildWelcomeText(String name) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'dashboard.welcome'.tr(),
-          style: TextStyle(color: Colors.white70, fontSize: 11.sp),
-        ),
-        Text(
-          name,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 15.sp,
-            fontWeight: FontWeight.bold,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
     );
   }
 
@@ -504,54 +509,64 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
     );
   }
 
+  //   onTap عشان لما الدكتور يضغط على الإعلان يفتح صفحه التفاصيل
   Widget _buildOpportunityItem(
     String title,
     String subtitle,
     IconData icon,
     Color iconBg,
     Color navy,
-    Color gold,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(color: gold.withOpacity(0.15), width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(10.r),
+    Color gold, {
+    VoidCallback? onTap, 
+  }) {
+    return InkWell(
+      onTap: onTap, 
+      borderRadius: BorderRadius.circular(15.r),
+      child: Container(
+        padding: EdgeInsets.all(10.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15.r),
+          border: Border.all(color: gold.withOpacity(0.15), width: 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Icon(icon, color: navy, size: 20.sp),
             ),
-            child: Icon(icon, color: navy, size: 20.sp),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13.sp,
-                    color: navy,
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                      color: navy,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: Colors.grey, fontSize: 10.sp),
-                ),
-              ],
+                  SizedBox(height: 2.h),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: Colors.grey, fontSize: 10.sp),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-          ),
-          Icon(Icons.arrow_forward_ios_rounded, size: 12.sp, color: gold),
-        ],
+            Icon(Icons.arrow_forward_ios_rounded, size: 12.sp, color: gold),
+          ],
+        ),
       ),
     );
   }

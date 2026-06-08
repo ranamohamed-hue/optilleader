@@ -44,6 +44,7 @@ class AppNotificationModel {
   final String? relatedId;     
   final String receiverId;     
   final String? senderName;    
+  final String? doctorUid;     // ✅ [إضافة جديدة] عشان نعرف بيانات مين اللي رفع الطلب
 
   AppNotificationModel({
     required this.id,
@@ -55,6 +56,7 @@ class AppNotificationModel {
     this.relatedId,
     required this.receiverId,
     this.senderName,
+    this.doctorUid,            // ✅ [إضافة جديدة]
   });
 
   factory AppNotificationModel.fromFirestore(Map<String, dynamic> json, String docId) {
@@ -67,7 +69,8 @@ class AppNotificationModel {
       timestamp: json['timestamp'] ?? Timestamp.now(),
       relatedId: json['related_id'],
       receiverId: json['receiver_id'] ?? '', 
-      senderName: json['sender_name'],       
+      senderName: json['sender_name'],
+      doctorUid: json['doctor_uid'],        // ✅ [إضافة جديدة]
     );
   }
 
@@ -82,6 +85,7 @@ class AppNotificationModel {
       'related_id': relatedId,
       'receiver_id': receiverId,
       'sender_name': senderName,
+      'doctor_uid': doctorUid,              // ✅ [إضافة جديدة]
     };
   }
 

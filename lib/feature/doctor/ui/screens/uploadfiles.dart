@@ -6,6 +6,7 @@ import 'package:optialeader/core/routing/routes.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 import 'package:optialeader/core/services/file_halper.dart';
 import 'package:optialeader/feature/doctor/ui/widgets/file_picker_field.dart';
 
@@ -45,116 +46,171 @@ class _UploadFilePageState extends State<UploadFilePage> {
     final primaryDark = theme.colorScheme.primary;
     final accentGold = theme.colorScheme.secondary;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: primaryDark,
-        elevation: 0,
-        toolbarHeight: 70.h,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new,
-            size: 20.sp,
-            color: Colors.white,
+    return BlocListener<DoctorDataCubit, DoctorDataState>(
+      listener: (context, state) {
+        if (state is DoctorLoaded) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("تم رفع الملف إلى الأرشيف بنجاح!"),
+              backgroundColor: Colors.green,
+            ),
+          );
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go(Routes.user);
+          }
+        }
+
+        if (state is DoctorError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              // 🛠️ تم التعديل هنا: وضع قيمة افتراضية في حال كان الخطأ القادم null لمنع الـ Type Error
+              content: Text(state.error ?? "حدث خطأ غير متوقع أثناء الرفع"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: primaryDark,
+          elevation: 0,
+          toolbarHeight: 70.h,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new,
+              size: 20.sp,
+              color: Colors.white,
+            ),
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go(Routes.user),
           ),
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go(Routes.user),
-        ),
-        title: Text(
-          'upload.title'.tr(),
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18.sp,
+          title: Text(
+            'upload.title'.tr(),
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18.sp,
+            ),
+          ),
+          bottom: PreferredSize(
+            preferredSize: Size.fromHeight(2.h),
+            child: Container(color: accentGold, height: 2.h),
           ),
         ),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(2.h),
-          child: Container(color: accentGold, height: 2.h),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "upload.subtitle".tr(),
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.bold,
-                color: primaryDark,
+        body: SingleChildScrollView(
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "upload.subtitle".tr(),
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: primaryDark,
+                ),
               ),
-            ),
-            SizedBox(height: 30.h),
+              SizedBox(height: 30.h),
 
-            _buildInputField(
-              label: "upload.label_title".tr(),
-              hint: "upload.hint_title".tr(),
-              controller: _titleController,
-              primary: primaryDark,
-              gold: accentGold,
-            ),
-            SizedBox(height: 15.h),
+              _buildInputField(
+                label: "upload.label_title".tr(),
+                hint: "upload.hint_title".tr(),
+                controller: _titleController,
+                primary: primaryDark,
+                gold: accentGold,
+              ),
+              SizedBox(height: 15.h),
 
-            _buildCategoryDropdown(primaryDark, accentGold),
-            SizedBox(height: 15.h),
+              _buildCategoryDropdown(primaryDark, accentGold),
+              SizedBox(height: 15.h),
 
-            _buildInputField(
-              label: "upload.label_desc".tr(),
-              hint: "upload.hint_desc".tr(),
-              controller: _descController,
-              primary: primaryDark,
-              gold: accentGold,
-              maxLines: 3,
-            ),
-            SizedBox(height: 25.h),
+              _buildInputField(
+                label: "upload.label_desc".tr(),
+                hint: "upload.hint_desc".tr(),
+                controller: _descController,
+                primary: primaryDark,
+                gold: accentGold,
+                maxLines: 3,
+              ),
+              SizedBox(height: 25.h),
 
-            FilePickerField(
-              label: "upload.click_to_select".tr(), // ✅ ربطها بترجمة الـ JSON
-              selectedFile: _pickedFileData,
-              onFileSelected: (file) {
-                setState(() {
-                  _pickedFileData = file;
-                });
-              },
-              isRequired: true,
-            ),
-            SizedBox(height: 40.h),
+              FilePickerField(
+                label: "upload.click_to_select".tr(),
+                selectedFile: _pickedFileData,
+                onFileSelected: (file) {
+                  setState(() {
+                    _pickedFileData = file;
+                  });
+                },
+                isRequired: true,
+              ),
+              SizedBox(height: 40.h),
 
-            SPrimaryButton(
-              text: "upload.btn_upload".tr(),
-              color: primaryDark,
-              textColor: accentGold,
-              onPressed: () {
-                // ✅ ربط رسائل الخطأ بالترجمة
-                if (_pickedFileData == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("upload.error_file_required".tr())),
+              BlocBuilder<DoctorDataCubit, DoctorDataState>(
+                builder: (context, state) {
+                  final isLoading = state is DoctorLoading;
+
+                  return SizedBox(
+                    width: double.infinity,
+                    height: 50.h,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryDark,
+                        foregroundColor: accentGold,
+                        disabledBackgroundColor: primaryDark.withOpacity(0.6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      onPressed: isLoading
+                          ? null 
+                          : () {
+                              if (_pickedFileData == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text("upload.error_file_required".tr())),
+                                );
+                                return;
+                              }
+                              if (_titleController.text.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text("upload.error_title_required".tr())),
+                                );
+                                return;
+                              }
+
+                              context.read<DoctorDataCubit>().uploadArchiveFile(
+                                    uid: widget.doctorUid,
+                                    file: _pickedFileData!.file,
+                                    title: _titleController.text,
+                                    description: _descController.text,
+                                    category: _selectedCategory ?? 'archive.folders.misc',
+                                  );
+                            },
+                      child: isLoading
+                          ? SizedBox(
+                              width: 24.w,
+                              height: 24.w,
+                              child: CircularProgressIndicator(
+                                color: accentGold,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Text(
+                              "upload.btn_upload".tr(),
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
                   );
-                  return;
-                }
-                if (_titleController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("upload.error_title_required".tr())),
-                  );
-                  return;
-                }
-
-                context.read<DoctorDataCubit>().uploadArchiveFile(
-                  uid: widget.doctorUid,
-                  file: _pickedFileData!.file,
-                  title: _titleController.text,
-                  description: _descController.text,
-                  category: _selectedCategory ?? 'archive.folders.misc',
-                );
-
-                if (context.canPop()) {
-                  context.pop();
-                }
-              },
-            ),
-          ],
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -232,13 +288,13 @@ class _UploadFilePageState extends State<UploadFilePage> {
           ),
         ),
         SizedBox(height: 8.h),
-        TextField(
+        TextFormField(
           controller: controller,
           maxLines: maxLines,
-          style: TextStyle(fontSize: 13.sp),
+          style: TextStyle(fontSize: 13.sp, color: Colors.black),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(fontSize: 13.sp, color: Colors.grey),
+            hintStyle: TextStyle(fontSize: 13.sp, color: Colors.grey.shade400),
             filled: true,
             fillColor: Colors.white,
             contentPadding: EdgeInsets.symmetric(
@@ -256,47 +312,6 @@ class _UploadFilePageState extends State<UploadFilePage> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class SPrimaryButton extends StatelessWidget {
-  final String text;
-  final Color color;
-  final Color textColor;
-  final VoidCallback onPressed;
-
-  const SPrimaryButton({
-    super.key,
-    required this.text,
-    required this.color,
-    required this.textColor,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 55.h,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.r),
-          ),
-          elevation: 2,
-        ),
-        onPressed: onPressed,
-        child: Text(
-          text,
-          style: TextStyle(
-            color: textColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 16.sp,
-          ),
-        ),
-      ),
     );
   }
 }
