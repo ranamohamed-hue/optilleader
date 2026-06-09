@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; 
-import 'package:optialeader/core/services/file_halper.dart';
+import 'package:optialeader/core/helper/file_halper.dart';
 import 'package:optialeader/feature/doctor/data/model/research_paper_model.dart';
 import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 import 'package:optialeader/feature/doctor/data/repo/research_paper/research_paper_repo.dart';

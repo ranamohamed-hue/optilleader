@@ -6,7 +6,6 @@ class HiveService {
   
   Box? _box;
 
-  /// تهيئة الـ Hive (بتتنادى في الـ main.dart)
   Future<void> init() async {
     await Hive.initFlutter();
     _box = await Hive.openBox(_boxName);

@@ -6,24 +6,42 @@ import 'package:optialeader/feature/notification/logic/app_notification_state.da
 
 class NotificationCubit extends Cubit<NotificationState> {
   final NotificationRepo notificationRepo;
-  final String userId;
   
-  StreamSubscription? _notificationSubscription; // عشان نقدر نلغي الـ Stream
+  String userId; 
+  StreamSubscription? _notificationSubscription; 
 
-  NotificationCubit({required this.notificationRepo, required this.userId}) : super(NotificationInitial());
+  NotificationCubit({required this.notificationRepo, required this.userId}) : super(NotificationInitial()) {
+    // بنشغل الـ Stream فوراً لو الـ ID مش فاضي
+    if (userId.isNotEmpty) {
+      fetchNotifications();
+    }
+  }
 
-  // جلب الإشعارات بشكل لحظي (Real-time)
+  // لتحديث الـ ID وتشغيل الـ Stream بعد اللوجين فوراً
+  void updateUserIdAndFetch(String newUserId) {
+    if (newUserId.isNotEmpty && newUserId != userId) {
+      userId = newUserId; // بنحدث الـ ID جوه الكيوبيت
+      fetchNotifications(); // بنفتح الماسورة اللايف على الفايرستور بالـ ID الجديد
+    }
+  }
+
+  // جلب الإشعارات بشكل لحظي (Real-time) للأدمن
   void fetchNotifications() {
     emit(NotificationLoading());
     
-    // إلغاء أي Stream قديم عشان نعمل واحدة جديدة
+    // إلغاء أي Stream قديم عشان نمنع تداخل البيانات
     _notificationSubscription?.cancel(); 
     
-    _notificationSubscription = notificationRepo.getNotifications(userId).listen((notifications) {
-      emit(NotificationLoaded(notifications));
-    }, onError: (error) {
-      emit(NotificationError("فشل جلب الإشعارات"));
-    });
+    //  تم التغيير هنا لتقرأ من الدالة العامة الجديدة التي تراقب السيستم كله
+    _notificationSubscription = notificationRepo.getAdminPendingNotifications().listen(
+      (notifications) {
+        emit(NotificationLoaded(notifications));
+      }, 
+      onError: (error) {
+        print("🚨 خطأ لايف في الـ Stream للإشعارات: $error");
+        emit(NotificationError("فشل جلب الإشعارات"));
+      },
+    );
   }
 
   // إرسال إشعار

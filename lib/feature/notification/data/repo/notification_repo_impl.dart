@@ -7,7 +7,9 @@ class NotificationRepoImpl extends NotificationRepo {
   final FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
 
   @override
-  Future<Either<String, Unit>> sendNotification(AppNotificationModel notification) async {
+  Future<Either<String, Unit>> sendNotification(
+    AppNotificationModel notification,
+  ) async {
     try {
       // بنحفظ الإشعار في Subcollection جوا document الـ المستلم
       await firebaseFirestore
@@ -30,14 +32,37 @@ class NotificationRepoImpl extends NotificationRepo {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return AppNotificationModel.fromFirestore(doc.data(), doc.id);
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            return AppNotificationModel.fromFirestore(doc.data(), doc.id);
+          }).toList();
+        });
+  }
+
+  // بتراقب كوليكشن الإشعارات عند كل الدكاترة في نفس الوقت بدون الارتباط بـ UID محدد
+  @override
+  Stream<List<AppNotificationModel>> getAdminPendingNotifications() {
+    return firebaseFirestore
+        .collectionGroup('notifications')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          // 🔍 طباعة عدد المستندات التي يجدها الـ Stream فعلياً
+          print("🚀 عدد الإشعارات الكلي: ${snapshot.docs.length}");
+
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            // 🔍 طباعة بيانات كل مستند
+            print("📄 بيانات المستند: $data");
+            return AppNotificationModel.fromFirestore(data, doc.id);
+          }).toList();
+        });
   }
 
   @override
-  Future<Either<String, Unit>> markAsRead(String receiverId, String notificationId) async {
+  Future<Either<String, Unit>> markAsRead(
+    String receiverId,
+    String notificationId,
+  ) async {
     try {
       await firebaseFirestore
           .collection('users')
@@ -50,23 +75,39 @@ class NotificationRepoImpl extends NotificationRepo {
       return left("فشل تحديث الإشعار: ${e.toString()}");
     }
   }
-    // دالة بتبعت إشعار لليستة مستخدمين (للإشعارات الجماعية)
-  Future<Either<String, Unit>> broadcastNotification(
-    List<String> receiverIds,
-    AppNotificationModel notification,
-  ) async {
-    try {
-      // بنعمل Loop عشان نحفظ الإشعار جوه الـ Subcollection بتاعة كل يوزر
-      for (var uid in receiverIds) {
-        await firebaseFirestore
-            .collection('users')
-            .doc(uid)
-            .collection('notifications')
-            .add(notification.toMap());
-      }
-      return right(unit);
-    } catch (e) {
-      return left("فشل إرسال الإشعار الجماعي: ${e.toString()}");
+
+  // دالة بتبعت إشعار لليستة مستخدمين (للإشعارات الجماعية)
+  @override
+Future<Either<String, Unit>> broadcastNotification(
+  List<String> receiverIds,
+  AppNotificationModel notification,
+) async {
+  try {
+    for (var uid in receiverIds) {
+      // 1. إنشاء نسخة من الموديل بالـ receiverId الصحيح
+      final notificationForAdmin = AppNotificationModel(
+        id: '',
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        timestamp: notification.timestamp,
+        receiverId: uid, // ✅ هنا التعديل: نضع الـ ID الصحيح لكل أدمن
+        relatedId: notification.relatedId,
+        doctorUid: notification.doctorUid,
+        senderName: notification.senderName,
+        isRead: false,
+      );
+
+      // 2. الحفظ في الفايربيز
+      await firebaseFirestore
+          .collection('users')
+          .doc(uid) // الـ Document الصحيح للأدمن
+          .collection('notifications')
+          .add(notificationForAdmin.toMap());
     }
+    return right(unit);
+  } catch (e) {
+    return left("فشل إرسال الإشعار الجماعي: ${e.toString()}");
   }
+}
 }

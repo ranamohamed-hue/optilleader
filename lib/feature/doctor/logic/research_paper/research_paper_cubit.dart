@@ -1,18 +1,19 @@
 import 'dart:io';
 import 'package:bloc/bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ [إضافة]
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:optialeader/feature/doctor/data/model/research_paper_model.dart';
 import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 import 'package:optialeader/feature/doctor/data/repo/research_paper/research_paper_repo.dart';
 import 'package:optialeader/feature/doctor/logic/research_paper/research_paper_state.dart';
-import 'package:optialeader/feature/notification/data/model/app_notification_model.dart'; // ✅ [إضافة]
-import 'package:optialeader/feature/notification/data/repo/notification_repo_impl.dart'; // ✅ [إضافة]
+import 'package:optialeader/feature/notification/data/model/app_notification_model.dart';
+import 'package:optialeader/feature/notification/data/repo/notification_repo_impl.dart';
 
 class ResearchCubit extends Cubit<ResearchState> {
   final ResearchPaperRepo researchRepo;
-  final NotificationRepoImpl notificationRepo; // ✅ [إضافة]
+  final NotificationRepoImpl notificationRepo;
 
-  ResearchCubit(this.researchRepo, this.notificationRepo) : super(ResearchInitial()); // ✅ [تعديل]
+  ResearchCubit(this.researchRepo, this.notificationRepo)
+    : super(ResearchInitial());
 
   Future<void> addNewResearch({
     required String doctorUid,
@@ -27,39 +28,37 @@ class ResearchCubit extends Cubit<ResearchState> {
       paperFile: paperFile,
       indexingProofFile: indexingProofFile,
     );
-    result.fold(
-      (error) => emit(ResearchError(error: error)),
-      (_) async {
-        emit(ResearchSuccess());
-        
-        // ✅✅✅ [إضافة] إرسال إشعار للأدمنز بعد نجاح الإضافة
-        try {
-          final adminsSnapshot = await FirebaseFirestore.instance
-              .collection('users')
-              .where('role', isEqualTo: 'admin')
-              .get();
-          
-          final List<String> adminIds = adminsSnapshot.docs.map((doc) => doc.id).toList();
+    result.fold((error) => emit(ResearchError(error: error)), (_) async {
+      emit(ResearchSuccess());
+      try {
+        final adminsSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('jop.title.en', isEqualTo: 'admin')
+            .get();
+        final List<String> adminIds = adminsSnapshot.docs
+            .map((doc) => doc.id)
+            .toList();
+        if (adminIds.isNotEmpty) {
+          final notification = AppNotificationModel(
+            id: '',
+            title: 'طلب اعتماد بحث جديد',
+            message: 'تم إضافة بحث بعنوان: ${paper.titleAr} يحتاج موافقتك',
+            type: NotificationType.newResearchSubmitted,
+            timestamp: Timestamp.now(),
+            receiverId: '', // هنسيبه فاضي هنا عادي
+            relatedId: paper.id,
+            doctorUid: doctorUid,
+          );
 
-          if (adminIds.isNotEmpty) {
-            final notification = AppNotificationModel(
-              id: '',
-              title: 'طلب اعتماد بحث جديد',
-              message: 'تم إضافة بحث بعنوان: ${paper.titleAr} يحتاج موافقتك',
-              type: NotificationType.newResearchSubmitted,
-              timestamp: Timestamp.now(),
-              receiverId: '',
-              relatedId: paper.id, // ✅ مهم جداً
-              doctorUid: doctorUid, // ✅ مهم جداً
-            );
-            
-            await notificationRepo.broadcastNotification(adminIds, notification);
-          }
-        } catch (e) {
-          print("فشل إرسال إشعار للأدمن: $e");
+          await notificationRepo.broadcastNotification(adminIds, notification);
+
+          print("Notifications sent to admins: ${adminIds.length}");
+          print(result);
         }
-      },
-    );
+      } catch (e) {
+        print("Error: $e");
+      }
+    });
   }
 
   Future<void> deleteResearch(String doctorUid, String paperId) async {
@@ -93,7 +92,9 @@ class ResearchCubit extends Cubit<ResearchState> {
   Future<void> approveResearch(String doctorUid, String paperId) async {
     emit(ResearchLoading());
     final result = await researchRepo.updatePaperStatus(
-      doctorUid, paperId, VerificationStatus.approved,
+      doctorUid,
+      paperId,
+      VerificationStatus.approved,
     );
     result.fold(
       (error) => emit(ResearchError(error: error)),
@@ -101,10 +102,16 @@ class ResearchCubit extends Cubit<ResearchState> {
     );
   }
 
-  Future<void> rejectResearch(String doctorUid, String paperId, String reason) async {
+  Future<void> rejectResearch(
+    String doctorUid,
+    String paperId,
+    String reason,
+  ) async {
     emit(ResearchLoading());
     final result = await researchRepo.updatePaperStatus(
-      doctorUid, paperId, VerificationStatus.rejected,
+      doctorUid,
+      paperId,
+      VerificationStatus.rejected,
       rejectionReason: reason,
     );
     result.fold(

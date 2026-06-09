@@ -4,12 +4,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
-// ✅ شلنا import dart:io و image_picker لأنهم مش محتاجين هنا
 import 'package:cached_network_image/cached_network_image.dart'; 
 import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/logic/database_admin_data/database_admin_state.dart';
 import 'package:optialeader/feature/database_admin/logic/database_admin_data/databse_admin_cubit.dart';
 import 'package:optialeader/core/theming/app_color.dart';
+import 'package:optialeader/feature/notification/logic/app_notification_cubit.dart'; // ✅ [إضافة] استدعاء لـ NotificationCubit
 import 'package:optialeader/feature/notification/ui/notification_page.dart';
 import 'package:optialeader/feature/setting/ui/setting.dart';
 
@@ -30,8 +30,81 @@ class _DatabaseAdminDashboardState extends State<DatabaseAdminDashboard> {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
         context.read<DatabseAdminCubit>().getProfile(uid);
+        // ✅ [إضافة] جلب الإشعارات مرة واحدة عند فتح الشاشة
+        context.read<NotificationCubit>().fetchNotifications();
       }
+
+      // ✅ [إضافة] فحص هل هو أول تسجيل دخول لعرض الديالوج الترحيبي
+      _checkAndShowWelcomeDialog();
     });
+  }
+
+  // ✅ [إضافة] دالة فحص أول تسجيل دخول
+  void _checkAndShowWelcomeDialog() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final creationTime = user.metadata.creationTime;
+    final lastSignInTime = user.metadata.lastSignInTime;
+
+    if (creationTime != null && lastSignInTime != null) {
+      final difference = lastSignInTime.difference(creationTime).inMinutes;
+      if (difference < 2) {
+        _showWelcomeDialog();
+      }
+    }
+  }
+
+  // ✅ [إضافة] تصميم الديالوج الترحيبي المشترك
+  void _showWelcomeDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isArabic = context.locale.languageCode == 'ar';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.waving_hand_rounded, color: Colors.orange, size: 28.sp),
+            SizedBox(width: 10.w),
+            Text(
+              isArabic ? 'أهلاً بك!' : 'Welcome!',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          isArabic
+              ? 'يسعدنا انضمامك لمنصة OptiLeader.\nيمكنك البدء في استكشاف الميزات الخاصة بك من القائمة.'
+              : 'Welcome to OptiLeader platform.\nYou can start exploring your features from the menu.',
+          style: TextStyle(fontSize: 15.sp, height: 1.5),
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                isArabic ? 'لنبدأ!' : "Let's Start!",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   final List<Widget> _tabs = const [
@@ -127,7 +200,6 @@ class _HomeTab extends StatelessWidget {
               toolbarHeight: 90.h,
               title: Row(
                 children: [
-                  // ✅ [تعديل] الصورة بقيت للعرض فقط بدون GestureDetector وأيقونة الكاميرا
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
@@ -370,7 +442,7 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
-// 2. تبويب التنبيهات
+// تبويب التنبيهات
 class _NotificationsTab extends StatelessWidget {
   const _NotificationsTab();
   @override
@@ -378,6 +450,7 @@ class _NotificationsTab extends StatelessWidget {
     final state = context.watch<DatabseAdminCubit>().state;
 
     if (state is DatabaseAdminSuccess) {
+      // ✅ تم إزالة أي استدعاء لـ fetchNotifications من هنا
       return const NotificationsScreen();
     }
 
@@ -385,7 +458,7 @@ class _NotificationsTab extends StatelessWidget {
   }
 }
 
-// 3. تبويب الإعدادات
+// تبويب الإعدادات
 class _SettingsTab extends StatelessWidget {
   const _SettingsTab();
 

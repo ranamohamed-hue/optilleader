@@ -1,4 +1,4 @@
-import 'dart:async'; // لازم تضيفي دي
+import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_state.dart';
@@ -16,7 +16,7 @@ class RouterRefreshNotifier extends ChangeNotifier {
 
   @override
   void dispose() {
-    _subscription.cancel(); // مهم جداً عشان الأداء
+    _subscription.cancel(); 
     super.dispose();
   }
 }

@@ -25,29 +25,50 @@ class AdminApprovalRepoImpl extends AdminApprovalRepo {
       firebaseFirestore.collection('users');
 
   @override
-  Future<Either<String, List<DoctorProfileModel>>> getPendingRequests() async {
-    try {
-      final snapshot = await _usersCollection.where('role', isEqualTo: 'doctor').get();
+Future<Either<String, List<DoctorProfileModel>>> getPendingRequests() async {
+  try {
+    // 1. جلب كل المستخدمين من كولكشن 'users'
+    final snapshot = await firebaseFirestore.collection('users').get();
+    
+    print("--- بدأ الفحص ---");
+    print("عدد المستخدمين الذين تم العثور عليهم: ${snapshot.docs.length}");
+
+    final List<DoctorProfileModel> pendingDoctors = [];
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
       
-      final doctors = snapshot.docs.map((doc) {
-        return DoctorProfileModel.fromJson(
-          doc.data() as Map<String, dynamic>, 
-          doc.id,
-        );
-      }).toList();
+      // 2. نقوم بطباعة بيانات كل مستخدم لنرى شكل الحقول لديه
+      // هذا السطر سيكشف لنا لماذا 'profile.role' لا تعمل
+      print("مستخدم ID: ${doc.id} | البيانات: $data");
 
-      final pendingDoctors = doctors.where((doc) => 
-          doc.researchPapers.any((p) => p.status == VerificationStatus.pending) || 
-          doc.activities.any((a) => a.status == VerificationStatus.pending) ||
-          doc.trainingCourses.any((c) => c.status == VerificationStatus.pending)
-      ).toList();
-
-      return right(pendingDoctors);
-    } catch (e) {
-      return left("فشل جلب الطلبات المعلقة: ${e.toString()}");
+      // 3. محاولة مطابقة البيانات (عدلي هذا الشرط بناءً على ما سيظهر في الـ Console)
+      // إذا كان الـ role موجوداً مباشرة:
+      final role = data['role'] ?? (data['profile'] != null ? data['profile']['role'] : '');
+      
+      if (role == 'doctor') {
+        final doctor = DoctorProfileModel.fromJson(data, doc.id);
+        
+        // التحقق من وجود أبحاث أو أنشطة معلقة
+        bool hasPending = doctor.researchPapers.any((p) => p.status == VerificationStatus.pending) || 
+                          doctor.activities.any((a) => a.status == VerificationStatus.pending) ||
+                          doctor.trainingCourses.any((c) => c.status == VerificationStatus.pending);
+        
+        if (hasPending) {
+          pendingDoctors.add(doctor);
+        }
+      }
     }
-  }
 
+    print("عدد الدكاترة الذين لديهم طلبات معلقة: ${pendingDoctors.length}");
+    print("--- انتهى الفحص ---");
+    
+    return right(pendingDoctors);
+  } catch (e) {
+    print("خطأ فادح أثناء الجلب: $e");
+    return left("فشل جلب الطلبات: ${e.toString()}");
+  }
+}
   @override
   Future<Either<String, Unit>> approveResearch(String doctorUid, String paperId, String paperTitle) async {
     final result = await researchPaperRepo.updatePaperStatus(

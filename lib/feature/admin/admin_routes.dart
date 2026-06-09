@@ -57,4 +57,9 @@ final List<RouteBase> adminSubRoutes = [
     path: 'orders-list',
     builder: (context, state) => const AdminPendingRequestsPage(),
   ),
+  GoRoute(
+    path: 'pending-requests',
+    name: 'admin_pending_requests',
+    builder: (context, state) => const AdminPendingRequestsPage(),
+  ),
 ];

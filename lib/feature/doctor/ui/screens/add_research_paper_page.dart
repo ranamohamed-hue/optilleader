@@ -1,11 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:easy_localization/easy_localization.dart'; 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import 'package:optialeader/core/services/file_halper.dart';
+import 'package:optialeader/core/helper/file_halper.dart';
 import 'package:optialeader/feature/doctor/data/model/research_paper_model.dart';
 import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 import 'package:optialeader/feature/doctor/logic/research_paper/research_paper_cubit.dart';
@@ -29,8 +28,8 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
   final _publicationYearController = TextEditingController();
   final _journalUrlController = TextEditingController();
 
-  JournalScope _journalScope = JournalScope.specialized;
-  JournalLevel _journalLevel = JournalLevel.international;
+  final JournalScope _journalScope = JournalScope.specialized;
+  final JournalLevel _journalLevel = JournalLevel.international;
 
   PickedFileData? _paperFile;
   PickedFileData? _indexingProofFile;
@@ -50,7 +49,10 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     if (!_formKey.currentState!.validate()) return;
     if (_paperFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-         SnackBar(content: Text('addResearch.fileRequired'.tr()), backgroundColor: Colors.red), 
+        SnackBar(
+          content: Text('addResearch.fileRequired'.tr()),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -61,16 +63,19 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
       titleEn: _titleEnController.text.trim(),
       journalName: _journalNameController.text.trim(),
       issn: _issnController.text.trim(),
-      impactFactor: '', 
-      publicationYear: int.tryParse(_publicationYearController.text.trim()) ?? 0,
-      authorOrder: 1, 
-      totalAuthors: 1, 
+      impactFactor: '',
+      publicationYear:
+          int.tryParse(_publicationYearController.text.trim()) ?? 0,
+      authorOrder: 1,
+      totalAuthors: 1,
       journalScope: _journalScope,
       journalLevel: _journalLevel,
       indexingDatabase: IndexingDatabase.scopus,
       journalUrl: _journalUrlController.text.trim(),
       paperFileUrl: '',
-      paperFileType: _paperFile!.type == UploadedFileType.image ? 'image' : 'pdf',
+      paperFileType: _paperFile!.type == UploadedFileType.image
+          ? 'image'
+          : 'pdf',
       status: VerificationStatus.pending,
     );
 
@@ -87,9 +92,12 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     return BlocConsumer<ResearchCubit, ResearchState>(
       listener: (context, state) {
         if (state is ResearchSuccess) {
-          context.pop(); 
+          context.pop();
           ScaffoldMessenger.of(context).showSnackBar(
-             SnackBar(content: Text('addResearch.success'.tr()), backgroundColor: Colors.green), 
+            SnackBar(
+              content: Text('addResearch.success'.tr()),
+              backgroundColor: Colors.green,
+            ),
           );
         } else if (state is ResearchError) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -100,7 +108,10 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
       builder: (context, state) {
         final isLoading = state is ResearchLoading;
         return Scaffold(
-          appBar: AppBar(title: Text('addResearch.title'.tr()), centerTitle: true), 
+          appBar: AppBar(
+            title: Text('addResearch.title'.tr()),
+            centerTitle: true,
+          ),
           body: SingleChildScrollView(
             padding: EdgeInsets.all(16.w),
             child: Form(
@@ -108,80 +119,103 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
               child: Column(
                 children: [
                   TextFormField(
-                    controller: _titleArController, 
-                    decoration: InputDecoration(labelText: 'addResearch.titleAr'.tr()), 
-                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null 
+                    controller: _titleArController,
+                    decoration: InputDecoration(
+                      labelText: 'addResearch.titleAr'.tr(),
+                    ),
+                    validator: (v) =>
+                        v!.isEmpty ? 'validation.required'.tr() : null,
                   ),
                   SizedBox(height: 12.h),
                   TextFormField(
-                    controller: _titleEnController, 
-                    decoration: InputDecoration(labelText: 'addResearch.titleEn'.tr()), 
-                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null 
+                    controller: _titleEnController,
+                    decoration: InputDecoration(
+                      labelText: 'addResearch.titleEn'.tr(),
+                    ),
+                    validator: (v) =>
+                        v!.isEmpty ? 'validation.required'.tr() : null,
                   ),
                   SizedBox(height: 12.h),
                   TextFormField(
-                    controller: _journalNameController, 
-                    decoration: InputDecoration(labelText: 'addResearch.journalName'.tr()), 
-                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null 
+                    controller: _journalNameController,
+                    decoration: InputDecoration(
+                      labelText: 'addResearch.journalName'.tr(),
+                    ),
+                    validator: (v) =>
+                        v!.isEmpty ? 'validation.required'.tr() : null,
                   ),
                   SizedBox(height: 12.h),
                   Row(
                     children: [
                       Expanded(
                         child: TextFormField(
-                          controller: _issnController, 
-                          decoration: InputDecoration(labelText: 'addResearch.issn'.tr()), 
-                          validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null 
+                          controller: _issnController,
+                          decoration: InputDecoration(
+                            labelText: 'addResearch.issn'.tr(),
+                          ),
+                          validator: (v) =>
+                              v!.isEmpty ? 'validation.required'.tr() : null,
                         ),
                       ),
                       SizedBox(width: 10.w),
                       Expanded(
                         child: TextFormField(
-                          controller: _publicationYearController, 
-                          decoration: InputDecoration(labelText: 'addResearch.publicationYear'.tr()), 
-                          keyboardType: TextInputType.number, 
-                          validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null 
+                          controller: _publicationYearController,
+                          decoration: InputDecoration(
+                            labelText: 'addResearch.publicationYear'.tr(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (v) =>
+                              v!.isEmpty ? 'validation.required'.tr() : null,
                         ),
                       ),
                     ],
                   ),
                   SizedBox(height: 12.h),
                   TextFormField(
-                    controller: _journalUrlController, 
-                    decoration: InputDecoration(labelText: 'addResearch.journalUrl'.tr()), 
-                    validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null 
+                    controller: _journalUrlController,
+                    decoration: InputDecoration(
+                      labelText: 'addResearch.journalUrl'.tr(),
+                    ),
+                    validator: (v) =>
+                        v!.isEmpty ? 'validation.required'.tr() : null,
                   ),
                   SizedBox(height: 20.h),
-                  
-                  // رفع الملفات
                   FilePickerField(
-                    label: 'addResearch.paperFile'.tr(), 
+                    label: 'addResearch.paperFile'.tr(),
                     selectedFile: _paperFile,
                     onFileSelected: (file) => setState(() => _paperFile = file),
                     isRequired: true,
                   ),
                   SizedBox(height: 12.h),
                   FilePickerField(
-                    label: 'addResearch.indexingProof'.tr(), 
+                    label: 'addResearch.indexingProof'.tr(),
                     selectedFile: _indexingProofFile,
-                    onFileSelected: (file) => setState(() => _indexingProofFile = file),
+                    onFileSelected: (file) =>
+                        setState(() => _indexingProofFile = file),
                   ),
                   SizedBox(height: 30.h),
-                  
-                  // زرار الإرسال
                   SizedBox(
                     width: double.infinity,
                     height: 50.h,
                     child: ElevatedButton(
                       onPressed: isLoading ? null : _submit,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue, 
-                        foregroundColor: Colors.white, 
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r))
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
                       ),
                       child: isLoading
-                          ? CircularProgressIndicator(color: Colors.white)
-                          : Text('addResearch.submit'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)), 
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              'addResearch.submit'.tr(),
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                 ],

@@ -4,14 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:optialeader/feature/auth/data/models/user_model.dart';
 import 'package:optialeader/feature/auth/data/repo/auth_repo.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_state.dart';
-import 'package:optialeader/feature/notification/data/model/app_notification_model.dart'; 
-import 'package:optialeader/feature/notification/data/repo/notification_repo_impl.dart'; 
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepo authRepo;
-  final NotificationRepoImpl notificationRepo; 
 
-  AuthCubit(this.authRepo, this.notificationRepo) : super(AuthInitialState()) { 
+  AuthCubit(this.authRepo) : super(AuthInitialState()) { 
     checkAuthStatus();
   }
 
@@ -42,7 +39,6 @@ class AuthCubit extends Cubit<AuthState> {
     });
   }
 
-  // إكمال إعداد الحساب (أول مرة بس)
   Future<void> completeFirstLogin({required String newPassword}) async {
     UserModel? currentUser;
     if (state is NewUserFirstLoginState) {
@@ -59,62 +55,11 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       result.fold((error) => emit(UpdatePasswordErrorState(error)), (message) {
-
         final updatedUser = currentUser!.copyWith(isFirstLogin: false);
         emit(UpdatePasswordSuccessState(message, updatedUser));
         emit(AuthenticatedState(updatedUser));
 
-        // إرسال إشعار ترحيبي بعد تغيير الباسورد بنجاح
-        _sendWelcomeNotification(updatedUser);
       });
-    }
-  }
-
-  //  دالة إرسال إشعار الترحيب حسب دور المستخدم 
-  Future<void> _sendWelcomeNotification(UserModel user) async {
-    try {
-      String title;
-      String message;
-      NotificationType type = NotificationType.general;
-
-      // استخدام مفاتيح الترجمة بدل النصوص الثابتة
-      switch (user.role) {
-        case UserRole.user: // الدكتور
-          title = 'welcome_notifications.title_doctor'.tr();
-          message = 'welcome_notifications.message_doctor'.tr();
-          type = NotificationType.welcomeDoctor;
-          break;
-        case UserRole.admin:
-          title = 'welcome_notifications.title_admin'.tr();
-          message = 'welcome_notifications.message_admin'.tr();
-          type = NotificationType.welcomeAdmin;
-          break;
-        case UserRole.judge:
-          title = 'welcome_notifications.title_judge'.tr();
-          message = 'welcome_notifications.message_judge'.tr();
-          type = NotificationType.welcomeJudge;
-          break;
-        case UserRole.database_admin:
-          title = 'welcome_notifications.title_db_admin'.tr();
-          message = 'welcome_notifications.message_db_admin'.tr();
-          type = NotificationType.welcomeAdmin; 
-          break;
-      }
-
-      // إنشاء وبعث الإشعار
-      final notification = AppNotificationModel(
-        id: '',
-        title: title,
-        message: message,
-        type: type,
-        timestamp: Timestamp.now(),
-        receiverId: user.uid,
-      );
-
-      await notificationRepo.sendNotification(notification);
-      
-    } catch (e) {
-      print("فشل إرسال إشعار الترحيب: $e");
     }
   }
 

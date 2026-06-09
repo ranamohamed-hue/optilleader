@@ -1,10 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart'; 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:optialeader/core/services/file_halper.dart';
+import 'package:optialeader/core/helper/file_halper.dart';
 import 'package:uuid/uuid.dart';
 import 'package:optialeader/feature/doctor/data/model/activities_model.dart';
 import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
@@ -29,11 +28,19 @@ class _AddActivityPageState extends State<AddActivityPage> {
 
   PickedFileData? _proofFile;
 
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _organizationController.dispose();
+    _dateController.dispose();
+    super.dispose();
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
     final activity = ActivityModel(
-      id: Uuid().v4(),
+      id: const Uuid().v4(),
       type: _selectedType,
       title: _titleController.text.trim(),
       organization: _organizationController.text.trim(),
@@ -103,14 +110,12 @@ class _AddActivityPageState extends State<AddActivityPage> {
                     validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null, 
                   ),
                   SizedBox(height: 20.h),
-                  
                   FilePickerField(
                     label: 'addActivity.proofFile'.tr(), 
                     selectedFile: _proofFile,
                     onFileSelected: (file) => setState(() => _proofFile = file),
                   ),
                   SizedBox(height: 30.h),
-                  
                   SizedBox(
                     width: double.infinity,
                     height: 50.h,
@@ -122,7 +127,7 @@ class _AddActivityPageState extends State<AddActivityPage> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
                       ),
                       child: isLoading
-                          ? CircularProgressIndicator(color: Colors.white)
+                          ? const CircularProgressIndicator(color: Colors.white)
                           : Text('addActivity.submit'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)), 
                     ),
                   ),

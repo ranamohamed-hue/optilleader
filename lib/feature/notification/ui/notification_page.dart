@@ -19,12 +19,6 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
-  void initState() {
-    super.initState();
-    context.read<NotificationCubit>().fetchNotifications();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -86,22 +80,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               itemCount: state.notifications.length,
               itemBuilder: (context, index) {
                 final notification = state.notifications[index];
+                // ✅ مررنا الـ context الأساسي لتجنب ثغرة الـ BuildContext الفرعي
                 return _buildNotificationCard(context, notification);
               },
             );
           }
 
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: CircularProgressIndicator(color: colorScheme.primary),
+          );
         },
       ),
     );
   }
 
   Widget _buildNotificationCard(
-    BuildContext context,
+    BuildContext mainContext, // ✅ تغيير الاسم لضمان استخدام الـ Context المظبوط
     AppNotificationModel notification,
   ) {
-    final theme = Theme.of(context);
+    final theme = Theme.of(mainContext);
     final colorScheme = theme.colorScheme;
 
     return Card(
@@ -110,7 +107,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
       color: notification.isRead
           ? colorScheme.surface
-          : colorScheme.primaryContainer.withOpacity(0.1),
+          : colorScheme.secondaryContainer.withOpacity(
+              0.15,
+            ), // تفاعل لوني فخم للإشعارات الجديدة
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: _getColorForType(notification.type).withOpacity(0.1),
@@ -137,31 +136,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           _formatTimestamp(notification.timestamp),
           style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
         ),
-                onTap: () {
-          if (!notification.isRead) {
-            context.read<NotificationCubit>().markAsRead(notification.id);
-          }
-          
-          // فتح الإعلان للدكتور
-          if (notification.type == NotificationType.announcementCreated) {
-            // ✅ [تعديل] التأكد إن الـ ID موجود ومش فاضي
-            if (notification.relatedId != null && notification.relatedId!.isNotEmpty) {
-              print("DEBUG: Opening Announcement ID: ${notification.relatedId}"); // عشان نشوف في الـ Console
-              context.push('${Routes.announcementsDetailsDoctor}?id=${notification.relatedId}');
-            } else {
-              // لو الـ ID فاضي نعرض رسالة للمستخدم
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('عذراً، رابط الإعلان غير متاح')),
-              );
-              print("DEBUG: relatedId is null or empty!"); // عشان نشوف في الـ Console
-            }
-          }
-        },
+        // في ملف NotificationsScreen.dart
+   onTap: () {
+  if (!notification.isRead) {
+    mainContext.read<NotificationCubit>().markAsRead(notification.id);
+  }
+
+  if (notification.type == NotificationType.newResearchSubmitted ||
+      notification.type == NotificationType.newActivitySubmitted) {
+
+    mainContext.go('/admin/pending-requests'); // ✅ أهم تعديل
+
+  } else if (notification.type == NotificationType.announcementCreated) {
+    mainContext.go('${Routes.announcementsDetailsDoctor}?id=${notification.relatedId}');
+  }
+}
       ),
     );
   }
 
-  // إضافة الأيقونات للحالات الجديدة
   IconData _getIconForType(NotificationType type) {
     switch (type) {
       case NotificationType.userLogin:
@@ -197,7 +190,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case NotificationType.newResearchSubmitted:
         return Icons.science_outlined;
       case NotificationType.newActivitySubmitted:
-        return Icons.emoji_events_outlined;
+        return Icons.military_tech_outlined; // أيقونة أنسب للأنشطة والجوائز
       case NotificationType.researchStatusUpdated:
         return Icons.fact_check;
       case NotificationType.activityStatusUpdated:
@@ -207,7 +200,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  //  إضافة الألوان للحالات الجديدة
   Color _getColorForType(NotificationType type) {
     switch (type) {
       case NotificationType.userLogin:
@@ -240,9 +232,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Colors.teal;
       case NotificationType.newArbitrationRequest:
         return AppColors.darkGold;
-      // ✅ الحالات الجديدة
       case NotificationType.newResearchSubmitted:
-        return Colors.deepPurple;
+        return AppColors
+            .darkGold; // جعلناها متناسقة مع ألوان المشروع الاحترافية
       case NotificationType.newActivitySubmitted:
         return Colors.blueAccent;
       case NotificationType.researchStatusUpdated:
@@ -253,7 +245,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Colors.grey;
     }
   }
-//دالة الوقت
+
   String _formatTimestamp(Timestamp timestamp) {
     final date = timestamp.toDate();
     final now = DateTime.now();

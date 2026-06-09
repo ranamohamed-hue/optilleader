@@ -5,7 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_state.dart';
-import 'package:optialeader/core/routing/routes.dart'; 
+import 'package:optialeader/core/routing/routes.dart';
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
@@ -42,28 +42,48 @@ class _SignInViewState extends State<SignInView> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  /// Logo
-                  Image.asset(
-                    'assets/images/logoscreen.jpeg',
-                    height: 120.h,
-                    width: 120.w,
+                  /// Logo inside an elevated card with rounded corners
+                  Container(
+                    height: 180.h,
+                    width: 180.w,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24.r),
+                      child: Image.asset(
+                        'assets/images/logoscreen.jpeg',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
-                  SizedBox(height: 20.h),
 
-                                   Text(
+                  SizedBox(height: 24.h),
+
+                  /// App Name - بني غامق
+                  Text(
                     "OptiLeader",
                     style: theme.textTheme.displayLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF000080), // ← نفس لون أزرق الصورة
+                      color: const Color(0xFF3E2723), // ← بني غامق فخم
                     ),
                   ),
 
                   SizedBox(height: 8.h),
 
+                  /// Subtitle - بني فاتح شوية
                   Text(
                     "login.subtitle".tr(),
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF000080).withOpacity(0.7), // ← نفس الأزرق بس أخف شوية
+                      color: const Color(0xFF3E2723).withOpacity(0.7), // ← بني غامق أخف للعنوان الفرعي
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -95,7 +115,6 @@ class _SignInViewState extends State<SignInView> {
                     controller: passwordController,
                     obscureText: isObscure,
                     decoration: InputDecoration(
-                      //  توضيح للمستخدم إن الباسورد الأولاني هو الرقم القومي
                       labelText: "كلمة المرور (الرقم القومي لأول مرة)",
                       prefixIcon: const Icon(Icons.lock_outline),
                       border: OutlineInputBorder(
@@ -108,7 +127,7 @@ class _SignInViewState extends State<SignInView> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) return "validation.required".tr();
-                      if (v.length < 6) return "validation.password_short".tr(); 
+                      if (v.length < 6) return "validation.password_short".tr();
                       return null;
                     },
                   ),
@@ -118,8 +137,6 @@ class _SignInViewState extends State<SignInView> {
                   /// Login Button
                   BlocConsumer<AuthCubit, AuthState>(
                     listener: (context, state) {
-                      // شيلنا كل أكواد context.go() و LoginSuccessState
-                      // الـ Router هيوجه المستخدم لوحده بناءً على الـ State
                       if (state is LoginErrorState) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -144,7 +161,9 @@ class _SignInViewState extends State<SignInView> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF000080),
+                          backgroundColor: const Color.fromARGB(255, 48, 33, 20),      // ← زر أسود يليق مع البني
+                          foregroundColor: Colors.white,      // ← نص أبيض
+                          elevation: 5,                       // ← ظل بارز
                           minimumSize: Size(double.infinity, 52.h),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.r),

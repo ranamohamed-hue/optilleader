@@ -8,7 +8,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: AppColors.lightBackground,
+      scaffoldBackgroundColor: const Color.fromARGB(255, 228, 206, 163),
       textTheme: AppTextThemes.lightTextTheme,
 
       // نظام الألوان (ColorScheme)

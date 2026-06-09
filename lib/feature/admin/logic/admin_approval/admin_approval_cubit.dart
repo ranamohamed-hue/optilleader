@@ -7,21 +7,26 @@ class AdminApprovalCubit extends Cubit<AdminApprovalState> {
 
   AdminApprovalCubit({required this.adminApprovalRepo}) : super(AdminApprovalInitial());
 
-  Future<void> getPendingRequests() async {
+  // في AdminApprovalCubit
+// في ملف AdminApprovalCubit.dart
+Future<void> getPendingRequests({bool showLoading = true}) async {
+  if (showLoading) {
     emit(AdminApprovalLoading());
-    final result = await adminApprovalRepo.getPendingRequests();
-    result.fold(
-      (error) => emit(AdminApprovalError(error)),
-      (doctors) => emit(AdminApprovalLoaded(doctors)),
-    );
   }
+  
+  final result = await adminApprovalRepo.getPendingRequests();
+  result.fold(
+    (error) => emit(AdminApprovalError(error)),
+    (doctors) => emit(AdminApprovalLoaded(doctors)),
+  );
+}
 
-  Future<void> approveResearch(String doctorUid, String paperId, String paperTitle) async {
-    final result = await adminApprovalRepo.approveResearch(doctorUid, paperId, paperTitle);
-    result.fold(
-      (error) => emit(AdminApprovalError(error)),
-      (_) => getPendingRequests(),
-    );
+ Future<void> approveResearch(String doctorUid, String paperId, String paperTitle) async {
+  final result = await adminApprovalRepo.approveResearch(doctorUid, paperId, paperTitle);
+  result.fold(
+    (error) => emit(AdminApprovalError(error)),
+    (_) => getPendingRequests(showLoading: false), // 👈 هذا هو السر: لا تظهري الـ Loading هنا!
+  );
   }
 
   Future<void> rejectResearch(String doctorUid, String paperId, String paperTitle, String reason) async {

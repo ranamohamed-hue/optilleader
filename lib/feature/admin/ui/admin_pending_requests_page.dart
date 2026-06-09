@@ -1,56 +1,71 @@
-import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ [إضافة] عشان AdminApprovalRepoImpl
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:optialeader/feature/admin/data/repo/admin_approval/admin_aproval_repo_impl.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
 import 'package:optialeader/feature/doctor/data/model/activities_model.dart';
 import 'package:optialeader/feature/doctor/data/model/research_paper_model.dart';
 import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 import 'package:optialeader/feature/admin/logic/admin_approval/admin_approval_cubit.dart';
 import 'package:optialeader/feature/admin/logic/admin_approval/admin_approval_state.dart';
-import 'package:optialeader/feature/doctor/data/repo/activities/activity_repo.dart';
-import 'package:optialeader/feature/doctor/data/repo/research_paper/research_paper_repo.dart';
-import 'package:optialeader/feature/notification/data/repo/notification_repo.dart';
 
-class AdminPendingRequestsPage extends StatelessWidget {
+class AdminPendingRequestsPage extends StatefulWidget {
   const AdminPendingRequestsPage({super.key});
 
   @override
+  State<AdminPendingRequestsPage> createState() => _AdminPendingRequestsPageState();
+}
+
+class _AdminPendingRequestsPageState extends State<AdminPendingRequestsPage> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<AdminApprovalCubit>().getPendingRequests();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => AdminApprovalCubit( // ✅ [تعديل] اسم الكلاس بال Case الصح
-        adminApprovalRepo: AdminApprovalRepoImpl( // ✅ [تعديل] بنبعت الريبو Implementation
-          firebaseFirestore: FirebaseFirestore.instance,
-          researchPaperRepo: context.read<ResearchPaperRepo>(),
-          activityRepo: context.read<ActivityRepo>(),
-          notificationRepo: context.read<NotificationRepo>(),
-        ),
-      )..getPendingRequests(),
-      child: Scaffold(
-        appBar: AppBar(title: const Text('طلبات الاعتماد المعلقة')),
-        body: BlocConsumer<AdminApprovalCubit, AdminApprovalState>( // ✅ [تعديل] اسم الكلاس بال Case الصح
-          listener: (context, state) {
-            if (state is AdminApprovalError) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message)));
+    return Scaffold(
+      appBar: AppBar(title: const Text('طلبات الاعتماد المعلقة')),
+      body: BlocConsumer<AdminApprovalCubit, AdminApprovalState>(
+        listener: (context, state) {
+          if (state is AdminApprovalError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+          if (state is AdminApprovalLoaded) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('تم تحديث الحالة بنجاح'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 1),
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
+          if (state is AdminApprovalLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state is AdminApprovalLoaded) {
+            if (state.doctorsWithPending.isEmpty) {
+              return const Center(
+                child: Text('لا توجد طلبات معلقة حالياً', style: TextStyle(fontSize: 16)),
+              );
             }
-          },
-          builder: (context, state) {
-            if (state is AdminApprovalLoading) return const Center(child: CircularProgressIndicator());
-            if (state is AdminApprovalLoaded) {
-              if (state.doctorsWithPending.isEmpty) {
-                return const Center(child: Text('لا توجد طلبات معلقة حالياً'));
-              }
-              return ListView.builder(
+            return RefreshIndicator(
+              onRefresh: () => context.read<AdminApprovalCubit>().getPendingRequests(),
+              child: ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(), // عشان الـ RefreshIndicator يشتغل حتى لو الليست قصيرة
                 itemCount: state.doctorsWithPending.length,
                 itemBuilder: (context, index) {
                   final doctor = state.doctorsWithPending[index];
                   return _buildDoctorSection(context, doctor);
                 },
-              );
-            }
-            return const SizedBox();
-          },
-        ),
+              ),
+            );
+          }
+          return const SizedBox();
+        },
       ),
     );
   }
@@ -96,9 +111,12 @@ class AdminPendingRequestsPage extends StatelessWidget {
                   icon: const Icon(Icons.close, color: Colors.white),
                   label: const Text('رفض'),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: () => _showRejectDialog(context, () {
-                    context.read<AdminApprovalCubit>().rejectResearch(doctorUid, paper.id, paper.titleAr, 'لم يستوفي الشروط');
-                  }),
+                  onPressed: () async {
+                    final reason = await _showRejectDialog(context);
+                    if (reason != null && context.mounted) {
+                      context.read<AdminApprovalCubit>().rejectResearch(doctorUid, paper.id, paper.titleAr, reason);
+                    }
+                  },
                 ),
               ],
             ),
@@ -133,9 +151,12 @@ class AdminPendingRequestsPage extends StatelessWidget {
                   icon: const Icon(Icons.close, color: Colors.white),
                   label: const Text('رفض'),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: () => _showRejectDialog(context, () {
-                    context.read<AdminApprovalCubit>().rejectActivity(doctorUid, activity.id, activity.title, 'لم يستوفي الشروط');
-                  }),
+                  onPressed: () async {
+                    final reason = await _showRejectDialog(context);
+                    if (reason != null && context.mounted) {
+                      context.read<AdminApprovalCubit>().rejectActivity(doctorUid, activity.id, activity.title, reason);
+                    }
+                  },
                 ),
               ],
             ),
@@ -145,20 +166,41 @@ class AdminPendingRequestsPage extends StatelessWidget {
     );
   }
 
-  void _showRejectDialog(BuildContext context, VoidCallback onReject) {
-    showDialog(
+  Future<String?> _showRejectDialog(BuildContext context) async {
+    final TextEditingController reasonController = TextEditingController();
+    return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('تأكيد الرفض'),
-        content: const Text('هل أنت متأكد من رفض هذا الطلب؟'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text('تأكيد الرفض', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('برجاء كتابة سبب الرفض ليطلع عليه الدكتور:'),
+            const SizedBox(height: 15),
+            TextField(
+              controller: reasonController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                hintText: 'مثال: لم يتم إرفاق إثبات التفهرس...',
+              ),
+            ),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context), 
+            child: const Text('إلغاء'),
+          ),
           TextButton(
             onPressed: () {
-              onReject();
-              Navigator.pop(context);
+              final reason = reasonController.text.trim().isEmpty 
+                  ? 'لم يستوفي الشروط المطلوبة' 
+                  : reasonController.text.trim();
+              Navigator.pop(context, reason); 
             },
-            child: const Text('رفض', style: TextStyle(color: Colors.red)),
+            child: const Text('رفض', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

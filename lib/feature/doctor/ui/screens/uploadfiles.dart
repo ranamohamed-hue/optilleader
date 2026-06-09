@@ -7,7 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
-import 'package:optialeader/core/services/file_halper.dart';
+import 'package:optialeader/core/helper/file_halper.dart';
 import 'package:optialeader/feature/doctor/ui/widgets/file_picker_field.dart';
 
 class UploadFilePage extends StatefulWidget {

@@ -16,6 +16,7 @@ class Routes {
   //صفحات مرتبطة بصفحة الاعلانات
   static const announcementDetails = '/admin/announcements/details';
   static const editAnnountmentPage = '/admin/announcements/edit';
+  static const adminPendingRequestsPage = '/admin/pending-requests';
   //صفحات خاصه بادارة الطلبات 
   static const fullEmployeeReport='/admin/orders-list/fullEmployeeReport';
   //صفحات خاصه بأدمن قاعدة البيانات

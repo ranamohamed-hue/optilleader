@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:optialeader/core/routing/routes.dart'; 
 import 'package:optialeader/feature/database_admin/logic/judge_data/judge_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/judge_data/judge_data_state.dart';
+import 'package:optialeader/feature/notification/logic/app_notification_cubit.dart'; // ✅ [إضافة] استدعاء لـ NotificationCubit
 
 class MohakemDashboardHome extends StatefulWidget {
   const MohakemDashboardHome({super.key});
@@ -21,10 +22,86 @@ class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
   @override
   void initState() {
     super.initState();
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      context.read<JudgeDataCubit>().getJudgeProfile(uid);
+    // ✅ [تعديل] استخدام addPostFrameCallback لتجنب مشاكل الـ context في initState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        context.read<JudgeDataCubit>().getJudgeProfile(uid);
+        // ✅ [إضافة] جلب الإشعارات مرة واحدة في الخلفية
+        context.read<NotificationCubit>().fetchNotifications();
+      }
+
+      // ✅ [إضافة] فحص هل هو أول تسجيل دخول لعرض الديالوج الترحيبي
+      _checkAndShowWelcomeDialog();
+    });
+  }
+
+  // ✅ [إضافة] دالة فحص أول تسجيل دخول
+  void _checkAndShowWelcomeDialog() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final creationTime = user.metadata.creationTime;
+    final lastSignInTime = user.metadata.lastSignInTime;
+
+    if (creationTime != null && lastSignInTime != null) {
+      final difference = lastSignInTime.difference(creationTime).inMinutes;
+      if (difference < 2) {
+        _showWelcomeDialog();
+      }
     }
+  }
+
+  // ✅ [إضافة] تصميم الديالوج الترحيبي المشترك
+  void _showWelcomeDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isArabic = context.locale.languageCode == 'ar';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.waving_hand_rounded, color: Colors.orange, size: 28.sp),
+            SizedBox(width: 10.w),
+            Text(
+              isArabic ? 'أهلاً بك!' : 'Welcome!',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          isArabic
+              ? 'يسعدنا انضمامك لمنصة OptiLeader.\nيمكنك البدء في استكشاف الميزات الخاصة بك من القائمة.'
+              : 'Welcome to OptiLeader platform.\nYou can start exploring your features from the menu.',
+          style: TextStyle(fontSize: 15.sp, height: 1.5),
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                isArabic ? 'لنبدأ!' : "Let's Start!",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

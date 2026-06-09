@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/routing/router_refresh_notifier.dart';
 import 'package:optialeader/feature/admin/admin_routes.dart';
+import 'package:optialeader/feature/admin/ui/admin_pending_requests_page.dart';
 import 'package:optialeader/feature/admin/ui/dashboaer.dart'; // تأكدي من مسمى الملف ده (dashboard)
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_state.dart';
@@ -136,7 +137,8 @@ GoRouter createRouter(AuthCubit authCubit) {
             
             return const NotificationsScreen();
           },
-        )
+        ),
+        
     ],
   );
 

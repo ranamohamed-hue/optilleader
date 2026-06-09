@@ -24,8 +24,9 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
+  bool _isExpanded =
+      false; // نقلناها هنا عشان الـ SideBar يشتغل بمرونة ويرتبط بالـ State
 
-  // ✅ دالة موحدة لتبديل التبويبات
   void _onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
@@ -39,8 +40,83 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
         context.read<AdminDataCubit>().getAdminProfile(uid);
+
+        // ✅ [تصحيح الثغرة]: بنباصي الـ UID الحقيقي للكيوبيت عشان يقفل الماسورة القديمة ويفتح الصندوق الصح للأدمن
+        context.read<NotificationCubit>().updateUserIdAndFetch(uid);
       }
+
+      _checkAndShowWelcomeDialog();
     });
+  }
+
+  void _checkAndShowWelcomeDialog() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final creationTime = user.metadata.creationTime;
+    final lastSignInTime = user.metadata.lastSignInTime;
+
+    if (creationTime != null && lastSignInTime != null) {
+      final difference = lastSignInTime.difference(creationTime).inMinutes;
+      if (difference < 2) {
+        _showWelcomeDialog();
+      }
+    }
+  }
+
+  void _showWelcomeDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isArabic = context.locale.languageCode == 'ar';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.waving_hand_rounded,
+              color: AppColors.darkGold,
+              size: 28.sp,
+            ), // لمسة ذهبية ترحيبية
+            SizedBox(width: 10.w),
+            Text(
+              isArabic ? 'أهلاً بك!' : 'Welcome!',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          isArabic
+              ? 'يسعدنا انضمامك لمنصة OptiLeader.\nيمكنك البدء في استكشاف الميزات الخاصة بك من القائمة الجانبية.'
+              : 'Welcome to OptiLeader platform.\nYou can start exploring your features from the side menu.',
+          style: TextStyle(fontSize: 15.sp, height: 1.5),
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                isArabic ? 'لنبدأ!' : "Let's Start!",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -49,18 +125,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-          body: IndexedStack(
+      body: IndexedStack(
         index: _currentIndex,
         children: [
           _HomeTab(
             currentIndex: _currentIndex,
+            isExpanded: _isExpanded,
+            onToggleExpanded: () => setState(() => _isExpanded = !_isExpanded),
             onTabTapped: _onTabTapped,
           ),
           _AnnouncementsTab(onBack: () => _onTabTapped(0)),
           const _SearchTab(),
           const _NotificationsTab(),
-          // ✅ [تعديل] تمرير دالة الرجوع للتبويب رقم 0 (الرئيسية)
-          _SettingsTab(onBackToHome: () => _onTabTapped(0)), 
+          _SettingsTab(onBackToHome: () => _onTabTapped(0)),
         ],
       ),
     );
@@ -70,18 +147,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 /// ============================================================
 /// 1. تبويب الصفحة الرئيسية (Home Tab)
 /// ============================================================
-class _HomeTab extends StatefulWidget {
+class _HomeTab extends StatelessWidget {
   final int currentIndex;
+  final bool isExpanded;
+  final VoidCallback onToggleExpanded;
   final ValueChanged<int> onTabTapped;
 
-  const _HomeTab({required this.currentIndex, required this.onTabTapped});
-
-  @override
-  State<_HomeTab> createState() => _HomeTabState();
-}
-
-class _HomeTabState extends State<_HomeTab> {
-  bool _isExpanded = false;
+  const _HomeTab({
+    required this.currentIndex,
+    required this.isExpanded,
+    required this.onToggleExpanded,
+    required this.onTabTapped,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -101,16 +178,21 @@ class _HomeTabState extends State<_HomeTab> {
           final admin = state.admin!;
           String fullDisplayName = isArabic ? admin.nameAr : admin.nameEn;
           if (fullDisplayName.trim().isEmpty) {
-            fullDisplayName = FirebaseAuth.instance.currentUser?.displayName ?? (isArabic ? 'مدير النظام' : 'Admin');
+            fullDisplayName =
+                FirebaseAuth.instance.currentUser?.displayName ??
+                (isArabic ? 'مدير النظام' : 'Admin');
           }
 
           return SafeArea(
             child: Column(
               children: [
-                /// --- الهيدر العلوي ---
+                /// --- الهيدر العلوي الملكي ---
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 25.w, vertical: 20.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 25.w,
+                    vertical: 20.h,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -155,7 +237,8 @@ class _HomeTabState extends State<_HomeTab> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: colorScheme.secondary,
+                            color: AppColors
+                                .darkGold, // تحديد خط خارجي ذهبي لإبراز الصورة الهوية الملكية
                             width: 2,
                           ),
                         ),
@@ -231,7 +314,7 @@ class _HomeTabState extends State<_HomeTab> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      width: _isExpanded ? 130.w : 55.w,
+      width: isExpanded ? 130.w : 55.w,
       margin: EdgeInsets.only(
         left: context.locale.languageCode == 'ar' ? 6.w : 4.w,
         right: context.locale.languageCode == 'ar' ? 4.w : 6.w,
@@ -253,26 +336,69 @@ class _HomeTabState extends State<_HomeTab> {
           SizedBox(height: 10.h),
           IconButton(
             icon: Icon(
-              _isExpanded ? Icons.menu_open : Icons.menu,
-              color: colorScheme.secondary,
+              isExpanded ? Icons.menu_open : Icons.menu,
+              color: AppColors.darkGold, // زر المنيو منور بالذهبي الفخم
               size: 22.sp,
             ),
-            onPressed: () => setState(() => _isExpanded = !_isExpanded),
+            onPressed: onToggleExpanded,
           ),
           SizedBox(height: 5.h),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                _buildSideBarItem(Icons.home_outlined, Icons.home, 0, 'الرئيسية', colorScheme, textTheme),
-                _buildSideBarItem(Icons.list_alt_outlined, Icons.list_alt, -1, 'الطلبات', colorScheme, textTheme, customAction: () => context.push('/admin/orders-list')),
-                _buildSideBarItem(Icons.campaign_outlined, Icons.campaign, 1, 'الإعلانات', colorScheme, textTheme),
-                _buildSideBarItem(Icons.search, Icons.search, 2, 'البحث', colorScheme, textTheme),
-                _buildSideBarItem(Icons.notifications_none_outlined, Icons.notifications, 3, 'التنبيهات', colorScheme, textTheme),
+                _buildSideBarItem(
+                  Icons.home_outlined,
+                  Icons.home,
+                  0,
+                  'sidebar.home'.tr(),
+                  colorScheme,
+                  textTheme,
+                ),
+                _buildSideBarItem(
+                  Icons.list_alt_outlined,
+                  Icons.list_alt,
+                  -1,
+                  'sidebar.orders'.tr(),
+                  colorScheme,
+                  textTheme,
+                  customAction: () => context.push('/admin/orders-list'),
+                ),
+                _buildSideBarItem(
+                  Icons.campaign_outlined,
+                  Icons.campaign,
+                  1,
+                  'sidebar.announcements'.tr(),
+                  colorScheme,
+                  textTheme,
+                ),
+                _buildSideBarItem(
+                  Icons.search,
+                  Icons.search,
+                  2,
+                  'sidebar.search'.tr(),
+                  colorScheme,
+                  textTheme,
+                ),
+                _buildSideBarItem(
+                  Icons.notifications_none_outlined,
+                  Icons.notifications,
+                  3,
+                  'sidebar.notifications'.tr(),
+                  colorScheme,
+                  textTheme,
+                ),
               ],
             ),
           ),
-          _buildSideBarItem(Icons.person_outline, Icons.person, 4, 'الإعدادات', colorScheme, textTheme),
+          _buildSideBarItem(
+            Icons.person_outline,
+            Icons.person,
+            4,
+            'sidebar.settings'.tr(),
+            colorScheme,
+            textTheme,
+          ),
           SizedBox(height: 10.h),
         ],
       ),
@@ -280,41 +406,62 @@ class _HomeTabState extends State<_HomeTab> {
   }
 
   Widget _buildSideBarItem(
-    IconData icon, IconData activeIcon, int index, String label, ColorScheme colorScheme, TextTheme textTheme, {VoidCallback? customAction}
-  ) {
-    bool isSelected = customAction == null && widget.currentIndex == index;
-    final iconColor = isSelected ? colorScheme.secondary : colorScheme.onPrimary.withOpacity(0.8);
+    IconData icon,
+    IconData activeIcon,
+    int index,
+    String label,
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    VoidCallback? customAction,
+  }) {
+    bool isSelected = customAction == null && currentIndex == index;
+    // تفعيل الذهبى الملكي عند الاختيار والكحلي الفاتح لليوزر العادي
+    final iconColor = isSelected
+        ? AppColors.darkGold
+        : colorScheme.onPrimary.withOpacity(0.8);
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 6.h),
       child: Material(
-        color: isSelected ? colorScheme.secondary.withOpacity(0.15) : Colors.transparent,
+        color: isSelected
+            ? AppColors.darkGold.withOpacity(0.15)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(12.r),
         child: InkWell(
-          onTap: customAction ?? () => widget.onTabTapped(index),
+          onTap: customAction ?? () => onTabTapped(index),
           borderRadius: BorderRadius.circular(12.r),
           child: Container(
             height: 40.h,
-            padding: EdgeInsets.symmetric(horizontal: _isExpanded ? 8.w : 0),
+            padding: EdgeInsets.symmetric(horizontal: isExpanded ? 8.w : 0),
             alignment: Alignment.center,
-            child: _isExpanded
+            child: isExpanded
                 ? Row(
                     children: [
-                      Icon(isSelected ? activeIcon : icon, color: iconColor, size: 20.sp),
+                      Icon(
+                        isSelected ? activeIcon : icon,
+                        color: iconColor,
+                        size: 20.sp,
+                      ),
                       SizedBox(width: 8.w),
                       Expanded(
                         child: Text(
                           label,
                           style: textTheme.bodySmall?.copyWith(
                             color: iconColor,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   )
-                : Icon(isSelected ? activeIcon : icon, color: iconColor, size: 22.sp),
+                : Icon(
+                    isSelected ? activeIcon : icon,
+                    color: iconColor,
+                    size: 22.sp,
+                  ),
           ),
         ),
       ),
@@ -330,17 +477,45 @@ class _HomeTabState extends State<_HomeTab> {
       padding: EdgeInsets.only(left: 15.w, right: 15.w, top: 0, bottom: 10.h),
       child: Column(
         children: [
-          _buildActionCard(context, title: 'dashboard.new_requests'.tr(), icon: Icons.note_add_rounded, value: state.newRequestsCount.toString(), color: colorScheme.primary, onTap: () => context.push('/admin/orders-list')),
+          _buildActionCard(
+            context,
+            title: 'dashboard.new_requests'.tr(),
+            icon: Icons.note_add_rounded,
+            value: state.newRequestsCount.toString(),
+            color: colorScheme.primary,
+            onTap: () => context.push('/admin/orders-list'),
+          ),
           SizedBox(height: 18.h),
-          _buildActionCard(context, title: 'dashboard.under_review'.tr(), icon: Icons.gavel_rounded, value: state.underReviewCount.toString(), color: colorScheme.secondary, onTap: () => context.push('/admin/orders-list')),
+          _buildActionCard(
+            context,
+            title: 'dashboard.under_review'.tr(),
+            icon: Icons.gavel_rounded,
+            value: state.underReviewCount.toString(),
+            color: AppColors.darkGold,
+            onTap: () => context.push('/admin/orders-list'),
+          ), // متناسق ذهبي للمراجعات والتحكيم
           SizedBox(height: 18.h),
-          _buildActionCard(context, title: 'dashboard.add_announcement'.tr(), icon: Icons.campaign_rounded, value: '+', color: Colors.orange, onTap: () => context.push('/admin/editAnnountmentPage')),
+          _buildActionCard(
+            context,
+            title: 'dashboard.add_announcement'.tr(),
+            icon: Icons.campaign_rounded,
+            value: '+',
+            color: Colors.orange,
+            onTap: () => context.push('/admin/editAnnountmentPage'),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildActionCard(BuildContext context, {required String title, required IconData icon, required String value, required Color color, VoidCallback? onTap}) {
+  Widget _buildActionCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required String value,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
@@ -353,21 +528,49 @@ class _HomeTabState extends State<_HomeTab> {
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(24.r),
           border: Border.all(color: color.withOpacity(0.25), width: 1.5),
-          boxShadow: [BoxShadow(color: color.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              width: 52.w, height: 52.w,
-              decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
+              width: 52.w,
+              height: 52.w,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, color: color, size: 26.sp),
             ),
             SizedBox(width: 18.w),
-            Expanded(child: Text(title, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: 16.sp))),
+            Expanded(
+              child: Text(
+                title,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.sp,
+                ),
+              ),
+            ),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-              decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(14.r)),
-              child: Text(value, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: color, fontSize: 20.sp)),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(14.r),
+              ),
+              child: Text(
+                value,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                  fontSize: 20.sp,
+                ),
+              ),
             ),
           ],
         ),
@@ -384,41 +587,33 @@ class _AnnouncementsTab extends StatelessWidget {
   Widget build(BuildContext context) => AnnouncementsPage(onBack: onBack);
 }
 
-// تبويب البحث
 class _SearchTab extends StatelessWidget {
   const _SearchTab();
   @override
   Widget build(BuildContext context) => const UserSearchScreen();
 }
 
-// تبويب التنبيهات
-// تبويب التنبيهات (بقى نضيف لأن الـ Provider متعملش فوق في الـ AppProviders)
 class _NotificationsTab extends StatelessWidget {
   const _NotificationsTab();
-  
+
   @override
   Widget build(BuildContext context) {
-    // ✅ [تعديل] شيلنا الـ BlocProvider من هنا لأنه بقائي Global في AppProviders
-    // بنشغل الـ fetch بمجرد الدخول على التاب ده عشان يجيب أحدث الإشعارات
-    context.read<NotificationCubit>().fetchNotifications();
-    
     return const NotificationsScreen();
   }
 }
 
-// تبويب الإعدادات
 class _SettingsTab extends StatelessWidget {
-  final VoidCallback onBackToHome; 
-  const _SettingsTab({required this.onBackToHome}); 
+  final VoidCallback onBackToHome;
+  const _SettingsTab({required this.onBackToHome});
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AdminDataCubit>().state;
     if (state is AdminLoaded) {
       return SettingsScreen(
-        uid: state.admin!.uid, 
+        uid: state.admin!.uid,
         role: 'admin',
-        onBack: onBackToHome, 
+        onBack: onBackToHome,
       );
     }
     return const Center(child: CircularProgressIndicator());
