@@ -4,7 +4,7 @@ import 'package:optialeader/feature/admin/ui/announces/announce.dart';
 import 'package:optialeader/feature/admin/ui/announces/announce_dateail.dart';
 import 'package:optialeader/feature/admin/ui/announces/edit_announcement.dart';
 import 'package:optialeader/feature/admin/ui/admin_pending_requests_page.dart';
-
+import 'package:optialeader/feature/admin/ui/admin_details_page.dart';
 import 'package:optialeader/feature/admin/ui/request/full_employee_report_screen.dart';
 import 'package:optialeader/feature/admin/ui/request/order_list_screen.dart';
 import 'package:optialeader/feature/setting/ui/setting.dart';
@@ -57,9 +57,24 @@ final List<RouteBase> adminSubRoutes = [
     path: 'orders-list',
     builder: (context, state) => const AdminPendingRequestsPage(),
   ),
+ // تم دمج وتوحيد مسارات الطلبات
   GoRoute(
     path: 'pending-requests',
     name: 'admin_pending_requests',
     builder: (context, state) => const AdminPendingRequestsPage(),
+    // المسارات الفرعية للطلبات نضعها داخل routes الخاص بها
+    routes: [
+      GoRoute(
+        path: 'details',
+        builder: (context, state) {
+          final args = state.extra as Map<String, dynamic>;
+          return AdminDetailsPage(
+            item: args['item'],
+            doctorUid: args['doctorUid'],
+            type: args['type'],
+          );
+        },
+      ),
+    ],
   ),
 ];

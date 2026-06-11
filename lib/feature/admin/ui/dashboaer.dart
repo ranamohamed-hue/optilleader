@@ -503,6 +503,15 @@ class _HomeTab extends StatelessWidget {
             color: Colors.orange,
             onTap: () => context.push('/admin/editAnnountmentPage'),
           ),
+          SizedBox(height: 18.h),
+          _buildActionCard(
+            context,
+            title: 'dashboard.new_requests'.tr(), 
+            icon: Icons.pending_actions_rounded,
+            value: state.newRequestsCount.toString(),
+            color: AppColors.darkGold, 
+            onTap: () => context.push('/admin/pending-requests'), 
+          ),
         ],
       ),
     );

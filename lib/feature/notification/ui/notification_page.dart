@@ -18,6 +18,14 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
+  // في صفحة الإشعارات (داخل الـ initState أو عند فتح الصفحة)
+  @override
+  void initState() {
+    super.initState();
+    // تنظيف المقروء فور فتح الصفحة لتقليل الحمل مستقبلاً
+    context.read<NotificationCubit>().clearReadNotifications();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -28,6 +36,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(
         title: Text('notifications.title'.tr()),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_outlined),
+            tooltip: 'مسح المقروء',
+            onPressed: () {
+              // استدعاء دالة التنظيف الجديدة
+              context.read<NotificationCubit>().clearReadNotifications();
+            },
+          ),
+        ],
       ),
       body: BlocBuilder<NotificationCubit, NotificationState>(
         builder: (context, state) {
@@ -80,7 +98,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               itemCount: state.notifications.length,
               itemBuilder: (context, index) {
                 final notification = state.notifications[index];
-                // ✅ مررنا الـ context الأساسي لتجنب ثغرة الـ BuildContext الفرعي
                 return _buildNotificationCard(context, notification);
               },
             );
@@ -95,62 +112,81 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildNotificationCard(
-    BuildContext mainContext, // ✅ تغيير الاسم لضمان استخدام الـ Context المظبوط
+    BuildContext mainContext,
     AppNotificationModel notification,
   ) {
     final theme = Theme.of(mainContext);
     final colorScheme = theme.colorScheme;
 
-    return Card(
-      elevation: notification.isRead ? 0 : 2,
-      margin: EdgeInsets.only(bottom: 10.h),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-      color: notification.isRead
-          ? colorScheme.surface
-          : colorScheme.secondaryContainer.withOpacity(
-              0.15,
-            ), // تفاعل لوني فخم للإشعارات الجديدة
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getColorForType(notification.type).withOpacity(0.1),
-          child: Icon(
-            _getIconForType(notification.type),
-            color: _getColorForType(notification.type),
+    return Dismissible(
+      key: Key(notification.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        color: Colors.red,
+        alignment: Alignment.centerRight,
+        padding: EdgeInsets.only(right: 20.w),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      onDismissed: (direction) {
+        // استدعاء دالة الحذف التي أضفناها في الـ Cubit
+        context.read<NotificationCubit>().deleteNotification(notification.id);
+      },
+      child: Card(
+        elevation: notification.isRead ? 0 : 2,
+        margin: EdgeInsets.only(bottom: 10.h),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        color: notification.isRead
+            ? colorScheme.surface
+            : colorScheme.secondaryContainer.withOpacity(
+                0.15,
+              ), // تفاعل لوني فخم للإشعارات الجديدة
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: _getColorForType(
+              notification.type,
+            ).withOpacity(0.1),
+            child: Icon(
+              _getIconForType(notification.type),
+              color: _getColorForType(notification.type),
+            ),
           ),
-        ),
-        title: Text(
-          notification.title,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            fontWeight: notification.isRead
-                ? FontWeight.normal
-                : FontWeight.bold,
+          title: Text(
+            notification.title,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: notification.isRead
+                  ? FontWeight.normal
+                  : FontWeight.bold,
+            ),
           ),
-        ),
-        subtitle: Text(
-          notification.message,
-          style: theme.textTheme.bodySmall,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Text(
-          _formatTimestamp(notification.timestamp),
-          style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
-        ),
-        // في ملف NotificationsScreen.dart
-   onTap: () {
-  if (!notification.isRead) {
-    mainContext.read<NotificationCubit>().markAsRead(notification.id);
-  }
+          subtitle: Text(
+            notification.message,
+            style: theme.textTheme.bodySmall,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: Text(
+            _formatTimestamp(notification.timestamp),
+            style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
+          ),
+          // في ملف NotificationsScreen.dart
+          onTap: () {
+            if (!notification.isRead) {
+              mainContext.read<NotificationCubit>().markAsRead(notification.id);
+            }
 
-  if (notification.type == NotificationType.newResearchSubmitted ||
-      notification.type == NotificationType.newActivitySubmitted) {
-
-    mainContext.go('/admin/pending-requests'); // ✅ أهم تعديل
-
-  } else if (notification.type == NotificationType.announcementCreated) {
-    mainContext.go('${Routes.announcementsDetailsDoctor}?id=${notification.relatedId}');
-  }
-}
+            if (notification.type == NotificationType.newResearchSubmitted ||
+                notification.type == NotificationType.newActivitySubmitted) {
+              mainContext.go('/admin/pending-requests'); // ✅ أهم تعديل
+            } else if (notification.type ==
+                NotificationType.announcementCreated) {
+              mainContext.go(
+                '${Routes.announcementsDetailsDoctor}?id=${notification.relatedId}',
+              );
+            }
+          },
+        ),
       ),
     );
   }

@@ -3,53 +3,92 @@ import 'package:optialeader/feature/admin/data/repo/admin_approval/admin_approva
 import 'package:optialeader/feature/admin/logic/admin_approval/admin_approval_state.dart';
 
 class AdminApprovalCubit extends Cubit<AdminApprovalState> {
-  final AdminApprovalRepo adminApprovalRepo; 
+  final AdminApprovalRepo adminApprovalRepo;
 
-  AdminApprovalCubit({required this.adminApprovalRepo}) : super(AdminApprovalInitial());
+  AdminApprovalCubit({required this.adminApprovalRepo})
+    : super(AdminApprovalInitial());
 
   // في AdminApprovalCubit
-// في ملف AdminApprovalCubit.dart
-Future<void> getPendingRequests({bool showLoading = true}) async {
-  if (showLoading) {
-    emit(AdminApprovalLoading());
-  }
-  
-  final result = await adminApprovalRepo.getPendingRequests();
-  result.fold(
-    (error) => emit(AdminApprovalError(error)),
-    (doctors) => emit(AdminApprovalLoaded(doctors)),
-  );
-}
+  // في ملف AdminApprovalCubit.dart
+  Future<void> getPendingRequests({bool showLoading = true}) async {
+    if (showLoading) {
+      emit(AdminApprovalLoading());
+    }
 
- Future<void> approveResearch(String doctorUid, String paperId, String paperTitle) async {
-  final result = await adminApprovalRepo.approveResearch(doctorUid, paperId, paperTitle);
-  result.fold(
-    (error) => emit(AdminApprovalError(error)),
-    (_) => getPendingRequests(showLoading: false), // 👈 هذا هو السر: لا تظهري الـ Loading هنا!
-  );
-  }
-
-  Future<void> rejectResearch(String doctorUid, String paperId, String paperTitle, String reason) async {
-    final result = await adminApprovalRepo.rejectResearch(doctorUid, paperId, paperTitle, reason);
+    final result = await adminApprovalRepo.getPendingRequests();
     result.fold(
       (error) => emit(AdminApprovalError(error)),
-      (_) => getPendingRequests(),
+      (doctors) => emit(AdminApprovalLoaded(doctors)),
     );
   }
 
-  Future<void> approveActivity(String doctorUid, String activityId, String activityTitle) async {
-    final result = await adminApprovalRepo.approveActivity(doctorUid, activityId, activityTitle);
+  Future<void> approveResearch(
+    String doctorUid,
+    String paperId,
+    String paperTitle,
+  ) async {
+    final result = await adminApprovalRepo.approveResearch(
+      doctorUid,
+      paperId,
+      paperTitle,
+    );
     result.fold(
       (error) => emit(AdminApprovalError(error)),
-      (_) => getPendingRequests(),
+      (_) => getPendingRequests(
+        showLoading: false,
+      ), // 👈 هذا هو السر: لا تظهري الـ Loading هنا!
     );
   }
 
-  Future<void> rejectActivity(String doctorUid, String activityId, String activityTitle, String reason) async {
-    final result = await adminApprovalRepo.rejectActivity(doctorUid, activityId, activityTitle, reason);
+  Future<void> rejectResearch(
+    String doctorUid,
+    String paperId,
+    String paperTitle,
+    String reason,
+  ) async {
+    final result = await adminApprovalRepo.rejectResearch(
+      doctorUid,
+      paperId,
+      paperTitle,
+      reason,
+    );
     result.fold(
       (error) => emit(AdminApprovalError(error)),
-      (_) => getPendingRequests(),
+      (_) => getPendingRequests(showLoading: false), // اجعليها false هنا أيضاً
+    );
+  }
+
+  Future<void> approveActivity(
+    String doctorUid,
+    String activityId,
+    String activityTitle,
+  ) async {
+    final result = await adminApprovalRepo.approveActivity(
+      doctorUid,
+      activityId,
+      activityTitle,
+    );
+    result.fold(
+      (error) => emit(AdminApprovalError(error)),
+      (_) => getPendingRequests(showLoading: false), // وهنا أيضاً
+    );
+  }
+
+  Future<void> rejectActivity(
+    String doctorUid,
+    String activityId,
+    String activityTitle,
+    String reason,
+  ) async {
+    final result = await adminApprovalRepo.rejectActivity(
+      doctorUid,
+      activityId,
+      activityTitle,
+      reason,
+    );
+    result.fold(
+      (error) => emit(AdminApprovalError(error)),
+      (_) => getPendingRequests(showLoading: false), // وهنا أيضاً
     );
   }
 }

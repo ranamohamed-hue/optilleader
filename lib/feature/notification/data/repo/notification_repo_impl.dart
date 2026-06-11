@@ -38,25 +38,30 @@ class NotificationRepoImpl extends NotificationRepo {
         });
   }
 
-  // بتراقب كوليكشن الإشعارات عند كل الدكاترة في نفس الوقت بدون الارتباط بـ UID محدد
   @override
-  Stream<List<AppNotificationModel>> getAdminPendingNotifications() {
-    return firebaseFirestore
-        .collectionGroup('notifications')
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((snapshot) {
-          // 🔍 طباعة عدد المستندات التي يجدها الـ Stream فعلياً
-          print("🚀 عدد الإشعارات الكلي: ${snapshot.docs.length}");
+Stream<List<AppNotificationModel>> getAdminPendingNotifications() {
+  return firebaseFirestore
+      .collectionGroup('notifications')
+      .orderBy('timestamp', descending: true)
+      .snapshots()
+      .map((snapshot) {
+        final Map<String, AppNotificationModel> uniqueNotifications = {};
 
-          return snapshot.docs.map((doc) {
-            final data = doc.data();
-            // 🔍 طباعة بيانات كل مستند
-            print("📄 بيانات المستند: $data");
-            return AppNotificationModel.fromFirestore(data, doc.id);
-          }).toList();
-        });
-  }
+        for (var doc in snapshot.docs) {
+          final data = doc.data();
+          final model = AppNotificationModel.fromFirestore(data, doc.id);
+
+         
+          final key = "${model.relatedId}_${model.message}";
+
+          if (!uniqueNotifications.containsKey(key)) {
+            uniqueNotifications[key] = model;
+          }
+        }
+
+        return uniqueNotifications.values.toList();
+      });
+}
 
   @override
   Future<Either<String, Unit>> markAsRead(
@@ -110,4 +115,41 @@ Future<Either<String, Unit>> broadcastNotification(
     return left("فشل إرسال الإشعار الجماعي: ${e.toString()}");
   }
 }
+// ... (الدوال السابقة تبقى كما هي)
+
+  @override
+  Future<Either<String, Unit>> deleteNotification(String receiverId, String notificationId) async {
+    try {
+      await firebaseFirestore
+          .collection('users')
+          .doc(receiverId)
+          .collection('notifications')
+          .doc(notificationId)
+          .delete();
+      return right(unit);
+    } catch (e) {
+      return left("فشل حذف الإشعار: ${e.toString()}");
+    }
+  }
+
+  @override
+  Future<void> clearAllReadNotifications(String receiverId) async {
+    try {
+      final batch = firebaseFirestore.batch();
+      final querySnapshot = await firebaseFirestore
+          .collection('users')
+          .doc(receiverId)
+          .collection('notifications')
+          .where('is_read', isEqualTo: true) // حذف المقروء فقط
+          .get();
+
+      for (var doc in querySnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      
+      await batch.commit();
+    } catch (e) {
+      print("خطأ أثناء التنظيف الجماعي: $e");
+    }
+  }
 }

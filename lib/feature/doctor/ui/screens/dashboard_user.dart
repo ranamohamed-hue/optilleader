@@ -23,21 +23,17 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
   @override
   void initState() {
     super.initState();
-    // ✅ [تعديل] استخدام addPostFrameCallback لتجنب مشاكل الـ context في initState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
         context.read<DoctorDataCubit>().getDoctorProfile(uid);
-        // ✅ [إضافة] جلب الإشعارات مرة واحدة في الخلفية
         context.read<NotificationCubit>().fetchNotifications();
       }
 
-      // ✅ [إضافة] فحص هل هو أول تسجيل دخول لعرض الديالوج الترحيبي
       _checkAndShowWelcomeDialog();
     });
   }
 
-  // ✅ [إضافة] دالة فحص أول تسجيل دخول
   void _checkAndShowWelcomeDialog() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -53,7 +49,7 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
     }
   }
 
-  // ✅ [إضافة] تصميم الديالوج الترحيبي المشترك
+  //  تصميم الديالوج الترحيبي المشترك
   void _showWelcomeDialog() {
     final colorScheme = Theme.of(context).colorScheme;
     final isArabic = context.locale.languageCode == 'ar';
@@ -134,22 +130,9 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
               elevation: 0,
               toolbarHeight: 80.h,
                  centerTitle: false, 
-              titleSpacing: 0,     
+              titleSpacing: 20,     
               automaticallyImplyLeading: false,
-              leading: IconButton(
-                icon: Icon(
-                  Icons.arrow_back_ios_new,
-                  size: 20.sp,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  if (context.canPop()) {
-                    context.pop();
-                  } else {
-                    context.go(Routes.user);
-                  }
-                },
-              ),
+            
               
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,7 +140,7 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                 children: [
                   Text(
                     'dashboard.welcome'.tr(),
-                    style: TextStyle(color: Colors.white70, fontSize: 11.sp),
+                    style: TextStyle(color: Colors.white70, fontSize: 15.sp),
                   ),
                   Text(
                     context.locale.languageCode == 'ar'
@@ -266,7 +249,6 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                     ),
                     SizedBox(height: 10.h),
 
-                    //  استبدال الكود الاستاتيك بالكود الديناميكي بتاع الإعلانات
                     BlocBuilder<AnnouncementCubit, AnnouncementState>(
                       builder: (context, announceState) {
                         if (announceState is AnnouncementLoaded) {
@@ -370,7 +352,7 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
         border: Border.all(color: gold, width: 2),
       ),
       child: CircleAvatar(
-        radius: 20.r,
+        radius: 35.r,
         backgroundColor: Colors.white10,
         backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
             ? CachedNetworkImageProvider(imageUrl)

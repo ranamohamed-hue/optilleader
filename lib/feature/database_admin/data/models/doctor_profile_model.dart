@@ -76,73 +76,91 @@ class DoctorProfileModel {
     this.activities = const [],
   });
   factory DoctorProfileModel.fromJson(Map<String, dynamic> json, String id) {
-    // استخراج الـ identity (في الفايرستور اسمها profile)
-    final identity = json['profile'] as Map<String, dynamic>? ?? {};
-    final address = identity['address'] as Map<String, dynamic>? ?? {};
-    final phoneData = identity['phone'] as Map<String, dynamic>? ?? {};
+    // ✅ أفضل طريقة لقراءة الـ List of Models بأمان
+    List<ResearchPaperModel> parseResearchPapers(List<dynamic>? list) {
+      if (list == null) return [];
+      List<ResearchPaperModel> result = [];
+      for (var item in list) {
+        try {
+          result.add(ResearchPaperModel.fromJson(item as Map<String, dynamic>));
+        } catch (e) {
+          print("Error parsing research paper: $e");
+        }
+      }
+      return result;
+    }
 
-    // استخراج الـ scientific_work
-    final scientificWork = json['scientific_work'] as Map<String, dynamic>? ?? {};
+    List<ActivityModel> parseActivities(List<dynamic>? list) {
+      if (list == null) return [];
+      List<ActivityModel> result = [];
+      for (var item in list) {
+        try {
+          result.add(ActivityModel.fromJson(item as Map<String, dynamic>));
+        } catch (e) {
+          print("Error parsing activity: $e");
+        }
+      }
+      return result;
+    }
+
+    // استخراج بيانات الـ profile القديمة عشان تتوافق مع الباقي
+    final profile = json['profile'] as Map<String, dynamic>? ?? {};
 
     return DoctorProfileModel(
       uid: id,
-      role: json['role'] ?? identity['role'] ?? 'doctor', // الـ role ممكن تكون جوه profile
+      role: json['role'] ?? 'doctor',
       isFirstLogin: json['isFirstLogin'] ?? true,
-      
-      // بيانات الهوية (مأخوذة من profile map)
-      nameAr: identity['name_ar'] ?? '',
-      nameEn: identity['name_en'] ?? '',
-      nationalityAr: identity['nationality_ar'] ?? '',
-      nationalityEn: identity['nationality_en'] ?? '',
-      currentJobAr: identity['current_job_ar'] ?? '',
-      currentJobEn: identity['current_job_en'] ?? '',
-      socialStatusAr: identity['social_status_ar'] ?? '',
-      socialStatusEn: identity['social_status_en'] ?? '',
-      nationalId: identity['national_id'] ?? '',
-      employeeId: identity['employee_id'] ?? '',
-      birthDate: identity['birth_date'] != null
-          ? (identity['birth_date'] is Timestamp
-                ? (identity['birth_date'] as Timestamp).toDate()
-                : DateTime.tryParse(identity['birth_date'].toString()))
+
+      // بيانات الهوية (متوافقة مع هيكل profile القديم)
+      nameAr: profile['display_name']?['ar'] ?? '',
+      nameEn: profile['display_name']?['en'] ?? '',
+      nationalityAr: profile['nationality_ar'] ?? '',
+      nationalityEn: profile['nationality_en'] ?? '',
+      currentJobAr:
+          profile['current_job_ar'] ?? json['jop']?['title']?['ar'] ?? '',
+      currentJobEn:
+          profile['current_job_en'] ?? json['jop']?['title']?['en'] ?? '',
+      socialStatusAr: profile['social_status_ar'] ?? '',
+      socialStatusEn: profile['social_status_en'] ?? '',
+      nationalId: json['national_id'] ?? '',
+      employeeId: json['employee_id'] ?? '',
+      birthDate: profile['birth_date'] != null
+          ? (profile['birth_date'] is Timestamp
+                ? (profile['birth_date'] as Timestamp).toDate()
+                : DateTime.tryParse(profile['birth_date'].toString()))
           : null,
-      profileImage: identity['profile_image'] ?? '', // في الصورة اسمها profile_image مش profile_image_url
-      
-      // بيانات التواصل (مأخوذة من جوه profile)
-      email: identity['university_email'] ?? '',
-      phone: phoneData['phone1'] ?? '', // في الصورة الارقام في map اسمها phone
-      addressAr: address['ar'] ?? '',   // العناوين في map اسمها address
-      addressEn: address['en'] ?? '',
-      alternativeEmail: identity['alternative_email'],
+      profileImage: profile['profile_image'] ?? '',
+
+      // بيانات التواصل (متوافقة مع الهيكل القديم)
+      email: json['university_email'] ?? '',
+      phone: profile['phone']?['phone1'] ?? '',
+      addressAr: profile['address']?['ar'] ?? '',
+      addressEn: profile['address']?['en'] ?? '',
+      alternativeEmail: json['alternative_email'] ?? '',
 
       // البيانات الأكاديمية
       academicHistory: List<Map<String, dynamic>>.from(
         json['academic_profile']?['history'] ?? [],
       ),
-      
+
       // البيانات الأهلية والإدارية
-      disciplinaryClearance: json['eligibility_data']?['disciplinary_clearance'] ?? true,
-      hasPermanentPosition: json['eligibility_data']?['has_permanent_position'] ?? true,
+      disciplinaryClearance:
+          json['eligibility_data']?['disciplinary_clearance'] ?? true,
+      hasPermanentPosition:
+          json['eligibility_data']?['has_permanent_position'] ?? true,
       isOnVacation: json['eligibility_data']?['is_on_vacation'] ?? false,
-      isActive: json['eligibility_data']?['is_active'] ?? true,
-      
+      isActive:
+          json['is_active'] ?? json['eligibility_data']?['is_active'] ?? true,
       cvUrl: json['academic_profile']?['cv_url'],
 
-      // ✅ القراءة باستخدام الموديلات الجديدة (دي كانت صح والحمد لله)
-      researchPapers: List<ResearchPaperModel>.from(
-        (scientificWork['research_papers'] ?? []).map(
-          (x) => ResearchPaperModel.fromJson(x),
-        ),
+      // الأبحاث والأنشطة (بطريقة آمنة)
+      researchPapers: parseResearchPapers(
+        json['scientific_work']?['research_papers'],
       ),
-      trainingCourses: List<ActivityModel>.from(
-        (scientificWork['training_courses'] ?? []).map(
-          (x) => ActivityModel.fromJson(x),
-        ),
+      trainingCourses: parseActivities(
+        json['scientific_work']?['training_courses'],
       ),
-      activities: List<ActivityModel>.from(
-        (scientificWork['other_activities'] ?? []).map(
-          (x) => ActivityModel.fromJson(x),
-        ),
-      ),
+      activities: parseActivities(json['scientific_work']?['other_activities']),
     );
   }
 
@@ -151,27 +169,26 @@ class DoctorProfileModel {
       'uid': uid ?? '',
       'role': role,
       'isFirstLogin': isFirstLogin,
-      'identity': {
-        'name_ar': nameAr,
-        'name_en': nameEn,
+      // متوافق مع باقي المستخدمين
+      'university_email': email,
+      'alternative_email': alternativeEmail ?? "",
+      'national_id': nationalId,
+      'employee_id': employeeId,
+      'is_active': isActive,
+      'profile': {
+        'display_name': {'ar': nameAr, 'en': nameEn},
+        'phone': {'phone1': phone},
+        'address': {'ar': addressAr, 'en': addressEn},
+        'profile_image': profileImage,
         'nationality_ar': nationalityAr,
         'nationality_en': nationalityEn,
         'current_job_ar': currentJobAr,
         'current_job_en': currentJobEn,
-        'national_id': nationalId,
-        'employee_id': employeeId,
-        'birth_date': birthDate,
-        'profile_image_url': profileImage,
         'social_status_ar': socialStatusAr,
         'social_status_en': socialStatusEn,
+        'birth_date': birthDate,
       },
-      'contact': {
-        'university_email': email,
-        'alternative_email': alternativeEmail ?? "",
-        'phone_number': phone,
-        'home_address_ar': addressAr,
-        'home_address_en': addressEn,
-      },
+      // بيانات الدكتور الخاصة
       'academic_profile': {'history': academicHistory, 'cv_url': cvUrl},
       'eligibility_data': {
         'is_on_vacation': isOnVacation,
@@ -179,7 +196,6 @@ class DoctorProfileModel {
         'disciplinary_clearance': disciplinaryClearance,
         'is_active': isActive,
       },
-      // ✅ الكتابة باستخدام الموديلات الجديدة
       'scientific_work': {
         'research_papers': researchPapers.map((x) => x.toMap()).toList(),
         'training_courses': trainingCourses.map((x) => x.toMap()).toList(),
@@ -253,62 +269,3 @@ class DoctorProfileModel {
     );
   }
 }
-
-
-/**
-  factory DoctorProfileModel.fromJson(Map<String, dynamic> json, String id) {
-    return DoctorProfileModel(
-      uid: id,
-      role: json['role'] ?? 'doctor',
-      isFirstLogin: json['isFirstLogin'] ?? true,
-      nameAr: json['identity']?['name_ar'] ?? '',
-      nameEn: json['identity']?['name_en'] ?? '',
-      nationalityAr: json['identity']?['nationality_ar'] ?? '',
-      nationalityEn: json['identity']?['nationality_en'] ?? '',
-      currentJobAr: json['identity']?['current_job_ar'] ?? '',
-      currentJobEn: json['identity']?['current_job_en'] ?? '',
-      socialStatusAr: json['identity']?['social_status_ar'] ?? '',
-      socialStatusEn: json['identity']?['social_status_en'] ?? '',
-      nationalId: json['identity']?['national_id'] ?? '',
-      employeeId: json['identity']?['employee_id'] ?? '',
-      birthDate: json['identity']?['birth_date'] != null
-          ? (json['identity']['birth_date'] is Timestamp
-                ? (json['identity']['birth_date'] as Timestamp).toDate()
-                : DateTime.tryParse(json['identity']['birth_date'].toString()))
-          : null,
-      profileImage: json['identity']?['profile_image_url'] ?? '',
-      email: json['contact']?['university_email'] ?? '',
-      phone: json['contact']?['phone_number'] ?? '',
-      addressAr: json['contact']?['home_address_ar'] ?? '',
-      addressEn: json['contact']?['home_address_en'] ?? '',
-      alternativeEmail: json['contact']?['alternative_email'],
-      academicHistory: List<Map<String, dynamic>>.from(
-        json['academic_profile']?['history'] ?? [],
-      ),
-      disciplinaryClearance:
-          json['eligibility_data']?['disciplinary_clearance'] ?? true,
-      hasPermanentPosition:
-          json['eligibility_data']?['has_permanent_position'] ?? true,
-      isOnVacation: json['eligibility_data']?['is_on_vacation'] ?? false,
-      isActive: json['eligibility_data']?['is_active'] ?? true,
-      cvUrl: json['academic_profile']?['cv_url'],
-
-      // ✅ القراءة باستخدام الموديلات الجديدة
-      researchPapers: List<ResearchPaperModel>.from(
-        (json['scientific_work']?['research_papers'] ?? []).map(
-          (x) => ResearchPaperModel.fromJson(x),
-        ),
-      ),
-      trainingCourses: List<ActivityModel>.from(
-        (json['scientific_work']?['training_courses'] ?? []).map(
-          (x) => ActivityModel.fromJson(x),
-        ),
-      ),
-      activities: List<ActivityModel>.from(
-        (json['scientific_work']?['other_activities'] ?? []).map(
-          (x) => ActivityModel.fromJson(x),
-        ),
-      ),
-    );
-  }
- */

@@ -60,4 +60,28 @@ class NotificationCubit extends Cubit<NotificationState> {
     _notificationSubscription?.cancel();
     return super.close();
   }
+  // أضيفي هذه الدوال داخل كلاس NotificationCubit
+
+  // حذف إشعار محدد
+  Future<void> deleteNotification(String notificationId) async {
+    // لا نحتاج لعمل emit لحالة loading هنا لعدم تعطيل واجهة المستخدم
+    final result = await notificationRepo.deleteNotification(userId, notificationId);
+    
+    result.fold(
+      (error) => emit(NotificationError(error)),
+      (_) => null, // لا نحتاج لفعل شيء، الـ Stream سيحدث القائمة تلقائياً
+    );
+  }
+
+  // تنظيف جميع الإشعارات المقروءة
+  Future<void> clearReadNotifications() async {
+    await notificationRepo.clearAllReadNotifications(userId);
+    // بعد المسح، الـ Stream سيقوم بتحديث القائمة في الـ UI تلقائياً
+  }
+
+  // تحديث دالة markAsRead لتقوم أيضاً بعمل delete إذا كنتِ تفضلين الحذف بدلاً من التحديث
+  Future<void> markAndRemoveNotification(String notificationId) async {
+    await markAsRead(notificationId);
+    await deleteNotification(notificationId);
+  }
 }

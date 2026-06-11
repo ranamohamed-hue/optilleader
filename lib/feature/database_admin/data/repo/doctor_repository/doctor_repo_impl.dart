@@ -113,14 +113,14 @@ class DoctorRepoImpl extends DoctorRepo {
     }
   }
 
-  @override
+   @override
   Future<Either<String, Unit>> updateDoctorImage(
     String uid,
     String imageUrl,
   ) async {
     try {
       await _usersCollection.doc(uid).update({
-        'identity.profile_image_url': imageUrl,
+        'profile.profile_image': imageUrl, // رجعنا للقديم عشان يتفق مع الباقي
       });
       return right(unit);
     } catch (e) {

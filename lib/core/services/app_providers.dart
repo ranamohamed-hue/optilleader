@@ -102,13 +102,14 @@ class AppProviders {
     ),
 
     //  كيوبيت الإشعارات
+    //  كيوبيت الإشعارات
     BlocProvider(
       create: (context) {
         final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
         return NotificationCubit(
           notificationRepo: context.read<NotificationRepoImpl>(),
           userId: uid,
-        );
+        )..fetchNotifications();
       },
     ),
 

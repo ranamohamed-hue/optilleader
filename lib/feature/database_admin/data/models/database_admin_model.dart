@@ -1,10 +1,10 @@
 class DatabaseAdminProfileModel {
   final String uid;
-  final String nameAr;  
-  final String nameEn;  
+  final String nameAr;
+  final String nameEn;
   final String email;
-  final String addressAr;  
-  final String addressEn; 
+  final String addressAr;
+  final String addressEn;
   final String profileImage;
   final String role;
   final String phone;
@@ -26,54 +26,46 @@ class DatabaseAdminProfileModel {
     required this.employee_id,
     this.isFirstLogin = true,
   });
-  factory DatabaseAdminProfileModel.fromFirestore(Map<String, dynamic> json, String id) {
-    // بنعمل متغير عشان نسهل القراءة من جوا الماب
-    final profileData = json['profile'] as Map<String, dynamic>? ?? {};
+
+   factory DatabaseAdminProfileModel.fromFirestore(
+    Map<String, dynamic> json,
+    String id,
+  ) {
+    final profile = json['profile'] as Map<String, dynamic>? ?? {};
 
     return DatabaseAdminProfileModel(
       uid: id,
-      nameAr: json['display_name']?['ar'] ?? json['username_ar'] ?? '',
-      nameEn: json['display_name']?['en'] ?? json['username_en'] ?? '',
+      nameAr: profile['display_name']?['ar'] ?? '',
+      nameEn: profile['display_name']?['en'] ?? '',
       email: json['university_email'] ?? '',
-      
-      // ✅ قراءة العنوان من جوا ماب profile
-      addressAr: profileData['address']?['ar'] ?? '', 
-      addressEn: profileData['address']?['en'] ?? '',
-      
-      // ✅ قراءة الصورة من جوا ماب profile
-      profileImage: profileData['profile_image'] ?? '', 
-      
+      addressAr: profile['address']?['ar'] ?? '',
+      addressEn: profile['address']?['en'] ?? '',
+      profileImage: profile['profile_image'] ?? '',
       role: json['role'] ?? 'database_admin',
-      
-      // ✅ قراءة الموبايل من جوا ماب profile (لو متسجل كـ phone1)
-      phone: profileData['phone']?['phone1'] ?? '', 
-      
-      national_id: json['national_id'] ?? '',
-      employee_id: json['employee_id'] ?? '',
-      isFirstLogin: json['isFirstLogin'] ?? true, 
+      phone: profile['phone']?['phone1'] ?? '',
+      // ✅ التعديل هنا: القراءة من جوه profile
+      national_id: profile['national_id'] ?? json['national_id'] ?? '',
+      employee_id: profile['employee_id'] ?? json['employee_id'] ?? '',
+      isFirstLogin: json['isFirstLogin'] ?? true,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'display_name': {
-        'ar': nameAr,
-        'en': nameEn,
-      },
-      'university_email': email,
-      'address': {
-        'ar': addressAr,
-        'en': addressEn,
-      },
-      'profile_image': profileImage,
       'role': role,
-      'phone': phone,
-      'national_id': national_id,
-      'employee_id': employee_id,
-      'isFirstLogin': isFirstLogin, 
+      'university_email': email,
+      'isFirstLogin': isFirstLogin,
+      // ✅ الكتابة موحدة جوه ماب profile
+      'profile': {
+        'display_name': {'ar': nameAr, 'en': nameEn},
+        'phone': {'phone1': phone},
+        'address': {'ar': addressAr, 'en': addressEn},
+        'profile_image': profileImage,
+        'national_id': national_id, // ✅ التعديل هنا: الكتابة جوه profile
+        'employee_id': employee_id, // ✅ التعديل هنا: الكتابة جوه profile
+      },
     };
   }
-
   DatabaseAdminProfileModel copyWith({
     String? uid,
     String? nameAr,
@@ -86,7 +78,7 @@ class DatabaseAdminProfileModel {
     String? phone,
     String? national_id,
     String? employee_id,
-    bool? isFirstLogin, 
+    bool? isFirstLogin,
   }) {
     return DatabaseAdminProfileModel(
       uid: uid ?? this.uid,
@@ -100,7 +92,7 @@ class DatabaseAdminProfileModel {
       phone: phone ?? this.phone,
       national_id: national_id ?? this.national_id,
       employee_id: employee_id ?? this.employee_id,
-      isFirstLogin: isFirstLogin ?? this.isFirstLogin, 
+      isFirstLogin: isFirstLogin ?? this.isFirstLogin,
     );
   }
 }

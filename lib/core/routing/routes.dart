@@ -13,6 +13,8 @@ class Routes {
   static const ordersList = '/admin/orders-list';
   static const userSearch = '/admin/user-search';
   static const fullemployeereports = '/admin/fullemployeereports';
+  // مسار صفحة تفاصيل الطلبات المعلقة للأدمن
+static const adminDetails = '/admin/pending-requests/details';
   //صفحات مرتبطة بصفحة الاعلانات
   static const announcementDetails = '/admin/announcements/details';
   static const editAnnountmentPage = '/admin/announcements/edit';
