@@ -2,36 +2,33 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum NotificationType {
   //  أدمن القاعدة (Database Admin)
-  userLogin,
-  userLogout,
-  profileDataUpdated,
-  accountSuspended,
+  userLogin, userLogout, profileDataUpdated, accountSuspended,
 
   //  أدمن عادي (Admin)
-  welcomeAdmin,
-  announcementCreated,
-  announcementExpired,
-  newDoctorRequest,
-  judgeRequestCompleted,
+  welcomeAdmin, announcementCreated, announcementExpired, newDoctorRequest, judgeRequestCompleted,
   
   //  إشعارات الأبحاث والأنشطة
-  newResearchSubmitted,      // دكتور رفع بحث جديد
-  newActivitySubmitted,      // دكتور رفع نشاط جديد
-  researchStatusUpdated,     // أدمن وافق/رفض البحث
-  activityStatusUpdated,     // أدمن وافق/رفض النشاط
+  newResearchSubmitted, newActivitySubmitted, researchStatusUpdated, activityStatusUpdated,
 
   //  دكتور (Doctor)
-  welcomeDoctor,
-  newCompetition,
-  competitionResult,
-  requestStatusUpdate,
+  welcomeDoctor, newCompetition, competitionResult, requestStatusUpdate,
 
   //  محكم (Judge)
-  welcomeJudge,
-  newArbitrationRequest,
+  welcomeJudge, newArbitrationRequest,
 
   // عام
   general,
+}
+
+// ✅ إضافة الـ Target لتحديد مين يشوف الإشعار
+enum NotificationTarget {
+  adminOnly,
+  doctorOnly,
+  judgeOnly,
+  adminAndDoctor,
+  adminAndJudge,
+  allUsers,
+  specificUser,
 }
 
 class AppNotificationModel {
@@ -39,6 +36,7 @@ class AppNotificationModel {
   final String title;
   final String message;
   final NotificationType type;
+  final NotificationTarget target; // ✅ الجديد
   final bool isRead;
   final Timestamp timestamp;
   final String? relatedId;     
@@ -51,6 +49,7 @@ class AppNotificationModel {
     required this.title,
     required this.message,
     required this.type,
+    required this.target, // ✅ الجديد
     this.isRead = false,
     required this.timestamp,
     this.relatedId,
@@ -59,12 +58,42 @@ class AppNotificationModel {
     this.doctorUid,            
   });
 
+  // ✅ دالة copyWith عشان نقدر نغير حاجات بسيطة في الموديل بسهولة
+  AppNotificationModel copyWith({
+    String? id,
+    String? title,
+    String? message,
+    NotificationType? type,
+    NotificationTarget? target,
+    bool? isRead,
+    Timestamp? timestamp,
+    String? relatedId,
+    String? receiverId,
+    String? senderName,
+    String? doctorUid,
+  }) {
+    return AppNotificationModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      type: type ?? this.type,
+      target: target ?? this.target,
+      isRead: isRead ?? this.isRead,
+      timestamp: timestamp ?? this.timestamp,
+      relatedId: relatedId ?? this.relatedId,
+      receiverId: receiverId ?? this.receiverId,
+      senderName: senderName ?? this.senderName,
+      doctorUid: doctorUid ?? this.doctorUid,
+    );
+  }
+
   factory AppNotificationModel.fromFirestore(Map<String, dynamic> json, String docId) {
     return AppNotificationModel(
       id: docId,
       title: json['title'] ?? '',
       message: json['message'] ?? '',
       type: _parseType(json['type'] ?? 'general'),
+      target: _parseTarget(json['target'] ?? 'allUsers'), // ✅ الجديد
       isRead: json['is_read'] ?? false,
       timestamp: json['timestamp'] ?? Timestamp.now(),
       relatedId: json['related_id'],
@@ -74,12 +103,12 @@ class AppNotificationModel {
     );
   }
 
-  //  دالة لتحويل الموديل لـ Map عشان نحفظه في الفايرستور
   Map<String, dynamic> toMap() {
     return {
       'title': title,
       'message': message,
-      'type': type.name, // بنحفظ الـ Enum كـ String
+      'type': type.name,
+      'target': target.name, // ✅ الجديد
       'is_read': isRead,
       'timestamp': timestamp,
       'related_id': relatedId,
@@ -100,20 +129,30 @@ class AppNotificationModel {
       case 'announcementExpired': return NotificationType.announcementExpired;
       case 'newDoctorRequest': return NotificationType.newDoctorRequest;
       case 'judgeRequestCompleted': return NotificationType.judgeRequestCompleted;
-     
       case 'newResearchSubmitted': return NotificationType.newResearchSubmitted;
       case 'newActivitySubmitted': return NotificationType.newActivitySubmitted;
       case 'researchStatusUpdated': return NotificationType.researchStatusUpdated;
       case 'activityStatusUpdated': return NotificationType.activityStatusUpdated;
-
       case 'welcomeDoctor': return NotificationType.welcomeDoctor;
       case 'newCompetition': return NotificationType.newCompetition;
       case 'competitionResult': return NotificationType.competitionResult;
       case 'requestStatusUpdate': return NotificationType.requestStatusUpdate;
       case 'welcomeJudge': return NotificationType.welcomeJudge;
       case 'newArbitrationRequest': return NotificationType.newArbitrationRequest;
-      
       default: return NotificationType.general;
+    }
+  }
+
+  // ✅ دالة تحويل الـ String للـ Target Enum
+  static NotificationTarget _parseTarget(String target) {
+    switch (target) {
+      case 'adminOnly': return NotificationTarget.adminOnly;
+      case 'doctorOnly': return NotificationTarget.doctorOnly;
+      case 'judgeOnly': return NotificationTarget.judgeOnly;
+      case 'adminAndDoctor': return NotificationTarget.adminAndDoctor;
+      case 'adminAndJudge': return NotificationTarget.adminAndJudge;
+      case 'specificUser': return NotificationTarget.specificUser;
+      default: return NotificationTarget.allUsers;
     }
   }
 }

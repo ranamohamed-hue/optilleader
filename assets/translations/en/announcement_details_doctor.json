@@ -1,10 +1,36 @@
-{    "announce": {
+{
+  "announce": {
+    "active": "نشط",
+    "pending": "قيد الانتظار",
+    "closed": "مغلق",
+    "delete": {
+      "confirm_title": "تأكيد الحذف",
+      "confirm_body": "هل أنت متأكد من حذف هذا الإعلان؟ لا يمكن التراجع عن هذا الإجراء."
+    },
     "details": {
-      "apply_button": "Apply Now",
-      "apply_success": "Your application has been submitted successfully!",
-      "badge_title_user": "Opportunity Available",
-      "opportunity_badge": "Open Opportunity",
-      "deadline_label": "Application Deadline",
-      "posted_label": "Posted On"
+      "badge_title": "إعلان رسمي",
+      "edit_button": "تعديل الإعلان",
+      "applicants_label": "عدد المتقدمين",
+      "person_unit": "شخص",
+      "deadline_label": "آخر أجل للتقديم",
+      "posted_label": "تاريخ النشر",
+      "target_role": "نوع المسابقة",
+      "college": "الكلية",
+      "department": "القسم",
+      "apply_button": "تقدم الآن",
+      "apply_success": "تم تسجيل طلبك بنجاح!",
+      "badge_title_user": "فرصة متاحة",
+      "opportunity_badge": "فرصة مفتوحة"
     }
-  }}
+  },
+  "announcement_details": {
+    "title": "Announcement Details",
+    "not_found": "Announcement Not Found",
+    "no_title": "No Title",
+    "no_description": "No Description"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "delete": "Delete"
+  }
+}

@@ -2,30 +2,46 @@
   "evaluation": {
     "title": "Applicant Evaluation",
     "applicant_card": {
-      "dept": "Computer Science Dept - Faculty of Engineering"
+      "role_label": "Nominated for role:"
+    },
+    "interview_date": {
+      "label": "Interview Date",
+      "hint": "Tap to select interview date",
+      "required": "Please select the interview date"
     },
     "sections": {
-      "personal": "1. Personal Traits & Appearance (Max: 15)",
+      "personal": "1. Personal Attributes & Appearance (Max: 15)",
       "scientific": "2. Scientific & Professional Competence (Max: 40)",
       "communication": "3. Communication & Presentation Skills (Max: 25)",
       "leadership": "4. Leadership & Management Development (Max: 20)"
     },
     "criteria": {
-      "appearance": "General appearance and grooming",
-      "confidence": "Self-confidence & public speaking",
-      "poise": "Poise and resourcefulness",
-      "max_score": "Maximum Score: {}",
-      "sub_total": "Sub-total:",
+      "appearance": "General Appearance & Grooming",
+      "confidence": "Self-Confidence & Public Address",
+      "poise": "Composure & Good Conduct",
+      "input_score": "Score",
+      "max_score": "Max Score: {0}",
+      "sub_total": "Sub Total:",
       "total_score": "Total Score:",
-      "details_hint": "Evaluation details will appear here..."
+      "details_hint": "Evaluation content appears here..."
+    },
+    "errors": {
+      "invalid_scores": "Some scores exceed the maximum limit!"
     },
     "notes": {
       "title": "Additional Notes & Recommendations",
-      "hint": "Type your notes here..."
+      "hint": "Write your notes here...",
+      "no_notes": "No notes"
     },
     "actions": {
       "approve": "Approve Evaluation",
-      "save_draft": "Save as Draft"
+      "save_draft": "Save Draft"
     }
+  },
+  "judge_orders": {
+    "title": "Evaluation Requests",
+    "role_label": "Role:",
+    "evaluate": "Evaluate",
+    "no_requests": "No evaluation requests available"
   }
 }

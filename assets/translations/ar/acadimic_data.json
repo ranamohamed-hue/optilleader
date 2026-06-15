@@ -4,7 +4,24 @@
     "inactive": "غير نشط"
   },
   "dashboard": {
-    "doctor_default": "الدكتور"
+    "welcome": "مرحباً بك،",
+    "doctor_default": "الدكتور",
+    "achievements": "الإنجازات",
+    "achievements_msg": "لديك {0} إنجاز مسجل",
+    "academic_data": "البيانات الأكاديمية",
+    "no_credentials": "لا يوجد مؤهل",
+    "requests_status": "حالة الطلبات",
+    "pending": "قيد الانتظار",
+    "career_path": "المسار الوظيفي",
+    "completed_percent": "{0} مكتمل",
+    "latest_opportunities": "أحدث الفرص المتاحة",
+    "view_all": "عرض الكل",
+    "nav": {
+      "settings": "الإعدادات",
+      "notifications": "التنبيهات",
+      "files": "الملفات",
+      "home": "الرئيسية"
+    }
   },
   "acadimicData": {
     "title": "البيانات الأكاديمية",
@@ -19,5 +36,15 @@
     "email": "البريد الإلكتروني",
     "address_ar": "العنوان (بالعربي)",
     "save_btn": "حفظ البيانات"
-  }
+  },
+  "add_doctor": {
+    "university_ar": "الجامعة",
+    "university_en": "University",
+    "faculty_ar": "الكلية",
+    "faculty_en": "Faculty",
+    "department_ar": "القسم",
+    "department_en": "Department"
+  },
+  "error_message": "حدث خطأ غير متوقع",
+  "retry": "إعادة المحاولة"
 }

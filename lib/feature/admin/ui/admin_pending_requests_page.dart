@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
 import 'package:optialeader/feature/doctor/data/model/activities_model.dart';
 import 'package:optialeader/feature/doctor/data/model/research_paper_model.dart';
@@ -26,20 +27,20 @@ class _AdminPendingRequestsPageState extends State<AdminPendingRequestsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('طلبات الاعتماد المعلقة')),
+      appBar: AppBar(title: Text('admin_pending.title'.tr())),
       body: BlocConsumer<AdminApprovalCubit, AdminApprovalState>(
         listener: (context, state) {
           if (state is AdminApprovalError) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message)));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
           }
           if (state is AdminApprovalLoaded) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('تم تحديث الحالة بنجاح'),
+              SnackBar(
+                content: Text('admin_pending.success_msg'.tr()),
                 backgroundColor: Colors.green,
-                duration: Duration(seconds: 1),
+                duration: const Duration(seconds: 1),
               ),
             );
           }
@@ -50,10 +51,10 @@ class _AdminPendingRequestsPageState extends State<AdminPendingRequestsPage> {
           }
           if (state is AdminApprovalLoaded) {
             if (state.doctorsWithPending.isEmpty) {
-              return const Center(
+              return Center(
                 child: Text(
-                  'لا توجد طلبات معلقة حالياً',
-                  style: TextStyle(fontSize: 16),
+                  'admin_pending.no_pending'.tr(),
+                  style: const TextStyle(fontSize: 16),
                 ),
               );
             }
@@ -61,8 +62,7 @@ class _AdminPendingRequestsPageState extends State<AdminPendingRequestsPage> {
               onRefresh: () =>
                   context.read<AdminApprovalCubit>().getPendingRequests(),
               child: ListView.builder(
-                physics:
-                    const AlwaysScrollableScrollPhysics(), // عشان الـ RefreshIndicator يشتغل حتى لو الليست قصيرة
+                physics: const AlwaysScrollableScrollPhysics(),
                 itemCount: state.doctorsWithPending.length,
                 itemBuilder: (context, index) {
                   final doctor = state.doctorsWithPending[index];
@@ -81,10 +81,11 @@ class _AdminPendingRequestsPageState extends State<AdminPendingRequestsPage> {
     final pendingPapers = doctor.researchPapers
         .where((p) => p.status == VerificationStatus.pending)
         .toList();
-    final pendingActivities = [
-      ...doctor.activities,
-      ...doctor.trainingCourses,
-    ].where((a) => a.status == VerificationStatus.pending).toList();
+    
+    // ✅✅ التعديل هنا: بقينا بنفلتر من الـ activities بس (لأنها بقت ليستة موحدة)
+    final pendingActivities = doctor.activities
+        .where((a) => a.status == VerificationStatus.pending)
+        .toList();
 
     return ExpansionTile(
       title: Text(
@@ -92,7 +93,7 @@ class _AdminPendingRequestsPageState extends State<AdminPendingRequestsPage> {
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       subtitle: Text(
-        '${pendingPapers.length} أبحاث - ${pendingActivities.length} أنشطة',
+        '${'admin_pending.papers_count'.tr(args: ['${pendingPapers.length}'])} - ${'admin_pending.activities_count'.tr(args: ['${pendingActivities.length}'])}',
       ),
       children: [
         if (pendingPapers.isNotEmpty)
@@ -109,6 +110,7 @@ class _AdminPendingRequestsPageState extends State<AdminPendingRequestsPage> {
       ],
     );
   }
+
 Widget _buildPaperCard(
     BuildContext context,
     String doctorUid,
@@ -119,7 +121,6 @@ Widget _buildPaperCard(
       elevation: 2,
       child: ListTile(
         onTap: () {
-          // استخدام المسار الصحيح الموحد مع تمرير النوع 'paper'
           context.push('/admin/pending-requests/details', extra: {
             'item': paper,
             'doctorUid': doctorUid,
@@ -131,12 +132,12 @@ Widget _buildPaperCard(
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('المجلة: ${paper.journalName}'),
+            Text('${'admin_pending.journal'.tr()} ${paper.journalName}'),
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-              child: const Text('بانتظار المراجعة', style: TextStyle(color: Colors.orange, fontSize: 12)),
+              child: Text('admin_pending.pending_review'.tr(), style: const TextStyle(color: Colors.orange, fontSize: 12)),
             ),
           ],
         ),
@@ -156,7 +157,6 @@ Widget _buildPaperCard(
       elevation: 2,
       child: ListTile(
         onTap: () {
-          // استخدام المسار الصحيح الموحد مع تمرير النوع 'activity'
           context.push('/admin/pending-requests/details', extra: {
             'item': activity,
             'doctorUid': doctorUid,
@@ -168,12 +168,12 @@ Widget _buildPaperCard(
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('الجهة: ${activity.organization}'),
+            Text('${'admin_pending.organization'.tr()} ${activity.organization}'),
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-              child: const Text('بانتظار المراجعة', style: TextStyle(color: Colors.orange, fontSize: 12)),
+              child: Text('admin_pending.pending_review'.tr(), style: const TextStyle(color: Colors.orange, fontSize: 12)),
             ),
           ],
         ),
@@ -189,23 +189,18 @@ Widget _buildPaperCard(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text(
-          'تأكيد الرفض',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text('admin_pending.reject_dialog.title'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('برجاء كتابة سبب الرفض ليطلع عليه الدكتور:'),
+            Text('admin_pending.reject_dialog.body'.tr()),
             const SizedBox(height: 15),
             TextField(
               controller: reasonController,
               maxLines: 3,
               decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                hintText: 'مثال: لم يتم إرفاق إثبات التفهرس...',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                hintText: 'admin_pending.reject_dialog.hint'.tr(),
               ),
             ),
           ],
@@ -213,19 +208,16 @@ Widget _buildPaperCard(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child: Text('common.cancel'.tr()),
           ),
           TextButton(
             onPressed: () {
               final reason = reasonController.text.trim().isEmpty
-                  ? 'لم يستوفي الشروط المطلوبة'
+                  ? 'admin_pending.default_rejection'.tr()
                   : reasonController.text.trim();
               Navigator.pop(context, reason);
             },
-            child: const Text(
-              'رفض',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
+            child: Text('admin_pending.reject_dialog.confirm'.tr(), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

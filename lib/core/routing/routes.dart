@@ -12,13 +12,14 @@ class Routes {
   static const announcements = '/admin/announcements';
   static const ordersList = '/admin/orders-list';
   static const userSearch = '/admin/user-search';
-  static const fullemployeereports = '/admin/fullemployeereports';
+  //static const fullemployeereports = '/admin/fullemployeereports';
   // مسار صفحة تفاصيل الطلبات المعلقة للأدمن
 static const adminDetails = '/admin/pending-requests/details';
   //صفحات مرتبطة بصفحة الاعلانات
   static const announcementDetails = '/admin/announcements/details';
   static const editAnnountmentPage = '/admin/announcements/edit';
   static const adminPendingRequestsPage = '/admin/pending-requests';
+  static const nominationRequestDetails = '/admin/nomination-request-details'; 
   //صفحات خاصه بادارة الطلبات 
   static const fullEmployeeReport='/admin/orders-list/fullEmployeeReport';
   //صفحات خاصه بأدمن قاعدة البيانات
@@ -26,15 +27,17 @@ static const adminDetails = '/admin/pending-requests/details';
   static const addAdminPage = '/databaseAdmin/addAdminPage';
   static const addJudgePage = '/databaseAdmin/addJudgePage';
   static const searchPage='/databaseAdmin/searchPage';
+  static const String usersListPage = '/databaseAdmin/users-list';
   //صفحات خاصه بالمحكم
   static const judgeEvaluation = '/judge/evaluationScreen';
-  //صفخات خاصه
+  static const judgeOrderList = '/judge/orders-list'; 
   static const acadiminData = '/user/acadimicData';
   static const archievementPage = '/user/archievementPage';
   static const careerInfo = '/user/careerInfo';
   static const digitalArchieve = '/user/digitalArchieve';
   static const uploadFiles = '/user/uploadFiles';
   static const announcementsDetailsDoctor = '/user/announcementsDetailsDoctor';  
+static const doctorNominationRequest = '/user/doctorNominationRequest';
   // \ مسارات صفحات رفع الأبحاث والأنشطة
   static const addResearch = '/user/addResearch';
   static const addActivity = '/user/addActivity';

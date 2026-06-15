@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 
 import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
@@ -31,6 +32,7 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final isArabic = context.locale.languageCode == 'ar';
 
     return BlocBuilder<DoctorDataCubit, DoctorDataState>(
       builder: (context, state) {
@@ -77,46 +79,28 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
                   ),
                 ),
                 SizedBox(width: 12.w),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'career.title'.tr(),
-                      style: textTheme.titleSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'career.title'.tr(),
+                        style: textTheme.titleSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    Text(
-                      context.locale.languageCode == 'ar'
-                          ? (doctor?.nameAr ?? '-')
-                          : (doctor?.nameEn ?? '-'),
-                      style: textTheme.bodySmall?.copyWith(
-                        color: Colors.white70,
+                      Text(
+                        isArabic
+                            ? (doctor?.nameAr ?? '-')
+                            : (doctor?.nameEn ?? '-'),
+                        style: textTheme.bodySmall?.copyWith(
+                          color: Colors.white70,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                InkWell(
-                  onTap: () {
-                    // للذهاب لصفحة تعديل البيانات
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(8.w),
-                    decoration: BoxDecoration(
-                      color: colorScheme.secondary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10.r),
-                      border: Border.all(
-                        color: colorScheme.secondary.withOpacity(0.5),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.edit_note_rounded,
-                      color: colorScheme.secondary,
-                      size: 22.sp,
-                    ),
+                    ],
                   ),
                 ),
               ],
@@ -136,7 +120,6 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
                   Icons.school_outlined,
                   'career.sections.credentials'.tr(),
                 ),
-
                 if (doctor?.academicHistory != null &&
                     doctor!.academicHistory.isNotEmpty)
                   ...doctor.academicHistory.asMap().entries.map((entry) {
@@ -144,18 +127,30 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
                     Map<String, dynamic> cert = entry.value;
                     bool isLast = index == doctor!.academicHistory.length - 1;
 
+                    String degree = cert['degree'] ?? '-';
+                    String major = cert['major'] ?? '-';
+                    String place = cert['place'] ?? '-';
+                    String dateStr = '-';
+                    if (cert['date'] != null) {
+                      final date = cert['date'] is DateTime
+                          ? cert['date'] as DateTime
+                          : (cert['date'] as dynamic)?.toDate();
+                      if (date != null) {
+                        dateStr = DateFormat('yyyy').format(date);
+                      }
+                    }
+
                     return _buildCredentialCard(
                       context,
-                      cert['degree_ar'] ?? 'Degree',
-                      cert['spec_ar'] ?? 'Specialization',
-                      cert['institution'] ?? 'University',
-                      cert['date'] ?? '-',
+                      degree,
+                      major,
+                      place,
+                      dateStr,
                       isLast: isLast,
                     );
                   }).toList()
                 else
                   _buildEmptyCard(context, 'career.no_history'.tr()),
-
                 SizedBox(height: 25.h),
                 _buildSectionHeader(
                   context,
@@ -231,8 +226,8 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
   Widget _buildCredentialCard(
     BuildContext context,
     String degree,
-    String spec,
-    String inst,
+    String major,
+    String place,
     String date, {
     bool isLast = false,
   }) {
@@ -259,12 +254,14 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
                 size: 16.sp,
               ),
               SizedBox(width: 8.w),
-              Text(
-                degree,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
-                  fontSize: 14.sp,
+              Expanded(
+                child: Text(
+                  degree,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                    fontSize: 14.sp,
+                  ),
                 ),
               ),
             ],
@@ -275,14 +272,17 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(spec, style: theme.textTheme.bodyMedium),
-                Text(inst, style: theme.textTheme.bodySmall),
-                Text(
-                  date,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.grey,
+                if (major.isNotEmpty)
+                  Text(major, style: theme.textTheme.bodyMedium),
+                if (place.isNotEmpty)
+                  Text(place, style: theme.textTheme.bodySmall),
+                if (date.isNotEmpty)
+                  Text(
+                    date,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.grey,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -297,6 +297,18 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isArabic = context.locale.languageCode == 'ar';
+
+    int experienceYears = 0;
+    if (doctor?.professorRankDate != null) {
+      experienceYears = DateTime.now().year - doctor!.professorRankDate!.year;
+      if (DateTime.now().month < doctor.professorRankDate!.month ||
+          (DateTime.now().month == doctor.professorRankDate!.month &&
+              DateTime.now().day < doctor.professorRankDate!.day)) {
+        experienceYears--;
+      }
+    }
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(18.w),
@@ -311,7 +323,7 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
           Text(
             'career.current_role'.tr(
               args: [
-                context.locale.languageCode == 'ar'
+                isArabic
                     ? (doctor?.currentJobAr ?? '-')
                     : (doctor?.currentJobEn ?? '-'),
               ],
@@ -320,9 +332,7 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
           ),
           SizedBox(height: 8.h),
           Text(
-            'career.experience'.tr(
-              args: ['0'],
-            ), // لو عندك حساب للسنوات حطه مكان 0
+            'career.experience'.tr(args: ['$experienceYears']),
             style: TextStyle(
               color: colorScheme.secondary,
               fontWeight: FontWeight.w600,
@@ -334,11 +344,13 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           SizedBox(height: 10.h),
-          _buildHistoryItem(
-            context,
-            'career.roles.lecturer'.tr(),
-            '2020 – Present',
-          ),
+          if (doctor?.previousLeadershipRoles != null &&
+              doctor!.previousLeadershipRoles.isNotEmpty)
+            ...doctor.previousLeadershipRoles
+                .map((role) => _buildHistoryItem(context, role, ''))
+                .toList()
+          else
+            _buildHistoryItem(context, 'career.no_previous_roles'.tr(), ''),
         ],
       ),
     );
@@ -351,14 +363,17 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
       child: Row(
         children: [
           Icon(Icons.arrow_right, color: colorScheme.secondary),
-          Text(
-            '$title: ',
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
           ),
-          Text(
-            period,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          if (period.isNotEmpty)
+            Text(
+              period,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
         ],
       ),
     );
@@ -369,6 +384,7 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
     DoctorProfileModel? doctor,
   ) {
     final theme = Theme.of(context);
+    final isArabic = context.locale.languageCode == 'ar';
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(18.w),
@@ -383,7 +399,9 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
             context,
             Icons.account_balance_rounded,
             'career.labels.dept'.tr(),
-            doctor?.addressAr ?? '-',
+            isArabic
+                ? (doctor?.departmentAr ?? '-')
+                : (doctor?.departmentEn ?? '-'),
           ),
           SizedBox(height: 12.h),
           _buildInfoRow(

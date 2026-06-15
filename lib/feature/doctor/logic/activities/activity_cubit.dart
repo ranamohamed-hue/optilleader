@@ -6,11 +6,11 @@ import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 import 'package:optialeader/feature/doctor/data/repo/activities/activity_repo.dart';
 import 'package:optialeader/feature/doctor/logic/activities/acativity_state.dart';
 import 'package:optialeader/feature/notification/data/model/app_notification_model.dart';
-import 'package:optialeader/feature/notification/data/repo/notification_repo_impl.dart';
+import 'package:optialeader/feature/notification/data/repo/notification_repo.dart';
 
 class ActivityCubit extends Cubit<ActivityState> {
   final ActivityRepo activityRepo;
-  final NotificationRepoImpl notificationRepo;
+  final NotificationRepo notificationRepo; // محتاجينه عشان addNewActivity بس
 
   ActivityCubit(this.activityRepo, this.notificationRepo)
     : super(ActivityInitial());
@@ -28,57 +28,31 @@ class ActivityCubit extends Cubit<ActivityState> {
       proofFile: proofFile,
     );
 
-    result.fold(
-      (error) {
-        emit(ActivityError(error: error));
-      },
-      (_) async {
-        emit(ActivitySuccess());
+    result.fold((error) => emit(ActivityError(error: error)), (_) async {
+      emit(ActivitySuccess());
 
-        try {
-          print("===== START NOTIFICATION =====");
+      // ✅ إرسال إشعار للأدمن إن في نشاط جديد (ده موجود صح)
+      try {
+        final notification = AppNotificationModel(
+          id: '',
+          title: 'طلب اعتماد نشاط جديد',
+          message: 'تم إضافة نشاط بعنوان: "${activity.title}" يحتاج موافقتك',
+          type: NotificationType.newActivitySubmitted,
+          target: NotificationTarget.adminOnly,
+          timestamp: Timestamp.now(),
+          receiverId: '',
+          relatedId: activity.id,
+          doctorUid: doctorUid,
+        );
 
-          final adminsSnapshot = await FirebaseFirestore.instance
-              .collection('users')
-              .where('jop.title.en', isEqualTo: 'admin')
-              .get();
-
-          print("Admins Count = ${adminsSnapshot.docs.length}");
-
-          final adminIds = adminsSnapshot.docs.map((doc) => doc.id).toList();
-
-          print("Admin IDs = $adminIds");
-          print("Admins Count = ${adminsSnapshot.docs.length}");
-          print(adminsSnapshot.docs.map((e) => e.id).toList());
-          for (String adminId in adminIds) {
-            print("Sending to Admin: $adminId");
-
-            final notification = AppNotificationModel(
-              id: '',
-              title: 'طلب اعتماد نشاط جديد',
-              message: 'تم إضافة نشاط بعنوان: ${activity.title} يحتاج موافقتك',
-              type: NotificationType.newActivitySubmitted,
-              timestamp: Timestamp.now(),
-              receiverId: adminId,
-              relatedId: activity.id,
-              doctorUid: doctorUid,
-            );
-
-            final sendResult = await notificationRepo.sendNotification(
-              notification,
-            );print(result);
-
-            print("Notification Result: $sendResult");
-          }
-
-          print("===== END NOTIFICATION =====");
-        } catch (e, s) {
-          print("ERROR IN NOTIFICATION:");
-          print(e);
-          print(s);
-        }
-      },
-    );
+        await notificationRepo.sendRoleBasedNotification(notification);
+        print(
+          "✅ Notifications sent to admins successfully via Role-Based logic",
+        );
+      } catch (e) {
+        print("🚨 Error sending admin notification: $e");
+      }
+    });
   }
 
   Future<void> deleteActivity({
@@ -93,46 +67,27 @@ class ActivityCubit extends Cubit<ActivityState> {
     );
   }
 
-  Future<void> updateActivityStatus({
-    required String doctorUid,
-    required String activityId,
-    required VerificationStatus status,
-    String? rejectionReason,
-  }) async {
-    emit(ActivityLoading());
-    final result = await activityRepo.updateActivityStatus(
-      doctorUid,
-      activityId,
-      status,
-      rejectionReason: rejectionReason,
-    );
-    result.fold(
-      (error) => emit(ActivityError(error: error)),
-      (_) => emit(ActivitySuccess()),
-    );
-  }
-
-  Future<void> approveActivity(
-    String doctorUid,
-    String activityId,
-    String activityTitle,
-  ) async {
+  // ✅ تم مسح الإشعار من هنا عشان الـ AdminApprovalRepoImpl هو اللي يبعته
+  Future<void> approveActivity(String doctorUid, String activityId) async {
     emit(ActivityLoading());
     final result = await activityRepo.updateActivityStatus(
       doctorUid,
       activityId,
       VerificationStatus.approved,
     );
+
     result.fold(
       (error) => emit(ActivityError(error: error)),
-      (_) => emit(ActivitySuccess()),
+      (_) => emit(
+        ActivitySuccess(),
+      ), // خلاص، أتحتت الحالة والإشعار راح من الـ Repo
     );
   }
 
+  // ✅ تم مسح الإشعار من هنا برضو
   Future<void> rejectActivity(
     String doctorUid,
     String activityId,
-    String activityTitle,
     String reason,
   ) async {
     emit(ActivityLoading());
@@ -142,9 +97,12 @@ class ActivityCubit extends Cubit<ActivityState> {
       VerificationStatus.rejected,
       rejectionReason: reason,
     );
+
     result.fold(
       (error) => emit(ActivityError(error: error)),
-      (_) => emit(ActivitySuccess()),
+      (_) => emit(
+        ActivitySuccess(),
+      ), // خلاص، أتحتت الحالة والإشعار راح من الـ Repo
     );
   }
 }

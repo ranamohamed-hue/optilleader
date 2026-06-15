@@ -87,7 +87,6 @@ class DoctorRepoImpl extends DoctorRepo {
     }
   }
 
-  //  دالة رفع الملفات للسوبابيز
   @override
   Future<Either<String, String>> uploadFile(
     Uint8List fileBytes,
@@ -113,14 +112,14 @@ class DoctorRepoImpl extends DoctorRepo {
     }
   }
 
-   @override
+  @override
   Future<Either<String, Unit>> updateDoctorImage(
     String uid,
     String imageUrl,
   ) async {
     try {
       await _usersCollection.doc(uid).update({
-        'profile.profile_image': imageUrl, // رجعنا للقديم عشان يتفق مع الباقي
+        'profile.profile_image': imageUrl,
       });
       return right(unit);
     } catch (e) {
@@ -128,16 +127,13 @@ class DoctorRepoImpl extends DoctorRepo {
     }
   }
 
-  // ✅ دالة الحذف الشامل (الصور والملفات من السوبابيز + الفايرستور)
   @override
   Future<Either<String, Unit>> deleteDoctorAccount(String uid) async {
     try {
-      // 1. مسح صورة البروفايل
       try {
         final List<FileObject> images = await Supabase.instance.client.storage
             .from('images')
             .list(path: 'profiles/$uid');
-
         if (images.isNotEmpty) {
           final List<String> imagePaths = images
               .map((img) => 'profiles/$uid/${img.name}')
@@ -150,12 +146,10 @@ class DoctorRepoImpl extends DoctorRepo {
         print("خطأ في مسح صورة البروفايل: $e");
       }
 
-      // 2. مسح ملفات الأرشيف
       try {
         final List<FileObject> archives = await Supabase.instance.client.storage
             .from('files')
             .list(path: 'archives/$uid');
-
         if (archives.isNotEmpty) {
           final List<String> archivePaths = archives
               .map((arch) => 'archives/$uid/${arch.name}')
@@ -168,7 +162,6 @@ class DoctorRepoImpl extends DoctorRepo {
         print("خطأ في مسح ملفات الأرشيف: $e");
       }
 
-      // 3. مسح بيانات الدكتور من الفايرستور
       await _usersCollection.doc(uid).delete();
 
       return right(unit);
@@ -177,7 +170,6 @@ class DoctorRepoImpl extends DoctorRepo {
     }
   }
 
-  // ✅✅✅ الدالة اللي كان بيطلع ليها الـ Error
   @override
   Future<Either<String, Unit>> updateDoctorProfileData(
     String uid,
@@ -190,12 +182,18 @@ class DoctorRepoImpl extends DoctorRepo {
       return left("فشل تحديث بيانات الدكتور: ${e.toString()}");
     }
   }
-    @override
+
+  @override
   Future<Either<String, List<DoctorProfileModel>>> getAllDoctorsOnce() async {
     try {
-      final snapshot = await _usersCollection.where('role', isEqualTo: 'doctor').get();
+      final snapshot = await _usersCollection
+          .where('role', isEqualTo: 'doctor')
+          .get();
       final doctors = snapshot.docs.map((doc) {
-        return DoctorProfileModel.fromJson(doc.data() as Map<String, dynamic>, doc.id);
+        return DoctorProfileModel.fromJson(
+          doc.data() as Map<String, dynamic>,
+          doc.id,
+        );
       }).toList();
       return right(doctors);
     } catch (e) {

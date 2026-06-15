@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 
 import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
@@ -11,7 +12,7 @@ import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 
 class DoctorProfileDataPage extends StatefulWidget {
-  final String doctorUid; 
+  final String doctorUid;
 
   const DoctorProfileDataPage({super.key, required this.doctorUid});
 
@@ -20,11 +21,9 @@ class DoctorProfileDataPage extends StatefulWidget {
 }
 
 class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
-
   @override
   void initState() {
     super.initState();
-    // ✅ اللوجيك مربوط كويس هنا بجلب بيانات الدكتور
     context.read<DoctorDataCubit>().getDoctorProfile(widget.doctorUid);
   }
 
@@ -32,10 +31,10 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isArabic = context.locale.languageCode == 'ar';
 
     return BlocBuilder<DoctorDataCubit, DoctorDataState>(
       builder: (context, state) {
-        // 1. حالة التحميل
         if (state is DoctorLoading) {
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
@@ -43,9 +42,8 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
           );
         }
 
-        // 2. حالة عرض البيانات
-        if (state is DoctorLoaded) {
-          final doctor = state.doctor;
+        if (state is DoctorLoaded && state.doctor != null) {
+          final doctor = state.doctor!;
 
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
@@ -58,9 +56,17 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
                   backgroundColor: colorScheme.primary,
                   elevation: 0,
                   leading: IconButton(
-                    icon: Icon(Icons.arrow_back_ios_new, size: 20.sp, color: Colors.white),
+                    icon: Icon(
+                      Icons.arrow_back_ios_new,
+                      size: 20.sp,
+                      color: Colors.white,
+                    ),
                     onPressed: () {
-                      if (context.canPop()) { context.pop(); } else { context.go(Routes.user); }
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go(Routes.user);
+                      }
                     },
                   ),
                   flexibleSpace: FlexibleSpaceBar(
@@ -69,7 +75,10 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.85)],
+                          colors: [
+                            colorScheme.primary,
+                            colorScheme.primary.withOpacity(0.85),
+                          ],
                         ),
                       ),
                       child: Padding(
@@ -80,16 +89,26 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
                             Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: colorScheme.secondary, width: 2.w),
+                                border: Border.all(
+                                  color: colorScheme.secondary,
+                                  width: 2.w,
+                                ),
                               ),
                               child: CircleAvatar(
                                 radius: 35.r,
                                 backgroundColor: Colors.white12,
-                                backgroundImage: (doctor!.profileImage.isNotEmpty)
-                                    ? CachedNetworkImageProvider(doctor.profileImage)
+                                backgroundImage:
+                                    (doctor.profileImage.isNotEmpty)
+                                    ? CachedNetworkImageProvider(
+                                        doctor.profileImage,
+                                      )
                                     : null,
                                 child: (doctor.profileImage.isEmpty)
-                                    ? Icon(Icons.person, color: colorScheme.secondary, size: 40.sp)
+                                    ? Icon(
+                                        Icons.person,
+                                        color: colorScheme.secondary,
+                                        size: 40.sp,
+                                      )
                                     : null,
                               ),
                             ),
@@ -100,19 +119,25 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    context.locale.languageCode == 'ar'
-                                        ? (doctor.nameAr ?? 'dashboard.doctor_default'.tr())
-                                        : (doctor.nameEn ?? 'dashboard.doctor_default'.tr()),
-                                    style: theme.textTheme.titleMedium?.copyWith(
-                                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18.sp,
-                                    ),
+                                    isArabic ? doctor.nameAr : doctor.nameEn,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18.sp,
+                                        ),
                                     overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
                                   ),
                                   Text(
-                                    doctor.currentJobAr ?? "acadimicData.personal_section".tr(),
+                                    isArabic
+                                        ? doctor.currentJobAr
+                                        : doctor.currentJobEn,
                                     style: theme.textTheme.bodySmall?.copyWith(
-                                      color: Colors.white70, fontSize: 13.sp,
+                                      color: Colors.white70,
+                                      fontSize: 13.sp,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
@@ -129,34 +154,91 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
                     _buildSectionCard(
                       context,
                       icon: Icons.badge_outlined,
-                      // ✅ [تعديل] تطابق مع الـ JSON Key
                       title: "acadimicData.personal_section".tr(),
                       children: [
-                        _buildInfoRow(context, label: "acadimicData.name_ar".tr(), value: doctor.nameAr ?? '-'),
-                        _buildInfoRow(context, label: "acadimicData.phone".tr(), value: doctor.phone ?? '-'),
-                        _buildInfoRow(context, label: "acadimicData.social_status".tr(), value: doctor.socialStatusAr ?? '-'),
-                        // ✅ [تعديل] ترجمة كلمة نشط وغير نشط
-                        _buildInfoRow(context, label: "statuses.active".tr(), value: (doctor.isActive) ? "statuses.active".tr() : "statuses.inactive".tr()),
-                        _buildInfoRow(context, label: "acadimicData.birth_date".tr(), value: doctor.birthDate != null ? "${doctor.birthDate!.toLocal()}".split(' ')[0] : '-'),
+                        _buildInfoRow(
+                          context,
+                          label: "acadimicData.name_ar".tr(),
+                          value: isArabic ? doctor.nameAr : doctor.nameEn,
+                        ),
+                        _buildInfoRow(
+                          context,
+                          label: "acadimicData.phone".tr(),
+                          value: doctor.phone,
+                        ),
+                        _buildInfoRow(
+                          context,
+                          label: "acadimicData.social_status".tr(),
+                          value: isArabic
+                              ? doctor.socialStatusAr
+                              : doctor.socialStatusEn,
+                        ),
+                        _buildInfoRow(
+                          context,
+                          label: "statuses.active".tr(),
+                          value: (doctor.isActive)
+                              ? "statuses.active".tr()
+                              : "statuses.inactive".tr(),
+                        ),
+                        _buildInfoRow(
+                          context,
+                          label: "acadimicData.birth_date".tr(),
+                          value: doctor.birthDate != null
+                              ? DateFormat(
+                                  'yyyy-MM-dd',
+                                ).format(doctor.birthDate!)
+                              : '-',
+                        ),
                       ],
                     ),
                     _buildSectionCard(
                       context,
                       icon: Icons.school_outlined,
-                      // ✅ [تعديل] تطابق مع الـ JSON Key
                       title: "acadimicData.academic_section".tr(),
                       children: [
-                        _buildInfoRow(context, label: "acadimicData.job_ar".tr(), value: doctor.currentJobAr ?? '-'),
+                        _buildInfoRow(
+                          context,
+                          label: "add_doctor.university_ar".tr(),
+                          value: isArabic
+                              ? doctor.universityAr
+                              : doctor.universityEn,
+                        ),
+                        _buildInfoRow(
+                          context,
+                          label: "add_doctor.faculty_ar".tr(),
+                          value: isArabic ? doctor.facultyAr : doctor.facultyEn,
+                        ),
+                        _buildInfoRow(
+                          context,
+                          label: "add_doctor.department_ar".tr(),
+                          value: isArabic
+                              ? doctor.departmentAr
+                              : doctor.departmentEn,
+                        ),
+                        _buildInfoRow(
+                          context,
+                          label: "acadimicData.job_ar".tr(),
+                          value: isArabic
+                              ? doctor.currentJobAr
+                              : doctor.currentJobEn,
+                        ),
                       ],
                     ),
                     _buildSectionCard(
                       context,
                       icon: Icons.contact_mail_outlined,
-                      // ✅ [تعديل] تطابق مع الـ JSON Key
                       title: "acadimicData.contact_section".tr(),
                       children: [
-                        _buildInfoRow(context, label: "acadimicData.email".tr(), value: doctor.email ?? '-'),
-                        _buildInfoRow(context, label: "acadimicData.address_ar".tr(), value: doctor.addressAr ?? '-'),
+                        _buildInfoRow(
+                          context,
+                          label: "acadimicData.email".tr(),
+                          value: doctor.email,
+                        ),
+                        _buildInfoRow(
+                          context,
+                          label: "acadimicData.address_ar".tr(),
+                          value: isArabic ? doctor.addressAr : doctor.addressEn,
+                        ),
                       ],
                     ),
                     SizedBox(height: 40.h),
@@ -167,7 +249,6 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
           );
         }
 
-        // 3. حالة الخطأ
         if (state is DoctorError) {
           return Scaffold(
             body: Center(
@@ -176,12 +257,17 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
                 children: [
                   Icon(Icons.error_outline, color: Colors.red, size: 48.sp),
                   SizedBox(height: 16.h),
-                  Text(state.error ?? 'error_message'.tr(), style: TextStyle(color: Colors.red, fontSize: 14.sp)),
+                  Text(
+                    state.error ?? 'error_message'.tr(),
+                    style: TextStyle(color: Colors.red, fontSize: 14.sp),
+                    textAlign: TextAlign.center,
+                  ),
                   SizedBox(height: 20.h),
                   ElevatedButton(
                     onPressed: () {
-                      // ✅ اللوجيك مربوط كويس هنا بإعادة المحاولة
-                      context.read<DoctorDataCubit>().getDoctorProfile(widget.doctorUid);
+                      context.read<DoctorDataCubit>().getDoctorProfile(
+                        widget.doctorUid,
+                      );
                     },
                     child: Text('retry'.tr()),
                   ),
@@ -196,7 +282,12 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
     );
   }
 
-  Widget _buildSectionCard(BuildContext context, {required IconData icon, required String title, required List<Widget> children}) {
+  Widget _buildSectionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required List<Widget> children,
+  }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Container(
@@ -204,18 +295,33 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
       decoration: BoxDecoration(
         color: theme.cardTheme.color ?? Colors.white,
         borderRadius: BorderRadius.circular(15.r),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10.r, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10.r,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
         padding: EdgeInsets.all(20.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Icon(icon, color: colorScheme.secondary, size: 22.sp),
-              SizedBox(width: 10.w),
-              Text(title, style: theme.textTheme.titleSmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 14.sp)),
-            ]),
+            Row(
+              children: [
+                Icon(icon, color: colorScheme.secondary, size: 22.sp),
+                SizedBox(width: 10.w),
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp,
+                  ),
+                ),
+              ],
+            ),
             Divider(height: 30.h, color: colorScheme.primary.withOpacity(0.1)),
             ...children,
           ],
@@ -224,16 +330,34 @@ class _DoctorProfileDataPageState extends State<DoctorProfileDataPage> {
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, {required String label, required String value}) {
+  Widget _buildInfoRow(
+    BuildContext context, {
+    required String label,
+    required String value,
+  }) {
     final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: 15.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary.withOpacity(0.7), fontWeight: FontWeight.w600, fontSize: 11.sp)),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.primary.withOpacity(0.7),
+              fontWeight: FontWeight.w600,
+              fontSize: 11.sp,
+            ),
+          ),
           SizedBox(height: 4.h),
-          Text(value, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface, fontSize: 14.sp, fontWeight: FontWeight.w500)),
+          Text(
+            value.isEmpty ? '-' : value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           SizedBox(height: 10.h),
           Divider(height: 1, color: theme.dividerColor.withOpacity(0.2)),
         ],

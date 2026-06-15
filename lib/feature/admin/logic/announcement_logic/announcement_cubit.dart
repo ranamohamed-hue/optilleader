@@ -1,114 +1,115 @@
-import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 import 'package:optialeader/feature/admin/data/repo/announcement_repos/announcement_repo.dart';
-import 'package:optialeader/feature/notification/data/model/app_notification_model.dart'; 
-import 'package:optialeader/feature/notification/data/repo/notification_repo.dart'; 
+import 'package:optialeader/feature/notification/data/model/app_notification_model.dart';
+import 'package:optialeader/feature/notification/data/repo/notification_repo.dart';
 import 'announcement_state.dart';
 
 class AnnouncementCubit extends Cubit<AnnouncementState> {
   final IAnnouncementRepository _repository;
-  final NotificationRepo _notificationRepo; 
-  final FirebaseFirestore _firebaseFirestore; 
+  final NotificationRepo _notificationRepo;
 
-  AnnouncementCubit(
-    this._repository,
-    this._notificationRepo,
-    this._firebaseFirestore,
-  ) : super(AnnouncementInitial());
+  AnnouncementCubit(this._repository, this._notificationRepo)
+    : super(AnnouncementInitial());
 
   void fetchAnnouncements() {
     emit(AnnouncementLoading());
     _repository.getAnnouncements().listen(
       (data) => emit(AnnouncementLoaded(data)),
-      onError: (error) => emit(AnnouncementError("ERROR_FETCH_ANNOUNCEMENTS")),
+      onError: (error) => emit(AnnouncementError("ERROR_FETCH_ANNOUNCEMENT")),
     );
   }
-  Future<void> addAnnouncement(AnnouncementModel announcement, {String? imagePath}) async {
+
+  Future<void> addAnnouncement(
+    AnnouncementModel announcement, {
+    String? imagePath,
+  }) async {
     emit(AnnouncementLoading());
-    
-    // 1. لو فيه صورة، ارفعها الأول
+
     if (imagePath != null) {
       final uploadResult = await _repository.uploadAnnouncementImage(imagePath);
-      String? finalImageUrl;
-      uploadResult.fold(
-        (error) {
-          emit(AnnouncementError(error));
-          return; 
-        }, 
-        (url) => finalImageUrl = url,
-      );
-      
-      if (finalImageUrl != null) {
-        announcement = announcement.copyWith(imageUrl: finalImageUrl);
+      if (uploadResult.isLeft()) {
+        uploadResult.fold(
+          (error) => emit(AnnouncementError(error)),
+          (_) => null,
+        );
+        return;
       }
+      final imageUrl = uploadResult.getOrElse(() => '');
+      announcement = announcement.copyWith(imageUrl: imageUrl);
     }
 
-    // 2. احفظ الإعلان في Firestore
     final result = await _repository.addAnnouncement(announcement);
-    result.fold(
-      (error) => emit(AnnouncementError(error)),
-      (generatedId) { 
-        emit(AnnouncementActionSuccess("SUCCESS_ADD_ANNOUNCEMENT"));
-        
-        _broadcastAnnouncementNotification(announcement.copyWith(id: generatedId));
-      },
-    );
+    result.fold((error) => emit(AnnouncementError(error)), (generatedId) {
+      emit(AnnouncementActionSuccess("SUCCESS_ADD_ANNOUNCEMENT"));
+      _broadcastAnnouncementNotification(
+        announcement.copyWith(id: generatedId),
+      );
+    });
   }
 
-  //  دالة الإشعار الجماعي للإعلانات والمسابقات
-  Future<void> _broadcastAnnouncementNotification(AnnouncementModel announcement) async {
+  Future<void> _broadcastAnnouncementNotification(
+    AnnouncementModel announcement,
+  ) async {
     try {
-      // 1. جلب كل الـ UIDs بتوع الدكاترة من الفايرستور
-      final snapshot = await _firebaseFirestore
-          .collection('users')
-          .where('role', isEqualTo: 'doctor')
-          .get();
-      
-      final doctorUids = snapshot.docs.map((doc) => doc.id).toList();
-
-      if (doctorUids.isEmpty) return; // مفيش دكاترة نبعتهم
-
-      // 2. تحديد نوع الإشعار
       NotificationType type = NotificationType.announcementCreated;
+      NotificationTarget target;
 
-      // 3. بناء الإشعار
+      switch (announcement.targetRole) {
+        case 'dean':
+        case 'rector':
+        case 'vice_chancellor':
+        case 'head_department':
+        case 'vice_dean':
+        case 'quality_manager':
+        case 'administrative':
+          target = NotificationTarget.doctorOnly;
+          break;
+        default:
+          target = NotificationTarget.allUsers;
+      }
+
       final notification = AppNotificationModel(
         id: '',
-        title: 'إعلان جديد: ${announcement.title}', 
-        message: announcement.description ?? 'تم نشر إعلان جديد يرجى المتابعة', 
+        title: 'إعلان جديد: ${announcement.title}',
+        message: announcement.description ?? 'تم نشر إعلان جديد يرجى المتابعة',
         type: type,
+        target: target,
         timestamp: Timestamp.now(),
-        receiverId: '', 
-        relatedId: announcement.id, 
+        receiverId: '',
+        relatedId: announcement.id,
       );
 
-      // 4. إرسال الإشعار الجماعي
-      await _notificationRepo.broadcastNotification(doctorUids, notification);
-      
+      // ✅ ملاحظة: لو عايز تبعت الإشعار لأطباء كلية معينة بس، لازم توفر دالة في NotificationRepo تقبل collegeId
+      await _notificationRepo.sendRoleBasedNotification(notification);
     } catch (e) {
-      print("فشل إرسال إشعار الإعلان: $e");
+      print("🚨 فشل إرسال إشعار الإعلان: $e");
     }
   }
-  
-  Future<void> updateAnnouncement(AnnouncementModel announcement, {String? imagePath}) async {
+
+  Future<void> updateAnnouncement(
+    AnnouncementModel announcement, {
+    String? imagePath,
+  }) async {
     emit(AnnouncementLoading());
-    
+
     if (imagePath != null) {
       final uploadResult = await _repository.uploadAnnouncementImage(imagePath);
-      String? finalImageUrl;
-      uploadResult.fold(
-        (error) {
-          emit(AnnouncementError(error));
-          return;
-        }, 
-        (url) => finalImageUrl = url,
-      );
-      
-      if (finalImageUrl != null) {
-        announcement = announcement.copyWith(imageUrl: finalImageUrl);
+      if (uploadResult.isLeft()) {
+        uploadResult.fold(
+          (error) => emit(AnnouncementError(error)),
+          (_) => null,
+        );
+        return;
       }
+      final newImageUrl = uploadResult.getOrElse(() => '');
+
+      // ✅ إضافة await عشان نستنى الصورة تتمسح
+      if (announcement.imageUrl != null && announcement.imageUrl!.isNotEmpty) {
+        await _repository.deleteAnnouncementImage(announcement.imageUrl!);
+      }
+      announcement = announcement.copyWith(imageUrl: newImageUrl);
     }
 
     final result = await _repository.updateAnnouncement(announcement);
@@ -125,6 +126,4 @@ class AnnouncementCubit extends Cubit<AnnouncementState> {
       (_) => emit(AnnouncementActionSuccess("SUCCESS_DELETE_ANNOUNCEMENT")),
     );
   }
-
- 
 }

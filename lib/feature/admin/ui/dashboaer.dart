@@ -24,8 +24,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
-  bool _isExpanded =
-      false; // نقلناها هنا عشان الـ SideBar يشتغل بمرونة ويرتبط بالـ State
+  bool _isExpanded = false;
 
   void _onTabTapped(int index) {
     setState(() {
@@ -40,11 +39,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
         context.read<AdminDataCubit>().getAdminProfile(uid);
-
-        // ✅ [تصحيح الثغرة]: بنباصي الـ UID الحقيقي للكيوبيت عشان يقفل الماسورة القديمة ويفتح الصندوق الصح للأدمن
         context.read<NotificationCubit>().updateUserIdAndFetch(uid);
       }
-
       _checkAndShowWelcomeDialog();
     });
   }
@@ -66,35 +62,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _showWelcomeDialog() {
     final colorScheme = Theme.of(context).colorScheme;
-    final isArabic = context.locale.languageCode == 'ar';
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
         title: Row(
           children: [
-            Icon(
-              Icons.waving_hand_rounded,
-              color: AppColors.darkGold,
-              size: 28.sp,
-            ), // لمسة ذهبية ترحيبية
+            Icon(Icons.waving_hand_rounded, color: AppColors.darkGold, size: 28.sp),
             SizedBox(width: 10.w),
-            Text(
-              isArabic ? 'أهلاً بك!' : 'Welcome!',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+            // ✅ استخدام الترجمة
+            Text('dashboard.welcome_title'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
-        content: Text(
-          isArabic
-              ? 'يسعدنا انضمامك لمنصة OptiLeader.\nيمكنك البدء في استكشاف الميزات الخاصة بك من القائمة الجانبية.'
-              : 'Welcome to OptiLeader platform.\nYou can start exploring your features from the side menu.',
-          style: TextStyle(fontSize: 15.sp, height: 1.5),
-        ),
+        // ✅ استخدام الترجمة
+        content: Text('dashboard.welcome_body'.tr(), style: TextStyle(fontSize: 15.sp, height: 1.5)),
         actions: [
           SizedBox(
             width: double.infinity,
@@ -103,15 +86,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
                 padding: EdgeInsets.symmetric(vertical: 12.h),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
               ),
               onPressed: () => Navigator.pop(dialogContext),
-              child: Text(
-                isArabic ? 'لنبدأ!' : "Let's Start!",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
-              ),
+              // ✅ استخدام الترجمة
+              child: Text('dashboard.lets_start'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp)),
             ),
           ),
         ],
@@ -169,42 +148,29 @@ class _HomeTab extends StatelessWidget {
     return BlocBuilder<AdminDataCubit, AdminDataState>(
       builder: (context, state) {
         if (state is AdminLoading) {
-          return Center(
-            child: CircularProgressIndicator(color: colorScheme.secondary),
-          );
+          return Center(child: CircularProgressIndicator(color: colorScheme.secondary));
         }
 
         if (state is AdminLoaded) {
           final admin = state.admin!;
           String fullDisplayName = isArabic ? admin.nameAr : admin.nameEn;
           if (fullDisplayName.trim().isEmpty) {
-            fullDisplayName =
-                FirebaseAuth.instance.currentUser?.displayName ??
-                (isArabic ? 'مدير النظام' : 'Admin');
+            fullDisplayName = FirebaseAuth.instance.currentUser?.displayName ?? 'dashboard.admin_role'.tr(); // ✅ ترجمة
           }
 
           return SafeArea(
             child: Column(
               children: [
-                /// --- الهيدر العلوي الملكي ---
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 25.w,
-                    vertical: 20.h,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 25.w, vertical: 20.h),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.primary,
-                        colorScheme.primaryContainer,
-                      ],
+                      colors: [colorScheme.primary, colorScheme.primaryContainer],
                     ),
-                    borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(30.r),
-                    ),
+                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(30.r)),
                   ),
                   child: Row(
                     children: [
@@ -212,23 +178,12 @@ class _HomeTab extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              isArabic ? 'مرحباً' : 'Welcome',
-                              style: TextStyle(
-                                color: colorScheme.onPrimary.withOpacity(0.85),
-                                fontSize: 16.sp,
-                              ),
-                            ),
+                            Text('dashboard.greeting'.tr(), style: TextStyle(color: colorScheme.onPrimary.withOpacity(0.85), fontSize: 16.sp)), // ✅ ترجمة
                             SizedBox(height: 4.h),
                             Text(
                               fullDisplayName,
-                              style: TextStyle(
-                                color: colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 22.sp,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                              style: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.bold, fontSize: 22.sp),
+                              overflow: TextOverflow.ellipsis, maxLines: 1,
                             ),
                           ],
                         ),
@@ -236,11 +191,7 @@ class _HomeTab extends StatelessWidget {
                       Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors
-                                .darkGold, // تحديد خط خارجي ذهبي لإبراز الصورة الهوية الملكية
-                            width: 2,
-                          ),
+                          border: Border.all(color: AppColors.darkGold, width: 2),
                         ),
                         child: CircleAvatar(
                           radius: 30.r,
@@ -248,14 +199,9 @@ class _HomeTab extends StatelessWidget {
                           child: ClipOval(
                             child: admin.profileImage.isNotEmpty
                                 ? CachedNetworkImage(
-                                    imageUrl: admin.profileImage,
-                                    width: 60.r,
-                                    height: 60.r,
-                                    fit: BoxFit.cover,
-                                    placeholder: (_, __) =>
-                                        const CircularProgressIndicator(),
-                                    errorWidget: (_, __, ___) =>
-                                        const Icon(Icons.person),
+                                    imageUrl: admin.profileImage, width: 60.r, height: 60.r, fit: BoxFit.cover,
+                                    placeholder: (_, __) => const CircularProgressIndicator(),
+                                    errorWidget: (_, __, ___) => const Icon(Icons.person),
                                   )
                                 : const Icon(Icons.person),
                           ),
@@ -268,14 +214,8 @@ class _HomeTab extends StatelessWidget {
                 Expanded(
                   child: Row(
                     children: isArabic
-                        ? [
-                            Expanded(child: _buildCardsList(context, state)),
-                            _buildSideBar(context),
-                          ]
-                        : [
-                            _buildSideBar(context),
-                            Expanded(child: _buildCardsList(context, state)),
-                          ],
+                        ? [Expanded(child: _buildCardsList(context, state)), _buildSideBar(context)]
+                        : [_buildSideBar(context), Expanded(child: _buildCardsList(context, state))],
                   ),
                 ),
               ],
@@ -323,23 +263,13 @@ class _HomeTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.primary,
         borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withOpacity(0.3),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: colorScheme.primary.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 3))],
       ),
       child: Column(
         children: [
           SizedBox(height: 10.h),
           IconButton(
-            icon: Icon(
-              isExpanded ? Icons.menu_open : Icons.menu,
-              color: AppColors.darkGold, // زر المنيو منور بالذهبي الفخم
-              size: 22.sp,
-            ),
+            icon: Icon(isExpanded ? Icons.menu_open : Icons.menu, color: AppColors.darkGold, size: 22.sp),
             onPressed: onToggleExpanded,
           ),
           SizedBox(height: 5.h),
@@ -347,85 +277,29 @@ class _HomeTab extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                _buildSideBarItem(
-                  Icons.home_outlined,
-                  Icons.home,
-                  0,
-                  'sidebar.home'.tr(),
-                  colorScheme,
-                  textTheme,
-                ),
-                _buildSideBarItem(
-                  Icons.list_alt_outlined,
-                  Icons.list_alt,
-                  -1,
-                  'sidebar.orders'.tr(),
-                  colorScheme,
-                  textTheme,
-                  customAction: () => context.push('/admin/orders-list'),
-                ),
-                _buildSideBarItem(
-                  Icons.campaign_outlined,
-                  Icons.campaign,
-                  1,
-                  'sidebar.announcements'.tr(),
-                  colorScheme,
-                  textTheme,
-                ),
-                _buildSideBarItem(
-                  Icons.search,
-                  Icons.search,
-                  2,
-                  'sidebar.search'.tr(),
-                  colorScheme,
-                  textTheme,
-                ),
-                _buildSideBarItem(
-                  Icons.notifications_none_outlined,
-                  Icons.notifications,
-                  3,
-                  'sidebar.notifications'.tr(),
-                  colorScheme,
-                  textTheme,
-                ),
+                _buildSideBarItem(Icons.home_outlined, Icons.home, 0, 'sidebar.home'.tr(), colorScheme, textTheme),
+                _buildSideBarItem(Icons.list_alt_outlined, Icons.list_alt, -1, 'sidebar.orders'.tr(), colorScheme, textTheme, customAction: () => context.push('/admin/orders-list')),
+                _buildSideBarItem(Icons.campaign_outlined, Icons.campaign, 1, 'sidebar.announcements'.tr(), colorScheme, textTheme),
+                _buildSideBarItem(Icons.search, Icons.search, 2, 'sidebar.search'.tr(), colorScheme, textTheme),
+                _buildSideBarItem(Icons.notifications_none_outlined, Icons.notifications, 3, 'sidebar.notifications'.tr(), colorScheme, textTheme),
               ],
             ),
           ),
-          _buildSideBarItem(
-            Icons.person_outline,
-            Icons.person,
-            4,
-            'sidebar.settings'.tr(),
-            colorScheme,
-            textTheme,
-          ),
+          _buildSideBarItem(Icons.person_outline, Icons.person, 4, 'sidebar.settings'.tr(), colorScheme, textTheme),
           SizedBox(height: 10.h),
         ],
       ),
     );
   }
 
-  Widget _buildSideBarItem(
-    IconData icon,
-    IconData activeIcon,
-    int index,
-    String label,
-    ColorScheme colorScheme,
-    TextTheme textTheme, {
-    VoidCallback? customAction,
-  }) {
+  Widget _buildSideBarItem(IconData icon, IconData activeIcon, int index, String label, ColorScheme colorScheme, TextTheme textTheme, {VoidCallback? customAction}) {
     bool isSelected = customAction == null && currentIndex == index;
-    // تفعيل الذهبى الملكي عند الاختيار والكحلي الفاتح لليوزر العادي
-    final iconColor = isSelected
-        ? AppColors.darkGold
-        : colorScheme.onPrimary.withOpacity(0.8);
+    final iconColor = isSelected ? AppColors.darkGold : colorScheme.onPrimary.withOpacity(0.8);
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 6.h),
       child: Material(
-        color: isSelected
-            ? AppColors.darkGold.withOpacity(0.15)
-            : Colors.transparent,
+        color: isSelected ? AppColors.darkGold.withOpacity(0.15) : Colors.transparent,
         borderRadius: BorderRadius.circular(12.r),
         child: InkWell(
           onTap: customAction ?? () => onTabTapped(index),
@@ -437,31 +311,12 @@ class _HomeTab extends StatelessWidget {
             child: isExpanded
                 ? Row(
                     children: [
-                      Icon(
-                        isSelected ? activeIcon : icon,
-                        color: iconColor,
-                        size: 20.sp,
-                      ),
+                      Icon(isSelected ? activeIcon : icon, color: iconColor, size: 20.sp),
                       SizedBox(width: 8.w),
-                      Expanded(
-                        child: Text(
-                          label,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: iconColor,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      Expanded(child: Text(label, style: textTheme.bodySmall?.copyWith(color: iconColor, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal), overflow: TextOverflow.ellipsis)),
                     ],
                   )
-                : Icon(
-                    isSelected ? activeIcon : icon,
-                    color: iconColor,
-                    size: 22.sp,
-                  ),
+                : Icon(isSelected ? activeIcon : icon, color: iconColor, size: 22.sp),
           ),
         ),
       ),
@@ -479,7 +334,7 @@ class _HomeTab extends StatelessWidget {
         children: [
           _buildActionCard(
             context,
-            title: 'dashboard.new_requests'.tr(),
+            title: 'dashboard.new_requests'.tr(), // طلبات الترشحات الجديدة
             icon: Icons.note_add_rounded,
             value: state.newRequestsCount.toString(),
             color: colorScheme.primary,
@@ -488,12 +343,12 @@ class _HomeTab extends StatelessWidget {
           SizedBox(height: 18.h),
           _buildActionCard(
             context,
-            title: 'dashboard.under_review'.tr(),
+            title: 'dashboard.under_review'.tr(), // الطلبات تحت المراجعة/التحكيم
             icon: Icons.gavel_rounded,
             value: state.underReviewCount.toString(),
             color: AppColors.darkGold,
             onTap: () => context.push('/admin/orders-list'),
-          ), // متناسق ذهبي للمراجعات والتحكيم
+          ),
           SizedBox(height: 18.h),
           _buildActionCard(
             context,
@@ -501,15 +356,17 @@ class _HomeTab extends StatelessWidget {
             icon: Icons.campaign_rounded,
             value: '+',
             color: Colors.orange,
-            onTap: () => context.push('/admin/editAnnountmentPage'),
+            // ✅ تعديل المسار عشان يطابق الراوتر
+            onTap: () => context.push('/admin/edit-announcement'), 
           ),
           SizedBox(height: 18.h),
           _buildActionCard(
             context,
-            title: 'dashboard.new_requests'.tr(), 
+            // ✅ تغيير العنوان عشان يختلف عن الكارت الأول (ده للأبحاث والأنشطة)
+            title: 'dashboard.pending_approvals'.tr(), 
             icon: Icons.pending_actions_rounded,
-            value: state.newRequestsCount.toString(),
-            color: AppColors.darkGold, 
+            value: state.newRequestsCount.toString(), // لو عندك متغير تاني للأبحاث يبقى نستبدله
+            color: Colors.teal, 
             onTap: () => context.push('/admin/pending-requests'), 
           ),
         ],
@@ -517,14 +374,7 @@ class _HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildActionCard(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required String value,
-    required Color color,
-    VoidCallback? onTap,
-  }) {
+  Widget _buildActionCard(BuildContext context, {required String title, required IconData icon, required String value, required Color color, VoidCallback? onTap}) {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
@@ -537,49 +387,21 @@ class _HomeTab extends StatelessWidget {
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(24.r),
           border: Border.all(color: color.withOpacity(0.25), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: color.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Row(
           children: [
             Container(
-              width: 52.w,
-              height: 52.w,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                shape: BoxShape.circle,
-              ),
+              width: 52.w, height: 52.w,
+              decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
               child: Icon(icon, color: color, size: 26.sp),
             ),
             SizedBox(width: 18.w),
-            Expanded(
-              child: Text(
-                title,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.sp,
-                ),
-              ),
-            ),
+            Expanded(child: Text(title, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: 16.sp))),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(14.r),
-              ),
-              child: Text(
-                value,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                  fontSize: 20.sp,
-                ),
-              ),
+              decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(14.r)),
+              child: Text(value, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: color, fontSize: 20.sp)),
             ),
           ],
         ),
@@ -591,7 +413,6 @@ class _HomeTab extends StatelessWidget {
 class _AnnouncementsTab extends StatelessWidget {
   final VoidCallback onBack;
   const _AnnouncementsTab({required this.onBack});
-
   @override
   Widget build(BuildContext context) => AnnouncementsPage(onBack: onBack);
 }
@@ -604,26 +425,18 @@ class _SearchTab extends StatelessWidget {
 
 class _NotificationsTab extends StatelessWidget {
   const _NotificationsTab();
-
   @override
-  Widget build(BuildContext context) {
-    return const NotificationsScreen();
-  }
+  Widget build(BuildContext context) => const NotificationsScreen();
 }
 
 class _SettingsTab extends StatelessWidget {
   final VoidCallback onBackToHome;
   const _SettingsTab({required this.onBackToHome});
-
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AdminDataCubit>().state;
     if (state is AdminLoaded) {
-      return SettingsScreen(
-        uid: state.admin!.uid,
-        role: 'admin',
-        onBack: onBackToHome,
-      );
+      return SettingsScreen(uid: state.admin!.uid, role: 'admin', onBack: onBackToHome);
     }
     return const Center(child: CircularProgressIndicator());
   }

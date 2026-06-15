@@ -1,28 +1,77 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; // ✅ إضافة
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart'; // ✅ إضافة
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart';
+
+// استيراد دالة اللون إذا كانت في ملف آخر، أو تعريفها هنا
+Color getAnnouncementStatusColor(String status, ColorScheme colorScheme) {
+  switch (status) {
+    case 'Active':
+      return Colors.blue;
+    case 'Pending':
+      return Colors.orange.shade700;
+    case 'Closed':
+      return colorScheme.error;
+    default:
+      return Colors.grey;
+  }
+}
 
 class AnnouncementDetailsPage extends StatelessWidget {
   final AnnouncementModel announcement;
 
   const AnnouncementDetailsPage({super.key, required this.announcement});
 
+  Future<void> _confirmDelete(BuildContext context) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("announce.delete.confirm_title".tr()),
+        content: Text("announce.delete.confirm_body".tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text("common.cancel".tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              "common.delete".tr(),
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      context.read<AnnouncementCubit>().deleteAnnouncement(
+        announcement.id!,
+        announcement.imageUrl,
+      );
+      context.pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final statusColor = getAnnouncementStatusColor(
+      announcement.status,
+      colorScheme,
+    );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          context.push('/admin/editAnnountmentPage', extra: announcement);
-        },
+        onPressed: () =>
+            context.push('/admin/edit-announcement', extra: announcement),
         elevation: 4,
         backgroundColor: colorScheme.primary,
         icon: Icon(Icons.edit_note_rounded, color: colorScheme.secondary),
@@ -50,14 +99,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   Icons.delete_sweep_outlined,
                   color: Colors.white70,
                 ),
-                onPressed: () {
-                  // ✅ [تعديل] استدعاء دالة الحذف من الـ Cubit وتمرير الرابط عشان يتمسح من سوبابيز
-                  context.read<AnnouncementCubit>().deleteAnnouncement(
-                    announcement.id!,
-                    announcement.imageUrl,
-                  );
-                  context.pop(); // الرجوع لشاشة الإعلانات بعد الحذف
-                },
+                onPressed: () => _confirmDelete(context),
               ),
               const SizedBox(width: 10),
             ],
@@ -169,6 +211,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
                 _buildAnnouncementDetailCard(
                   context,
                   announcement: announcement,
+                  statusColor: statusColor,
                 ),
                 const SizedBox(height: 100),
               ]),
@@ -182,10 +225,10 @@ class AnnouncementDetailsPage extends StatelessWidget {
   Widget _buildAnnouncementDetailCard(
     BuildContext context, {
     required AnnouncementModel announcement,
+    required Color statusColor,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final statusColor = announcement.getStatusColor(context);
 
     final formattedDeadline = DateFormat(
       'EEEE, d MMMM yyyy',
@@ -267,6 +310,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   padding: EdgeInsets.symmetric(vertical: 30),
                   child: Divider(thickness: 0.8),
                 ),
+
                 _buildInfoRow(
                   context,
                   Icons.groups_rounded,
@@ -290,6 +334,36 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   postedDate,
                   Colors.blueGrey,
                 ),
+                const SizedBox(height: 20),
+
+                _buildInfoRow(
+                  context,
+                  Icons.military_tech,
+                  "announce.details.target_role".tr(),
+                  announcement.targetRole.tr(),
+                  colorScheme.secondary,
+                ),
+
+                if (announcement.collegeName != null) ...[
+                  const SizedBox(height: 20),
+                  _buildInfoRow(
+                    context,
+                    Icons.domain,
+                    "announce.details.college".tr(),
+                    announcement.collegeName!,
+                    Colors.deepPurple,
+                  ),
+                ],
+                if (announcement.departmentName != null) ...[
+                  const SizedBox(height: 20),
+                  _buildInfoRow(
+                    context,
+                    Icons.meeting_room,
+                    "announce.details.department".tr(),
+                    announcement.departmentName!,
+                    Colors.teal,
+                  ),
+                ],
               ],
             ),
           ),

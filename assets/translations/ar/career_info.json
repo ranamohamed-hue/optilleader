@@ -16,9 +16,11 @@
       "software_eng": "هندسة البرمجيات",
       "computer_science": "علوم الحاسب"
     },
-    "current_role": "تاريخ شغل الوظيفة الحالية: {}",
+    "current_role": "المنصب الحالي: {}",
     "experience": "عدد سنوات الخبرة: {} سنوات",
     "previous_positions": "الوظائف السابقة:",
+    "no_history": "لا يوجد سجل أكاديمي",
+    "no_previous_roles": "لا توجد وظائف سابقة",
     "roles": {
       "lecturer": "مدرس",
       "ta": "معيد"
@@ -31,5 +33,4 @@
     "employment_type": {
       "permanent": "تعيين دائم"
     }
-  }
-}
+  }}

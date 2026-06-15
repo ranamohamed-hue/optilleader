@@ -1,7 +1,11 @@
 import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 
+// ✅✅✅ إضافة الـ Enums بتاعة تصنيف الدورات عشان محرك النقاط
+enum CourseCategory { administrative, specialized, general, none }
+enum CourseScope { international, local, none }
+
 class ActivityModel {
-  final String id;               // ✅ جديد
+  final String id;               
   final String type;
   final String title;
   final String organization;
@@ -9,10 +13,13 @@ class ActivityModel {
   final int? durationHours;
   final String participationType;
   
-  // ✅ الحقول للمصداقية
+  // ✅ الحقول الجديدة لتصنيف الدورات التدريبية
+  final CourseCategory courseCategory; // إدارية، تخصصية، عامة
+  final CourseScope courseScope;       // دولية، محلية
+  
   final VerificationStatus status;
   final String? proofUrl;        
-  final String? proofFileType;   // ✅ جديد - "image" أو "pdf"
+  final String? proofFileType;   
 
   ActivityModel({
     required this.id,
@@ -22,6 +29,8 @@ class ActivityModel {
     required this.date,
     this.durationHours,
     required this.participationType,
+    this.courseCategory = CourseCategory.none, // ✅ القيمة الافتراضية
+    this.courseScope = CourseScope.none,       // ✅ القيمة الافتراضية
     this.status = VerificationStatus.pending,
     this.proofUrl,
     this.proofFileType,
@@ -36,6 +45,11 @@ class ActivityModel {
       date: json['date'] ?? '',
       durationHours: json['duration_hours'],
       participationType: json['participation_type'] ?? '',
+      
+      // ✅ قراءة الـ Enums الجديدة بأمان
+      courseCategory: _parseCourseCategory(json['course_category'] ?? 'none'),
+      courseScope: _parseCourseScope(json['course_scope'] ?? 'none'),
+      
       status: parseVerificationStatus(json['status']),
       proofUrl: json['proofUrl'],
       proofFileType: json['proofFileType'],
@@ -51,6 +65,8 @@ class ActivityModel {
       'date': date,
       'duration_hours': durationHours,
       'participation_type': participationType,
+      'course_category': courseCategory.name, // ✅ حفظ الـ Enum كـ String
+      'course_scope': courseScope.name,       // ✅ حفظ الـ Enum كـ String
       'status': status.name,
       'proofUrl': proofUrl,
       'proofFileType': proofFileType,
@@ -65,6 +81,8 @@ class ActivityModel {
     String? date,
     int? durationHours,
     String? participationType,
+    CourseCategory? courseCategory, // ✅
+    CourseScope? courseScope,       // ✅
     VerificationStatus? status,
     String? proofUrl,
     String? proofFileType,
@@ -77,9 +95,26 @@ class ActivityModel {
       date: date ?? this.date,
       durationHours: durationHours ?? this.durationHours,
       participationType: participationType ?? this.participationType,
+      courseCategory: courseCategory ?? this.courseCategory, // ✅
+      courseScope: courseScope ?? this.courseScope,         // ✅
       status: status ?? this.status,
       proofUrl: proofUrl ?? this.proofUrl,
       proofFileType: proofFileType ?? this.proofFileType,
+    );
+  }
+
+  // ✅ دوال مساعدة لتحويل الـ String للـ Enum
+  static CourseCategory _parseCourseCategory(String value) {
+    return CourseCategory.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => CourseCategory.none,
+    );
+  }
+
+  static CourseScope _parseCourseScope(String value) {
+    return CourseScope.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => CourseScope.none,
     );
   }
 }

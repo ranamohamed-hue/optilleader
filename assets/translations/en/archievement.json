@@ -1,6 +1,9 @@
 {
   "achievements": {
     "title": "Achievements Log",
+    "add_new": "Add New",
+    "no_research": "No research papers added",
+    "no_activities": "No activities added",
     "tabs": {
       "research": "Research",
       "conferences": "Conferences",
@@ -9,14 +12,74 @@
     },
     "status": {
       "accepted": "Accepted",
-      "under_review": "Under Review",
-      "rejected": "Rejected"
-    },
-    "sections": {
-      "proposals": "Research Proposals"
-    },
-    "add_new": "Add New Achievement",
-    "no_research": "No research papers found",
-    "no_activities": "No activities found"
+      "rejected": "Rejected",
+      "under_review": "Under Review"
+    }
+  },
+  "validation": {
+    "required": "This field is required"
+  },
+  "common": {
+    "required": "Required",
+    "other": "Other"
+  },
+  "addActivity": {
+    "title": "Add New Activity",
+    "type": "Activity Type",
+    "typeConference": "Conference",
+    "typeWorkshop": "Workshop",
+    "typeCourse": "Training Course",
+    "activityTitle": "Activity Title",
+    "organization": "Organization",
+    "date": "Date",
+    "durationHours": "Duration (Hours)",
+    "participationType": "Participation Type",
+    "partAttendee": "Attendee",
+    "partSpeaker": "Speaker",
+    "partOrganizer": "Organizer",
+    "proofFile": "Proof of Participation",
+    "submit": "Add Activity",
+    "success": "Activity added successfully",
+    "courseCategory": "Course Category",
+    "courseScope": "Course Scope",
+    "catAdmin": "Administrative",
+    "catSpec": "Specialized",
+    "catGeneral": "General",
+    "scopeInt": "International",
+    "scopeLocal": "Local"
+  },
+  "addResearch": {
+    "title": "Add New Research",
+    "titleAr": "Research Title (Arabic)",
+    "titleEn": "Research Title (English)",
+    "journalName": "Journal Name",
+    "issn": "ISSN",
+    "impactFactor": "Impact Factor",
+    "publicationYear": "Publication Year",
+    "authorOrder": "Author Order",
+    "totalAuthors": "Total Authors",
+    "journalUrl": "Journal URL",
+    "paperFile": "Research Paper File",
+    "indexingProof": "Indexing Proof",
+    "fileRequired": "Research paper file is required",
+    "indexingProofRequired": "Indexing proof is required for this database",
+    "submit": "Add Research",
+    "success": "Research added successfully",
+    "authorsInSameSpecialty": "Authors in same general specialty",
+    "authorsInSameSpecialtyHint": "Count of participants in the same specialty to calculate participation ratio (Article 22)",
+    "isTopTierJournal": "Top Tier Journal (10 Points)",
+    "isTopTierJournalHint": "Check this option if the journal gets max 10 points according to regulations",
+    "validationAuthorsOrder": "Cannot be less than your order!",
+    "journalScopeLabel": "Journal Scope",
+    "scopeSpecialized": "Specialized",
+    "scopeNonSpecialized": "Non-Specialized (General)",
+    "journalLevelLabel": "Journal Level",
+    "levelInternational": "International",
+    "levelLocal": "Local/Regional",
+    "indexingDatabaseLabel": "Indexing Database",
+    "dbScopus": "Scopus",
+    "dbWebOfScience": "Web of Science",
+    "dbLocal": "Local Databases",
+    "indexingProofLabelDynamic": "Indexing Proof"
   }
 }

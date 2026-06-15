@@ -1,378 +1,349 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:optialeader/core/routing/routes.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:optialeader/feature/judge/data/model/interview_scoring_model.dart';
+import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomination_request_cubit.dart';
+import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomonation_request_state.dart';
 
-class EvaluationScreen extends StatelessWidget {
-  const EvaluationScreen({super.key});
+class InterviewEvaluationScreen extends StatefulWidget {
+  final String requestId;
+
+  const InterviewEvaluationScreen({
+    super.key,
+    required this.requestId,
+  });
+
+  @override
+  State<InterviewEvaluationScreen> createState() =>
+      _InterviewEvaluationScreenState();
+}
+
+class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
+  final TextEditingController _personalController = TextEditingController();
+  final TextEditingController _scientificController = TextEditingController();
+  final TextEditingController _communicationController =
+      TextEditingController();
+  final TextEditingController _leadershipController = TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
+
+  DateTime? _selectedInterviewDate;
+
+  final Map<String, double> _maxScores = {
+    'personal': 15,
+    'scientific': 40,
+    'communication': 25,
+    'leadership': 20,
+  };
+
+  @override
+  void dispose() {
+    _personalController.dispose();
+    _scientificController.dispose();
+    _communicationController.dispose();
+    _leadershipController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() => _selectedInterviewDate = picked);
+    }
+  }
+
+  double _parseDouble(String value) {
+    try {
+      return double.parse(value);
+    } catch (e) {
+      return 0.0;
+    }
+  }
+
+  double get _currentTotal {
+    return _parseDouble(_personalController.text) +
+        _parseDouble(_scientificController.text) +
+        _parseDouble(_communicationController.text) +
+        _parseDouble(_leadershipController.text);
+  }
+
+  void _submitEvaluation({bool isDraft = false}) {
+    if (_selectedInterviewDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('evaluation.interview_date.required'.tr())),
+      );
+      return;
+    }
+
+    final model = InterviewScoringModel(
+      interviewDate: _selectedInterviewDate!,
+      personalScore: _parseDouble(_personalController.text),
+      scientificScore: _parseDouble(_scientificController.text),
+      communicationScore: _parseDouble(_communicationController.text),
+      leadershipScore: _parseDouble(_leadershipController.text),
+      notes: _notesController.text,
+      isDraft: isDraft,
+    );
+
+    if (!model.isValid && !isDraft) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('evaluation.errors.invalid_scores'.tr()),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    context.read<NominationRequestCubit>().submitInterviewEvaluation(
+      requestId: widget.requestId,
+      evaluationModel: model,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        title: Text('evaluation.title'.tr()),
         backgroundColor: colorScheme.primary,
-        elevation: 0,
-        toolbarHeight: 80.h,
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new,
-            size: 20.sp,
-            color: Colors.white,
-          ),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go(Routes.judge);
-            }
-          },
-        ),
-        title: Text(
-          'evaluation.title'.tr(), // ترجمة العنوان
-          style: textTheme.titleMedium?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18.sp,
-            fontFamily: 'Tajawal',
-          ),
-        ),
         centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(2.h),
-          child: Container(color: colorScheme.secondary, height: 2.h),
-        ),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            // 1. كارت تعريف المتقدم
-            _buildApplicantCard(colorScheme),
-
-            // 2. أقسام التقييم
-            _buildEvaluationSection(
-              context,
-              'evaluation.sections.personal'.tr(),
-              [
-                _buildCriterionRow(
-                  'evaluation.criteria.appearance'.tr(),
-                  '5',
-                  '3',
-                ),
-                _buildCriterionRow(
-                  'evaluation.criteria.confidence'.tr(),
-                  '5',
-                  '5',
-                ),
-                _buildCriterionRow('evaluation.criteria.poise'.tr(), '5', '2'),
-              ],
-              '10 / 15',
-            ),
-
-            _buildExpandableSection(
-              context,
-              'evaluation.sections.scientific'.tr(),
-            ),
-            _buildExpandableSection(
-              context,
-              'evaluation.sections.communication'.tr(),
-            ),
-            _buildExpandableSection(
-              context,
-              'evaluation.sections.leadership'.tr(),
-            ),
-
-            // 3. المجموع الكلي
-            _buildTotalScore(colorScheme),
-
-            // 4. الملاحظات
-            _buildNotesField(colorScheme),
-
-            // 5. الأزرار
-            _buildActionButtons(context, colorScheme),
-            SizedBox(height: 30.h),
-          ],
+      body: BlocListener<NominationRequestCubit, NominationRequestState>(
+        listener: (context, state) {
+          if (state is NominationRequestLoading) {
+            // Optional: Show loading overlay
+          }
+          
+          if (state is NominationRequestActionSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message.tr()),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pop(context);
+          }
+          
+          if (state is NominationRequestError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDateCard(colorScheme),
+              SizedBox(height: 20.h),
+              _buildScoreCard(
+                titleKey: 'evaluation.sections.personal',
+                maxScore: _maxScores['personal']!,
+                controller: _personalController,
+                color: Colors.blue,
+              ),
+              SizedBox(height: 15.h),
+              _buildScoreCard(
+                titleKey: 'evaluation.sections.scientific',
+                maxScore: _maxScores['scientific']!,
+                controller: _scientificController,
+                color: Colors.green,
+              ),
+              SizedBox(height: 15.h),
+              _buildScoreCard(
+                titleKey: 'evaluation.sections.communication',
+                maxScore: _maxScores['communication']!,
+                controller: _communicationController,
+                color: Colors.orange,
+              ),
+              SizedBox(height: 15.h),
+              _buildScoreCard(
+                titleKey: 'evaluation.sections.leadership',
+                maxScore: _maxScores['leadership']!,
+                controller: _leadershipController,
+                color: Colors.purple,
+              ),
+              SizedBox(height: 20.h),
+              _buildTotalCard(colorScheme),
+              SizedBox(height: 20.h),
+              _buildNotesCard(colorScheme),
+              SizedBox(height: 40.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => _submitEvaluation(isDraft: true),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: colorScheme.primary),
+                        padding: EdgeInsets.symmetric(vertical: 15.h),
+                      ),
+                      child: Text('evaluation.actions.save_draft'.tr()),
+                    ),
+                  ),
+                  SizedBox(width: 15.w),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: () => _submitEvaluation(isDraft: false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        padding: EdgeInsets.symmetric(vertical: 15.h),
+                      ),
+                      child: Text(
+                        'evaluation.actions.approve'.tr(),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 30.h),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildApplicantCard(ColorScheme colorScheme) {
-    return Container(
-      margin: EdgeInsets.all(20.w),
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10.r,
-            offset: Offset(0, 4.h),
-          ),
-        ],
-        border: Border.all(color: colorScheme.secondary.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 35.r,
-            backgroundColor: colorScheme.secondary.withOpacity(0.1),
-            child: Icon(
-              Icons.person,
-              size: 45.sp,
-              color: colorScheme.secondary,
-            ),
-          ),
-          SizedBox(height: 12.h),
-          Text(
-            'د. أحمد منصور', // يمكن ربطها بـ API لاحقاً
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          Text(
-            'evaluation.applicant_card.dept'.tr(),
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: Colors.grey,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpandableSection(BuildContext context, String title) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 5.h),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(color: colorScheme.secondary.withOpacity(0.2)),
-      ),
-      child: ExpansionTile(
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 13.sp,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Tajawal',
-          ),
-        ),
-        trailing: Icon(Icons.keyboard_arrow_down, size: 24.sp),
-        children: [
-          Padding(
-            padding: EdgeInsets.all(15.w),
-            child: Text(
-              'evaluation.criteria.details_hint'.tr(),
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12.sp),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTotalScore(ColorScheme colorScheme) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.h),
+  Widget _buildDateCard(ColorScheme colorScheme) {
+    return InkWell(
+      onTap: _pickDate,
       child: Container(
         padding: EdgeInsets.all(15.w),
         decoration: BoxDecoration(
-          color: colorScheme.primary,
-          borderRadius: BorderRadius.circular(15.r),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: Colors.grey.shade300),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'evaluation.criteria.total_score'.tr(),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16.sp,
-                color: Colors.white,
-                fontFamily: 'Tajawal',
-              ),
+              _selectedInterviewDate == null
+                  ? 'evaluation.interview_date.hint'.tr()
+                  : DateFormat('yyyy-MM-dd').format(_selectedInterviewDate!),
+              style: TextStyle(fontSize: 14.sp, color: Colors.black87),
             ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: colorScheme.secondary,
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              child: Text(
-                '10 / 100',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.sp,
-                ),
-              ),
-            ),
+            Icon(Icons.calendar_today, color: colorScheme.primary),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNotesField(ColorScheme colorScheme) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start, // سيتغير تلقائياً حسب اللغة
-        children: [
-          Text(
-            'evaluation.notes.title'.tr(),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-              fontSize: 14.sp,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          SizedBox(height: 10.h),
-          TextField(
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: 'evaluation.notes.hint'.tr(),
-              hintStyle: TextStyle(fontSize: 12.sp),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15.r),
-                borderSide: BorderSide(
-                  color: colorScheme.secondary.withOpacity(0.3),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(BuildContext context, ColorScheme colorScheme) {
-    return Padding(
-      padding: EdgeInsets.all(20.w),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E7D32),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                padding: EdgeInsets.symmetric(vertical: 15.h),
-              ),
-              child: Text(
-                'evaluation.actions.approve'.tr(),
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
-              ),
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () {},
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: colorScheme.primary),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                padding: EdgeInsets.symmetric(vertical: 15.h),
-              ),
-              child: Text(
-                'evaluation.actions.save_draft'.tr(),
-                style: TextStyle(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.sp,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEvaluationSection(
-    BuildContext context,
-    String title,
-    List<Widget> criteria,
-    String subTotal,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildScoreCard({
+    required String titleKey,
+    required double maxScore,
+    required TextEditingController controller,
+    required Color color,
+  }) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+      padding: EdgeInsets.all(15.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: colorScheme.secondary.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5),
+        ],
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.05),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-            ),
-            child: Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-                fontSize: 13.sp,
-              ),
-            ),
-          ),
-          ...criteria,
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(20.r),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'evaluation.criteria.sub_total'.tr(),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13.sp,
-                  ),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(6.w),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.r),
                 ),
-                Text(
-                  subTotal,
+                child: Icon(Icons.star, color: color, size: 18.sp),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Text(
+                  titleKey.tr(),
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.primary,
                     fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                    color: color,
                   ),
                 ),
-              ],
+              ),
+            ],
+          ),
+          SizedBox(height: 15.h),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'evaluation.criteria.input_score'.tr(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 8.h,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 15.w),
+              Text(
+                'evaluation.criteria.max_score'.tr(args: ['$maxScore']),
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTotalCard(ColorScheme colorScheme) {
+    return Container(
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: colorScheme.primary),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'evaluation.criteria.total_score'.tr(),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+          ),
+          Text(
+            '${_currentTotal.toStringAsFixed(1)} / 100',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20.sp,
+              color: colorScheme.primary,
             ),
           ),
         ],
@@ -380,51 +351,28 @@ class EvaluationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCriterionRow(
-    String label,
-    String maxScore,
-    String currentScore,
-  ) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 10.h),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  'evaluation.criteria.max_score'.tr(args: [maxScore]),
-                  style: TextStyle(fontSize: 10.sp, color: Colors.grey),
-                ),
-              ],
+  Widget _buildNotesCard(ColorScheme colorScheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'evaluation.notes.title'.tr(),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
+        ),
+        SizedBox(height: 10.h),
+        TextField(
+          controller: _notesController,
+          maxLines: 4,
+          decoration: InputDecoration(
+            hintText: 'evaluation.notes.hint'.tr(),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
             ),
+            filled: true,
+            fillColor: Colors.grey[50],
           ),
-          SizedBox(width: 10.w),
-          Container(
-            width: 45.w,
-            height: 35.h,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: Center(
-              child: Text(
-                currentScore,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

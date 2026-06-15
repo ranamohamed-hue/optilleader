@@ -4,13 +4,15 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:optialeader/core/routing/routes.dart';
+import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_state.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:optialeader/feature/notification/logic/app_notification_cubit.dart'; // ✅ [إضافة] استدعاء لـ NotificationCubit
+import 'package:optialeader/feature/notification/logic/app_notification_cubit.dart';
 
 class DashboardUserPage extends StatefulWidget {
   const DashboardUserPage({super.key});
@@ -29,7 +31,6 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
         context.read<DoctorDataCubit>().getDoctorProfile(uid);
         context.read<NotificationCubit>().fetchNotifications();
       }
-
       _checkAndShowWelcomeDialog();
     });
   }
@@ -49,7 +50,6 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
     }
   }
 
-  //  تصميم الديالوج الترحيبي المشترك
   void _showWelcomeDialog() {
     final colorScheme = Theme.of(context).colorScheme;
     final isArabic = context.locale.languageCode == 'ar';
@@ -101,6 +101,14 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
     );
   }
 
+  double _calculateCareerProgress(DoctorProfileModel? doctor) {
+    if (doctor == null) return 0.0;
+    final int total = doctor.totalAchievements;
+    final int approved = doctor.totalApprovedAchievements;
+    if (total == 0) return 0.0;
+    return approved / total;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -129,11 +137,9 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
               backgroundColor: primaryNavy,
               elevation: 0,
               toolbarHeight: 80.h,
-                 centerTitle: false, 
-              titleSpacing: 20,     
+              centerTitle: false,
+              titleSpacing: 20,
               automaticallyImplyLeading: false,
-            
-              
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -155,7 +161,6 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                   ),
                 ],
               ),
-
               actions: [
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12.w),
@@ -169,9 +174,8 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
             ),
             body: RefreshIndicator(
               onRefresh: () async {
-                if (uid.isNotEmpty) {
+                if (uid.isNotEmpty)
                   await context.read<DoctorDataCubit>().getDoctorProfile(uid);
-                }
               },
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(
@@ -194,9 +198,7 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                           Icons.emoji_events_outlined,
                           goldAccent,
                           'dashboard.achievements_msg'.tr(
-                            args: [
-                              (doctor?.academicHistory.length ?? 0).toString(),
-                            ],
+                            args: ['${doctor?.totalAchievements ?? 0}'],
                           ),
                           primaryNavy,
                           onTap: () => context.push(
@@ -209,15 +211,8 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                           goldAccent,
                           (doctor?.academicHistory != null &&
                                   doctor!.academicHistory.isNotEmpty)
-                              ? (context.locale.languageCode == 'ar'
-                                    ? (doctor
-                                              .academicHistory
-                                              .first['degree_ar'] ??
-                                          'dashboard.no_credentials'.tr())
-                                    : (doctor
-                                              .academicHistory
-                                              .first['degree_en'] ??
-                                          'dashboard.no_credentials'.tr()))
+                              ? (doctor.academicHistory.first['degree'] ??
+                                    'dashboard.no_credentials'.tr())
                               : 'dashboard.no_credentials'.tr(),
                           primaryNavy,
                           onTap: () =>
@@ -225,7 +220,7 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                         ),
                         _buildStatusCard(
                           'dashboard.requests_status'.tr(),
-                          '3',
+                          '${doctor?.totalPendingAchievements ?? 0}',
                           'dashboard.pending'.tr(),
                           Colors.red.shade50,
                           Colors.red.shade900,
@@ -233,7 +228,7 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                         ),
                         _buildProgressCard(
                           'dashboard.career_path'.tr(),
-                          0.75,
+                          _calculateCareerProgress(doctor),
                           primaryNavy,
                           goldAccent,
                           onTap: () =>
@@ -248,7 +243,6 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                       'dashboard.latest_opportunities'.tr(),
                     ),
                     SizedBox(height: 10.h),
-
                     BlocBuilder<AnnouncementCubit, AnnouncementState>(
                       builder: (context, announceState) {
                         if (announceState is AnnouncementLoaded) {
@@ -266,13 +260,10 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                               ),
                             );
                           }
-
-                          // عرض أول 3 إعلانات بس عشان الداشبورد متتكدسش
                           final displayAnnouncements = announceState
                               .announcements
                               .take(3)
                               .toList();
-
                           return Column(
                             children: displayAnnouncements.map((ann) {
                               return Padding(
@@ -284,11 +275,9 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                                   primaryNavy.withOpacity(0.05),
                                   primaryNavy,
                                   goldAccent,
-                                  onTap: () {
-                                    context.push(
-                                      '${Routes.announcementsDetailsDoctor}?id=${ann.id}',
-                                    );
-                                  },
+                                  onTap: () => context.push(
+                                    '${Routes.announcementsDetailsDoctor}?id=${ann.id}',
+                                  ),
                                 ),
                               );
                             }).toList(),
@@ -297,7 +286,6 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                         return const SizedBox.shrink();
                       },
                     ),
-
                     SizedBox(height: 20.h),
                   ],
                 ),
@@ -338,7 +326,6 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
             ),
           );
         }
-
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
     );

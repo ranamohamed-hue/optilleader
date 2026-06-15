@@ -14,17 +14,20 @@ class ResearchPaperModel {
   final int totalAuthors;
   final String? doi;
 
+  final int authorsInSameSpecialty;  // عدد الباحثين في نفس التخصص العام
+  final bool isTopTierJournal;       // هل المجلة حاصلة على 10 نقاط (Top Tier)؟
+
   // 2. تصنيف المجلة
   final JournalScope journalScope;
   final JournalLevel journalLevel;
   final IndexingDatabase indexingDatabase;
   final String journalUrl;
 
-  // 3. الإثباتات والمصداقية (تم التعديل لدعم الصورة والـ PDF)
+  // 3. الإثباتات والمصداقية
   final String paperFileUrl;       
-  final String paperFileType;      // "image" أو "pdf"
+  final String paperFileType;      
   final String? indexingProofUrl;  
-  final String? indexingProofType; // "image" أو "pdf"
+  final String? indexingProofType; 
 
   // 4. حالة الاعتماد
   final VerificationStatus status;
@@ -41,6 +44,8 @@ class ResearchPaperModel {
     required this.authorOrder,
     required this.totalAuthors,
     this.doi,
+    this.authorsInSameSpecialty = 1,
+    this.isTopTierJournal = false,   
     required this.journalScope,
     required this.journalLevel,
     required this.indexingDatabase,
@@ -65,6 +70,8 @@ class ResearchPaperModel {
       authorOrder: json['authorOrder'] ?? 0,
       totalAuthors: json['totalAuthors'] ?? 0,
       doi: json['doi'],
+      authorsInSameSpecialty: json['authors_in_same_specialty'] ?? 1,
+      isTopTierJournal: json['is_top_tier_journal'] ?? false,
       journalScope: enumFromString(JournalScope.values, json['journalScope']),
       journalLevel: enumFromString(JournalLevel.values, json['journalLevel']),
       indexingDatabase: enumFromString(IndexingDatabase.values, json['indexingDatabase']),
@@ -90,6 +97,8 @@ class ResearchPaperModel {
       'authorOrder': authorOrder,
       'totalAuthors': totalAuthors,
       'doi': doi,
+      'authors_in_same_specialty': authorsInSameSpecialty,
+      'is_top_tier_journal': isTopTierJournal,
       'journalScope': journalScope.name,
       'journalLevel': journalLevel.name,
       'indexingDatabase': indexingDatabase.name,
@@ -114,6 +123,8 @@ class ResearchPaperModel {
     int? authorOrder,
     int? totalAuthors,
     String? doi,
+    int? authorsInSameSpecialty, 
+    bool? isTopTierJournal,    
     JournalScope? journalScope,
     JournalLevel? journalLevel,
     IndexingDatabase? indexingDatabase,
@@ -136,6 +147,8 @@ class ResearchPaperModel {
       authorOrder: authorOrder ?? this.authorOrder,
       totalAuthors: totalAuthors ?? this.totalAuthors,
       doi: doi ?? this.doi,
+      authorsInSameSpecialty: authorsInSameSpecialty ?? this.authorsInSameSpecialty,
+      isTopTierJournal: isTopTierJournal ?? this.isTopTierJournal,
       journalScope: journalScope ?? this.journalScope,
       journalLevel: journalLevel ?? this.journalLevel,
       indexingDatabase: indexingDatabase ?? this.indexingDatabase,

@@ -25,14 +25,35 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
   final _titleEnController = TextEditingController();
   final _journalNameController = TextEditingController();
   final _issnController = TextEditingController();
+  final _impactFactorController = TextEditingController();
   final _publicationYearController = TextEditingController();
+  final _authorOrderController = TextEditingController();
+  final _totalAuthorsController = TextEditingController();
   final _journalUrlController = TextEditingController();
+  final _authorsInSameSpecialtyController = TextEditingController();
 
-  final JournalScope _journalScope = JournalScope.specialized;
-  final JournalLevel _journalLevel = JournalLevel.international;
+  bool _isTopTierJournal = false;
+
+  JournalScope _selectedJournalScope = JournalScope.specialized;
+  JournalLevel _selectedJournalLevel = JournalLevel.international;
+  IndexingDatabase _selectedIndexDatabase = IndexingDatabase.scopus;
 
   PickedFileData? _paperFile;
   PickedFileData? _indexingProofFile;
+
+  // دالة مساعدة لتحويل قاعدة البيانات Enum إلى نص مترجم
+  String _getDbName(IndexingDatabase db) {
+    switch (db) {
+      case IndexingDatabase.scopus:
+        return 'addResearch.dbScopus'.tr();
+      case IndexingDatabase.webOfScience:
+        return 'addResearch.dbWebOfScience'.tr();
+      case IndexingDatabase.local:
+        return 'addResearch.dbLocal'.tr();
+      case IndexingDatabase.other:
+        return 'common.other'.tr();
+    }
+  }
 
   @override
   void dispose() {
@@ -40,17 +61,34 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     _titleEnController.dispose();
     _journalNameController.dispose();
     _issnController.dispose();
+    _impactFactorController.dispose();
     _publicationYearController.dispose();
+    _authorOrderController.dispose();
+    _totalAuthorsController.dispose();
     _journalUrlController.dispose();
+    _authorsInSameSpecialtyController.dispose();
     super.dispose();
   }
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
+
     if (_paperFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('addResearch.fileRequired'.tr()),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // التحقق من إثبات الفهرسة
+    if (_selectedIndexDatabase != IndexingDatabase.other &&
+        _indexingProofFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('addResearch.indexingProofRequired'.tr()),
           backgroundColor: Colors.red,
         ),
       );
@@ -63,14 +101,17 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
       titleEn: _titleEnController.text.trim(),
       journalName: _journalNameController.text.trim(),
       issn: _issnController.text.trim(),
-      impactFactor: '',
+      impactFactor: _impactFactorController.text.trim(),
       publicationYear:
           int.tryParse(_publicationYearController.text.trim()) ?? 0,
-      authorOrder: 1,
-      totalAuthors: 1,
-      journalScope: _journalScope,
-      journalLevel: _journalLevel,
-      indexingDatabase: IndexingDatabase.scopus,
+      authorOrder: int.tryParse(_authorOrderController.text.trim()) ?? 1,
+      totalAuthors: int.tryParse(_totalAuthorsController.text.trim()) ?? 1,
+      authorsInSameSpecialty:
+          int.tryParse(_authorsInSameSpecialtyController.text.trim()) ?? 1,
+      isTopTierJournal: _isTopTierJournal,
+      journalScope: _selectedJournalScope,
+      journalLevel: _selectedJournalLevel,
+      indexingDatabase: _selectedIndexDatabase,
       journalUrl: _journalUrlController.text.trim(),
       paperFileUrl: '',
       paperFileType: _paperFile!.type == UploadedFileType.image
@@ -145,6 +186,93 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                         v!.isEmpty ? 'validation.required'.tr() : null,
                   ),
                   SizedBox(height: 12.h),
+
+                  // قائمة نطاق المجلة
+                  DropdownButtonFormField<JournalScope>(
+                    value: _selectedJournalScope,
+                    decoration: InputDecoration(
+                      labelText: 'addResearch.journalScopeLabel'.tr(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: JournalScope.specialized,
+                        child: Text('addResearch.scopeSpecialized'.tr()),
+                      ),
+                      DropdownMenuItem(
+                        value: JournalScope.nonSpecialized,
+                        child: Text('addResearch.scopeNonSpecialized'.tr()),
+                      ),
+                    ],
+                    onChanged: (val) =>
+                        setState(() => _selectedJournalScope = val!),
+                    validator: (v) =>
+                        v == null ? 'validation.required'.tr() : null,
+                  ),
+                  SizedBox(height: 12.h),
+
+                  // قائمة مستوى المجلة
+                  DropdownButtonFormField<JournalLevel>(
+                    value: _selectedJournalLevel,
+                    decoration: InputDecoration(
+                      labelText: 'addResearch.journalLevelLabel'.tr(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: JournalLevel.international,
+                        child: Text('addResearch.levelInternational'.tr()),
+                      ),
+                      DropdownMenuItem(
+                        value: JournalLevel.local,
+                        child: Text('addResearch.levelLocal'.tr()),
+                      ),
+                    ],
+                    onChanged: (val) =>
+                        setState(() => _selectedJournalLevel = val!),
+                    validator: (v) =>
+                        v == null ? 'validation.required'.tr() : null,
+                  ),
+                  SizedBox(height: 12.h),
+
+                  // قاعدة الفهرسة
+                  DropdownButtonFormField<IndexingDatabase>(
+                    value: _selectedIndexDatabase,
+                    decoration: InputDecoration(
+                      labelText: 'addResearch.indexingDatabaseLabel'.tr(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: IndexingDatabase.scopus,
+                        child: Text('addResearch.dbScopus'.tr()),
+                      ),
+                      DropdownMenuItem(
+                        value: IndexingDatabase.webOfScience,
+                        child: Text('addResearch.dbWebOfScience'.tr()),
+                      ),
+                      DropdownMenuItem(
+                        value: IndexingDatabase.local,
+                        child: Text('addResearch.dbLocal'.tr()),
+                      ),
+                      DropdownMenuItem(
+                        value: IndexingDatabase.other,
+                        child: Text('common.other'.tr()),
+                      ),
+                    ],
+                    onChanged: (val) =>
+                        setState(() => _selectedIndexDatabase = val!),
+                    validator: (v) =>
+                        v == null ? 'validation.required'.tr() : null,
+                  ),
+                  SizedBox(height: 12.h),
+
                   Row(
                     children: [
                       Expanded(
@@ -160,6 +288,21 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                       SizedBox(width: 10.w),
                       Expanded(
                         child: TextFormField(
+                          controller: _impactFactorController,
+                          decoration: InputDecoration(
+                            labelText: 'addResearch.impactFactor'.tr(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12.h),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: TextFormField(
                           controller: _publicationYearController,
                           decoration: InputDecoration(
                             labelText: 'addResearch.publicationYear'.tr(),
@@ -169,9 +312,73 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                               v!.isEmpty ? 'validation.required'.tr() : null,
                         ),
                       ),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        flex: 1,
+                        child: TextFormField(
+                          controller: _authorOrderController,
+                          decoration: InputDecoration(
+                            labelText: 'addResearch.authorOrder'.tr(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (v) =>
+                              v!.isEmpty ? 'validation.required'.tr() : null,
+                        ),
+                      ),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        flex: 1,
+                        child: TextFormField(
+                          controller: _totalAuthorsController,
+                          decoration: InputDecoration(
+                            labelText: 'addResearch.totalAuthors'.tr(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (v) =>
+                              v!.isEmpty ? 'validation.required'.tr() : null,
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: 12.h),
+
+                  TextFormField(
+                    controller: _authorsInSameSpecialtyController,
+                    decoration: InputDecoration(
+                      labelText: 'addResearch.authorsInSameSpecialty'.tr(),
+                      helperText: 'addResearch.authorsInSameSpecialtyHint'.tr(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (v == null || v.isEmpty)
+                        return 'validation.required'.tr();
+                      final sameSpecialty = int.tryParse(v) ?? 0;
+                      final authorOrder =
+                          int.tryParse(_authorOrderController.text) ?? 0;
+                      if (sameSpecialty < authorOrder) {
+                        return 'addResearch.validationAuthorsOrder'.tr();
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 12.h),
+
+                  SwitchListTile(
+                    title: Text('addResearch.isTopTierJournal'.tr()),
+                    subtitle: Text('addResearch.isTopTierJournalHint'.tr()),
+                    value: _isTopTierJournal,
+                    onChanged: (bool value) {
+                      setState(() {
+                        _isTopTierJournal = value;
+                      });
+                    },
+                    activeColor: Colors.blue,
+                  ),
+                  SizedBox(height: 12.h),
+
                   TextFormField(
                     controller: _journalUrlController,
                     decoration: InputDecoration(
@@ -181,6 +388,7 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                         v!.isEmpty ? 'validation.required'.tr() : null,
                   ),
                   SizedBox(height: 20.h),
+
                   FilePickerField(
                     label: 'addResearch.paperFile'.tr(),
                     selectedFile: _paperFile,
@@ -188,13 +396,20 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                     isRequired: true,
                   ),
                   SizedBox(height: 12.h),
+
+                  // إثبات الفهرسة
                   FilePickerField(
-                    label: 'addResearch.indexingProof'.tr(),
+                    label: _selectedIndexDatabase == IndexingDatabase.other
+                        ? 'addResearch.indexingProof'.tr()
+                        : '${'addResearch.indexingProofLabelDynamic'.tr()} (${_getDbName(_selectedIndexDatabase)}) - ${'common.required'.tr()}',
                     selectedFile: _indexingProofFile,
                     onFileSelected: (file) =>
                         setState(() => _indexingProofFile = file),
+                    isRequired:
+                        _selectedIndexDatabase != IndexingDatabase.other,
                   ),
                   SizedBox(height: 30.h),
+
                   SizedBox(
                     width: double.infinity,
                     height: 50.h,

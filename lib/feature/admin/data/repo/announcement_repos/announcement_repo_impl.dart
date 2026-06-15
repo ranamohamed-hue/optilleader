@@ -1,25 +1,27 @@
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; 
-import 'package:flutter_image_compress/flutter_image_compress.dart'; 
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 import 'package:optialeader/feature/admin/data/repo/announcement_repos/announcement_repo.dart';
 
 class AnnouncementRepositoryImpl implements IAnnouncementRepository {
   final FirebaseFirestore _firestore;
-  final SupabaseClient _supabase = Supabase.instance.client; 
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   AnnouncementRepositoryImpl(this._firestore);
 
   CollectionReference get _collection => _firestore.collection('announcements');
+
   @override
-  Future<Either<String, String>> addAnnouncement( 
-    AnnouncementModel announcement,
+  Future<Either<String, String>> addAnnouncement(
+    AnnouncementModel
+    announcement, 
   ) async {
     try {
       final docRef = await _collection.add(announcement.toMap());
-      return Right(docRef.id); 
+      return Right(docRef.id);
     } catch (e) {
       return const Left("ERROR_ADD_ANNOUNCEMENT");
     }
@@ -54,14 +56,13 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
     }
   }
 
-  //   حذف الإعلان مع حذف الصورة من Supabase
   @override
   Future<Either<String, Unit>> deleteAnnouncement(
     String id,
     String? imageUrl,
   ) async {
     try {
-      // 1. حذف الصورة من Supabase إذا وجدت
+      // 1. حذف صورة البوستر من Supabase إذا وجدت
       if (imageUrl != null && imageUrl.contains('supabase.co')) {
         try {
           final uri = Uri.parse(imageUrl);
@@ -88,7 +89,6 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
     }
   }
 
-  // دالة ضغط ورفع صورة الإعلان
   @override
   Future<Either<String, String>> uploadAnnouncementImage(
     String filePath,
@@ -97,7 +97,7 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
       final Uint8List? compressedBytes =
           await FlutterImageCompress.compressWithFile(
             filePath,
-            minHeight: 800, // الإعلانات ممكن تحتاج حجم أكتر شوية
+            minHeight: 800,
             minWidth: 800,
             quality: 85,
           );
@@ -106,7 +106,6 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
         return const Left("ERROR_IMAGE_COMPRESS_FAILED");
       }
 
-      //  تثبيت الامتداد بـ jpg لأن المكتبة بترجع jpeg دائماً
       final storagePath =
           'announcements/${DateTime.now().millisecondsSinceEpoch}.jpg';
 
@@ -117,17 +116,36 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
             compressedBytes,
             fileOptions: const FileOptions(
               upsert: true,
-              contentType: 'image/jpeg', 
+              contentType: 'image/jpeg',
             ),
           );
 
       final imageUrl = _supabase.storage
           .from('images')
           .getPublicUrl(storagePath);
+
       return Right(imageUrl);
     } catch (e) {
-      print(" Supabase Announcement Upload Error: ${e.toString()}");
+      print("Supabase Announcement Upload Error: ${e.toString()}");
       return Left("ERROR_IMAGE_UPLOAD_SUPABASE: ${e.toString()}");
+    }
+  }
+    // في AnnouncementRepositoryImpl
+  @override
+  Future<void> deleteAnnouncementImage(String imageUrl) async {
+    if (imageUrl.contains('supabase.co')) {
+      try {
+        final uri = Uri.parse(imageUrl);
+        final pathSegments = uri.pathSegments;
+        final bucketIndex = pathSegments.indexOf('images');
+
+        if (bucketIndex != -1 && bucketIndex + 1 < pathSegments.length) {
+          final storagePath = pathSegments.sublist(bucketIndex + 1).join('/');
+          await _supabase.storage.from('images').remove([storagePath]);
+        }
+      } catch (e) {
+        print('Failed to delete old image: $e');
+      }
     }
   }
 }

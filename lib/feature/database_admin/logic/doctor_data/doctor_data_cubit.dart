@@ -1,16 +1,16 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data'; // ✅ [إضافة]
+import 'dart:typed_data';
 import 'package:path/path.dart' as p;
-import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ [إضافة مهمة] عشان FieldValue.arrayUnion
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
 import 'package:optialeader/feature/database_admin/data/repo/doctor_repository/doctor_repo.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 import 'package:optialeader/firebase_options.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart'; // ✅ [إضافة]
 
 class DoctorDataCubit extends Cubit<DoctorDataState> {
   final DoctorRepo doctorRepo;
@@ -18,7 +18,6 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
 
   DoctorDataCubit(this.doctorRepo) : super(DoctorInitial());
 
-  // جلب بيانات دكتور معين
   Future<void> getDoctorProfile(String uid) async {
     emit(DoctorLoading());
     final result = await doctorRepo.getDoctorProfile(uid);
@@ -28,7 +27,6 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     );
   }
 
-  // حفظ بيانات دكتور بالكامل (للأدمن)
   Future<void> saveDoctorData(DoctorProfileModel doctor) async {
     emit(DoctorLoading());
     final result = await doctorRepo.saveDoctorData(doctor);
@@ -38,7 +36,6 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     );
   }
 
-  // ✅ تحديث بيانات الدكتور (لما الدكتور يكمل بروفايله)
   Future<void> updateDoctorProfile(
     String uid,
     Map<String, dynamic> updatedFields,
@@ -49,17 +46,17 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     });
   }
 
-  // ✅ رفع صورة وتحديث البروفايل (بتضغط الصورة)
   Future<void> uploadAndSetProfileImage(String uid, File imageFile) async {
-    emit(DoctorLoading()); 
+    emit(DoctorLoading());
 
     try {
-      final Uint8List? compressedBytes = await FlutterImageCompress.compressWithFile(
-        imageFile.absolute.path,
-        minWidth: 1024,
-        minHeight: 1024,
-        quality: 85, 
-      );
+      final Uint8List? compressedBytes =
+          await FlutterImageCompress.compressWithFile(
+            imageFile.absolute.path,
+            minWidth: 1024,
+            minHeight: 1024,
+            quality: 85,
+          );
 
       if (compressedBytes == null) {
         emit(DoctorError(error: "فشل ضغط الصورة"));
@@ -70,7 +67,7 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
       final String storagePath = 'profiles/$uid/profile$fileExtension';
 
       final uploadResult = await doctorRepo.uploadFile(
-        compressedBytes, 
+        compressedBytes,
         storagePath,
         bucketName: 'images',
       );
@@ -88,8 +85,6 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     }
   }
 
-  // ✅✅✅ [إضافة جديدة] دالة رفع ملفات للأرشيف (بتخزن Array في الفايرستور)
-  // ✅✅✅ دالة رفع ملفات للأرشيف (معدلة بدون كراش الـ Timestamp)
   Future<void> uploadArchiveFile({
     required String uid,
     required File file,
@@ -97,43 +92,40 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     required String description,
     required String category,
   }) async {
-    emit(DoctorLoading()); 
+    emit(DoctorLoading());
 
     try {
-      // 1. قراءة الملف كـ Bytes
       final fileBytes = await file.readAsBytes();
-      final String fileExtension = p.extension(file.path); 
-      
-      // 2. بناء المسار داخل البوكت
-      final String storagePath = 'archives/$uid/${DateTime.now().millisecondsSinceEpoch}$fileExtension';
+      final String fileExtension = p.extension(file.path);
+      final String storagePath =
+          'archives/$uid/${DateTime.now().millisecondsSinceEpoch}$fileExtension';
 
-      // 3. رفع الملف على بوكت الـ files في السوبابيز
       final uploadResult = await doctorRepo.uploadFile(
         fileBytes,
         storagePath,
         bucketName: 'files',
       );
 
-      uploadResult.fold(
-        (error) => emit(DoctorError(error: error)), 
+      await uploadResult.fold(
+        (error) async {
+          emit(DoctorError(error: error));
+        },
         (fileUrl) async {
-          // 4. تجهيز الـ Object (تم استبدال serverTimestamp بـ ISO String لتجنب كراش arrayUnion)
           final newFileData = {
             'title': title,
             'description': description,
             'category': category,
             'file_url': fileUrl,
-            'uploaded_at': DateTime.now().toIso8601String(), // ✅ تعديل آمن للـ Array
+            'uploaded_at': DateTime.now().toIso8601String(),
           };
 
-          // 5. تحديث الفايرستور بإضافة الملف للستة (arrayUnion)
           final updateResult = await doctorRepo.updateDoctorProfileData(uid, {
             'digital_archive': FieldValue.arrayUnion([newFileData]),
           });
-          
+
           updateResult.fold(
-            (error) => emit(DoctorError(error: error)), 
-            (_) => getDoctorProfile(uid), 
+            (error) => emit(DoctorError(error: error)),
+            (_) => getDoctorProfile(uid),
           );
         },
       );
@@ -142,7 +134,6 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     }
   }
 
-  // تحديث حالة الحساب
   Future<void> updateAccountStatus(String uid, bool isActive) async {
     emit(DoctorLoading());
     final result = await doctorRepo.updateAccountStatus(uid, isActive);
@@ -152,7 +143,6 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     );
   }
 
-  // مراقبة قائمة الدكاترة
   void watchAllDoctors() {
     emit(DoctorLoading());
     _doctorsSubscription?.cancel();
@@ -166,7 +156,6 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     );
   }
 
-  /// إنشاء دكتور جديد (Auth + Firestore)
   Future<void> createNewDoctor(DoctorProfileModel doctor) async {
     emit(DoctorLoading());
     UserCredential? credential;
@@ -232,7 +221,6 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     }
   }
 
-  // حذف حساب دكتور
   Future<void> deleteDoctor(String uid) async {
     emit(DoctorDeleting());
     final result = await doctorRepo.deleteDoctorAccount(uid);
@@ -242,7 +230,6 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     );
   }
 
-  // اغلاق stream
   @override
   Future<void> close() {
     _doctorsSubscription?.cancel();

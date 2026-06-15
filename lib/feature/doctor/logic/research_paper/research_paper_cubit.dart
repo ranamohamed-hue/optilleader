@@ -6,14 +6,14 @@ import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 import 'package:optialeader/feature/doctor/data/repo/research_paper/research_paper_repo.dart';
 import 'package:optialeader/feature/doctor/logic/research_paper/research_paper_state.dart';
 import 'package:optialeader/feature/notification/data/model/app_notification_model.dart';
-import 'package:optialeader/feature/notification/data/repo/notification_repo_impl.dart';
+import 'package:optialeader/feature/notification/data/repo/notification_repo.dart';
 
 class ResearchCubit extends Cubit<ResearchState> {
   final ResearchPaperRepo researchRepo;
-  final NotificationRepoImpl notificationRepo;
+  final NotificationRepo notificationRepo; // محتاجينه عشان addNewResearch بس
 
   ResearchCubit(this.researchRepo, this.notificationRepo)
-    : super(ResearchInitial());
+      : super(ResearchInitial());
 
   Future<void> addNewResearch({
     required String doctorUid,
@@ -28,37 +28,33 @@ class ResearchCubit extends Cubit<ResearchState> {
       paperFile: paperFile,
       indexingProofFile: indexingProofFile,
     );
-    result.fold((error) => emit(ResearchError(error: error)), (_) async {
-      emit(ResearchSuccess());
-      try {
-        final adminsSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .where('jop.title.en', isEqualTo: 'admin')
-            .get();
-        final List<String> adminIds = adminsSnapshot.docs
-            .map((doc) => doc.id)
-            .toList();
-        if (adminIds.isNotEmpty) {
+    
+    result.fold(
+      (error) => emit(ResearchError(error: error)),
+      (_) async {
+        emit(ResearchSuccess());
+        
+        // ✅ إرسال إشعار للأدمن إن في بحث جديد (ده موجود صح)
+        try {
           final notification = AppNotificationModel(
             id: '',
             title: 'طلب اعتماد بحث جديد',
-            message: 'تم إضافة بحث بعنوان: ${paper.titleAr} يحتاج موافقتك',
+            message: 'تم إضافة بحث بعنوان: "${paper.titleAr}" يحتاج موافقتك',
             type: NotificationType.newResearchSubmitted,
+            target: NotificationTarget.adminOnly, // ✅ محدد إنه للأدمن بس
             timestamp: Timestamp.now(),
-            receiverId: '', // هنسيبه فاضي هنا عادي
+            receiverId: '', 
             relatedId: paper.id,
             doctorUid: doctorUid,
           );
 
-          await notificationRepo.broadcastNotification(adminIds, notification);
-
-          print("Notifications sent to admins: ${adminIds.length}");
-          print(result);
+          await notificationRepo.sendRoleBasedNotification(notification);
+          print("✅ Notifications sent to admins successfully via Role-Based logic");
+        } catch (e) {
+          print("🚨 Error sending admin notification: $e");
         }
-      } catch (e) {
-        print("Error: $e");
-      }
-    });
+      },
+    );
   }
 
   Future<void> deleteResearch(String doctorUid, String paperId) async {
@@ -70,25 +66,7 @@ class ResearchCubit extends Cubit<ResearchState> {
     );
   }
 
-  Future<void> updatePaperStatus(
-    String doctorUid,
-    String paperId,
-    VerificationStatus status, {
-    String? rejectionReason,
-  }) async {
-    emit(ResearchLoading());
-    final result = await researchRepo.updatePaperStatus(
-      doctorUid,
-      paperId,
-      status,
-      rejectionReason: rejectionReason,
-    );
-    result.fold(
-      (error) => emit(ResearchError(error: error)),
-      (_) => emit(ResearchSuccess()),
-    );
-  }
-
+  // ✅ تم مسح الإشعار من هنا عشان الـ AdminApprovalRepoImpl هو اللي يبعته
   Future<void> approveResearch(String doctorUid, String paperId) async {
     emit(ResearchLoading());
     final result = await researchRepo.updatePaperStatus(
@@ -96,12 +74,14 @@ class ResearchCubit extends Cubit<ResearchState> {
       paperId,
       VerificationStatus.approved,
     );
+    
     result.fold(
       (error) => emit(ResearchError(error: error)),
-      (_) => emit(ResearchSuccess()),
+      (_) => emit(ResearchSuccess()), // خلاص، أتحتت الحالة والإشعار راح من الـ Repo
     );
   }
 
+  // ✅ تم مسح الإشعار من هنا برضو
   Future<void> rejectResearch(
     String doctorUid,
     String paperId,
@@ -114,9 +94,10 @@ class ResearchCubit extends Cubit<ResearchState> {
       VerificationStatus.rejected,
       rejectionReason: reason,
     );
+    
     result.fold(
       (error) => emit(ResearchError(error: error)),
-      (_) => emit(ResearchSuccess()),
+      (_) => emit(ResearchSuccess()), // خلاص، أتحتت الحالة والإشعار راح من الـ Repo
     );
   }
 }

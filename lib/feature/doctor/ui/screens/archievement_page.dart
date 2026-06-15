@@ -23,7 +23,6 @@ class AchievementsLogPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
 
     return BlocBuilder<DoctorDataCubit, DoctorDataState>(
       builder: (context, state) {
@@ -118,12 +117,13 @@ class AchievementsLogPage extends StatelessWidget {
                       ),
                       _buildActivitiesList(
                         context,
-                        doctor?.trainingCourses ?? [],
+                        (doctor?.activities ?? [])
+                            .where((a) => a.type == 'course')
+                            .toList(),
                       ),
                     ],
                   ),
                 ),
-                // ✅✅✅ التعديل هنا: إضافة Builder لحل مشكلة الـ Context واستخدام Routes
                 Padding(
                   padding: EdgeInsets.all(16.w),
                   child: Builder(
@@ -133,9 +133,12 @@ class AchievementsLogPage extends StatelessWidget {
                         height: 50.h,
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            int currentIndex = DefaultTabController.of(
-                              innerContext,
-                            ).index;
+                            // ✅ استخدام maybeOf عشان نتجنب أي مشاكل لو الـ Context لسه مجهز
+                            final int currentIndex =
+                                DefaultTabController.maybeOf(
+                                  innerContext,
+                                )?.index ??
+                                0;
                             if (currentIndex == 0) {
                               context.push(
                                 '${Routes.addResearch}?uid=$doctorUid',

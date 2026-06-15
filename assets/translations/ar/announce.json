@@ -15,7 +15,14 @@
       "applicants_label": "عدد المتقدمين",
       "person_unit": "شخص",
       "deadline_label": "موعد الإغلاق",
-      "posted_label": "تاريخ النشر"
+      "posted_label": "تاريخ النشر",
+      "target_role": "نوع المسابقة",
+      "college": "الكلية",
+      "department": "القسم"
+    },
+    "delete": {
+      "confirm_title": "تأكيد الحذف",
+      "confirm_body": "هل أنت متأكد من حذف هذا الإعلان؟ لا يمكن التراجع عن هذا الإجراء."
     },
     "ERROR_FETCH_ANNOUNCEMENTS": "حدث خطأ أثناء جلب البيانات",
     "ERROR_ADD_ANNOUNCEMENT": "فشل إضافة الإعلان",
@@ -29,15 +36,25 @@
     "title": "تعديل الإعلان",
     "field_title": "العنوان",
     "hint_title": "أدخل عنوان الإعلان",
+    "field_target_role": "نوع المسابقة / الوظيفة",
+    "field_college": "الكلية",
+    "hint_college": "اختر الكلية",
+    "field_department": "القسم",
+    "hint_department": "اختر القسم",
     "field_desc": "الوصف",
     "hint_desc": "أدخل تفاصيل الإعلان هنا...",
+    "field_image": "صورة الإعلان",
+    "hint_image": "اضغط لاختيار صورة",
     "field_date": "تاريخ الانتهاء",
     "field_status": "الحالة",
     "save_button": "حفظ التعديلات",
-    "success_msg": "تم تحديث الإعلان بنجاح"
+    "success_msg": "تم تحديث الإعلان بنجاح",
+    "error_title_desc_required": "العنوان والوصف مطلوبين!",
+    "error_college_dept_required": "يجب اختيار الكلية والقسم لهذا النوع من الإعلانات"
   },
   "common": {
     "cancel": "إلغاء",
+    "delete": "حذف",
     "app_name": "نظام الجامعة"
   }
 }

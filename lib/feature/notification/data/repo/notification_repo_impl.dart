@@ -7,11 +7,8 @@ class NotificationRepoImpl extends NotificationRepo {
   final FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
 
   @override
-  Future<Either<String, Unit>> sendNotification(
-    AppNotificationModel notification,
-  ) async {
+  Future<Either<String, Unit>> sendNotification(AppNotificationModel notification) async {
     try {
-      // بنحفظ الإشعار في Subcollection جوا document الـ المستلم
       await firebaseFirestore
           .collection('users')
           .doc(notification.receiverId)
@@ -23,12 +20,55 @@ class NotificationRepoImpl extends NotificationRepo {
     }
   }
 
+  // ✅ إرسال جماعي بناءً على الـ Role باستخدام الـ Batch (سريع جداً)
+  @override
+  Future<Either<String, Unit>> sendRoleBasedNotification(AppNotificationModel notification) async {
+    try {
+      final roles = _getRolesForTarget(notification.target);
+      if (roles.isEmpty) return right(unit); // لو مش موجود Roles
+
+      // 1. نجيب كل اليوزرات اللي ليها الصلاحية دي
+      final usersQuery = await firebaseFirestore
+          .collection('users')
+          .where('role', whereIn: roles) // افترض إن الـ Role محفوظ كـ String في الفايرستور
+          .get();
+
+      if (usersQuery.docs.isEmpty) return right(unit);
+
+      // 2. نقسمهم لـ Batches (كل واحد 400 عشان لو العدد كبير التطبيق ميقعش)
+      final int batchSize = 400;
+      for (int i = 0; i < usersQuery.docs.length; i += batchSize) {
+        final batch = firebaseFirestore.batch();
+        final end = (i + batchSize > usersQuery.docs.length) ? usersQuery.docs.length : i + batchSize;
+
+        for (int j = i; j < end; j++) {
+          final uid = usersQuery.docs[j].id;
+          final docRef = firebaseFirestore
+              .collection('users')
+              .doc(uid)
+              .collection('notifications')
+              .doc();
+
+          final notificationMap = notification.copyWith(id: docRef.id, receiverId: uid).toMap();
+          batch.set(docRef, notificationMap);
+        }
+        await batch.commit(); // نطق للسيرفر
+      }
+      
+      return right(unit);
+    } catch (e) {
+      return left("فشل إرسال الإشعار الجماعي: ${e.toString()}");
+    }
+  }
+
+  // ✅ جلب الإشعارات الغير مقروءة فقط + اللحظي
   @override
   Stream<List<AppNotificationModel>> getNotifications(String receiverId) {
     return firebaseFirestore
         .collection('users')
         .doc(receiverId)
         .collection('notifications')
+        .where('is_read', isEqualTo: false) // ✅ الفلتر السحري عشان منجبش الفاضي
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
@@ -39,35 +79,7 @@ class NotificationRepoImpl extends NotificationRepo {
   }
 
   @override
-Stream<List<AppNotificationModel>> getAdminPendingNotifications() {
-  return firebaseFirestore
-      .collectionGroup('notifications')
-      .orderBy('timestamp', descending: true)
-      .snapshots()
-      .map((snapshot) {
-        final Map<String, AppNotificationModel> uniqueNotifications = {};
-
-        for (var doc in snapshot.docs) {
-          final data = doc.data();
-          final model = AppNotificationModel.fromFirestore(data, doc.id);
-
-         
-          final key = "${model.relatedId}_${model.message}";
-
-          if (!uniqueNotifications.containsKey(key)) {
-            uniqueNotifications[key] = model;
-          }
-        }
-
-        return uniqueNotifications.values.toList();
-      });
-}
-
-  @override
-  Future<Either<String, Unit>> markAsRead(
-    String receiverId,
-    String notificationId,
-  ) async {
+  Future<Either<String, Unit>> markAsRead(String receiverId, String notificationId) async {
     try {
       await firebaseFirestore
           .collection('users')
@@ -80,42 +92,6 @@ Stream<List<AppNotificationModel>> getAdminPendingNotifications() {
       return left("فشل تحديث الإشعار: ${e.toString()}");
     }
   }
-
-  // دالة بتبعت إشعار لليستة مستخدمين (للإشعارات الجماعية)
-  @override
-Future<Either<String, Unit>> broadcastNotification(
-  List<String> receiverIds,
-  AppNotificationModel notification,
-) async {
-  try {
-    for (var uid in receiverIds) {
-      // 1. إنشاء نسخة من الموديل بالـ receiverId الصحيح
-      final notificationForAdmin = AppNotificationModel(
-        id: '',
-        title: notification.title,
-        message: notification.message,
-        type: notification.type,
-        timestamp: notification.timestamp,
-        receiverId: uid, // ✅ هنا التعديل: نضع الـ ID الصحيح لكل أدمن
-        relatedId: notification.relatedId,
-        doctorUid: notification.doctorUid,
-        senderName: notification.senderName,
-        isRead: false,
-      );
-
-      // 2. الحفظ في الفايربيز
-      await firebaseFirestore
-          .collection('users')
-          .doc(uid) // الـ Document الصحيح للأدمن
-          .collection('notifications')
-          .add(notificationForAdmin.toMap());
-    }
-    return right(unit);
-  } catch (e) {
-    return left("فشل إرسال الإشعار الجماعي: ${e.toString()}");
-  }
-}
-// ... (الدوال السابقة تبقى كما هي)
 
   @override
   Future<Either<String, Unit>> deleteNotification(String receiverId, String notificationId) async {
@@ -132,24 +108,49 @@ Future<Either<String, Unit>> broadcastNotification(
     }
   }
 
+  // ✅ مسح جماعي مقسم على Batches عشان الفايرستور
   @override
   Future<void> clearAllReadNotifications(String receiverId) async {
     try {
-      final batch = firebaseFirestore.batch();
       final querySnapshot = await firebaseFirestore
           .collection('users')
           .doc(receiverId)
           .collection('notifications')
-          .where('is_read', isEqualTo: true) // حذف المقروء فقط
+          .where('is_read', isEqualTo: true)
           .get();
 
-      for (var doc in querySnapshot.docs) {
-        batch.delete(doc.reference);
+      final int batchSize = 400;
+      for (int i = 0; i < querySnapshot.docs.length; i += batchSize) {
+        final batch = firebaseFirestore.batch();
+        final end = (i + batchSize > querySnapshot.docs.length) ? querySnapshot.docs.length : i + batchSize;
+        
+        for (int j = i; j < end; j++) {
+          batch.delete(querySnapshot.docs[j].reference);
+        }
+        await batch.commit();
       }
-      
-      await batch.commit();
     } catch (e) {
       print("خطأ أثناء التنظيف الجماعي: $e");
+    }
+  }
+
+  // ✅ دالة مساعدة بتحول الـ Target لـ Roles
+  List<String> _getRolesForTarget(NotificationTarget target) {
+    switch (target) {
+      case NotificationTarget.adminOnly:
+        return ['admin'];
+      case NotificationTarget.doctorOnly:
+        return ['doctor'];
+      case NotificationTarget.judgeOnly:
+        return ['judge'];
+      case NotificationTarget.adminAndDoctor:
+        return ['admin', 'doctor'];
+      case NotificationTarget.adminAndJudge:
+        return ['admin', 'judge'];
+      case NotificationTarget.allUsers:
+        return ['admin', 'doctor', 'judge'];
+      case NotificationTarget.specificUser:
+        return []; // ده بيتبعت عن طريق sendNotification العادية
     }
   }
 }

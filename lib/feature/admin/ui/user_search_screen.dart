@@ -118,7 +118,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
     );
   }
 
-  Widget _buildDoctorCard(BuildContext context, DoctorProfileModel doctor) {
+   Widget _buildDoctorCard(BuildContext context, DoctorProfileModel doctor) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isAr = context.locale.languageCode == 'ar';
@@ -128,8 +128,14 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
       child: InkWell(
         onTap: () {
-          // الانتقال لصفحة التفاصيل (Review) عند الضغط
-          // context.push(Routes.employeeReview, extra: doctor);
+          // ✅ الانتقال لصفحة العرض والتعديل الخاصة بالدكتور
+          context.push(
+            Routes.addDoctorPage,
+            extra: {
+              'existingUid': doctor.uid ?? '', // تأكدي إن الـ UID مش null
+              'isViewMode': true, // ✅ تفعيل وضع العرض المجمد
+            },
+          );
         },
         borderRadius: BorderRadius.circular(12.r),
         child: Padding(

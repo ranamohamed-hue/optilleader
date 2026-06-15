@@ -170,7 +170,28 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
       margin: EdgeInsets.only(bottom: 16.h),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          // ✅ تحديد المسار بناءً على دور الموظف
+          String route = '';
+          if (user.role == 'doctor') {
+            route = Routes.addDoctorPage;
+          } else if (user.role == 'judge') {
+            route = Routes.addJudgePage;
+          } else if (user.role == 'admin') {
+            route = Routes.addAdminPage;
+          }
+
+          // ✅ الانتقال لصفحة العرض المجمد
+          if (route.isNotEmpty) {
+            context.push(
+              route,
+              extra: {
+                'existingUid': user.uid, // تأكدي إن الـ SearchUserModel فيه متغير uid
+                'isViewMode': true,
+              },
+            );
+          }
+        },
         borderRadius: BorderRadius.circular(12.r),
         child: Padding(
           padding: EdgeInsets.all(16.w),

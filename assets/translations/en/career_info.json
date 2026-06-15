@@ -16,9 +16,11 @@
       "software_eng": "Software Engineering",
       "computer_science": "Computer Science"
     },
-    "current_role": "Current position start date: {}",
+    "current_role": "Current Position: {}",
     "experience": "Years of experience: {} years",
     "previous_positions": "Previous Positions:",
+    "no_history": "No Academic History",
+    "no_previous_roles": "No Previous Positions",
     "roles": {
       "lecturer": "Lecturer",
       "ta": "Teaching Assistant"
@@ -31,5 +33,4 @@
     "employment_type": {
       "permanent": "Permanent"
     }
-  }
-}
+  }}

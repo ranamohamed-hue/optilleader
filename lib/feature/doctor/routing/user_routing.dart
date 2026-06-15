@@ -1,12 +1,15 @@
 import 'package:go_router/go_router.dart';
+import 'package:optialeader/feature/admin/data/model/announcement_model.dart'; 
 import 'package:optialeader/feature/doctor/ui/screens/acadimic_data.dart';
 import 'package:optialeader/feature/doctor/ui/screens/announctments_datails_doctor_page.dart';
 import 'package:optialeader/feature/doctor/ui/screens/archievement_page.dart';
 import 'package:optialeader/feature/doctor/ui/screens/career_info_page.dart';
 import 'package:optialeader/feature/doctor/ui/screens/digital_archieve.dart';
+import 'package:optialeader/feature/doctor/ui/screens/doctor_nomination_page.dart';
 import 'package:optialeader/feature/doctor/ui/screens/uploadfiles.dart';
 import 'package:optialeader/feature/doctor/ui/screens/add_research_paper_page.dart';
 import 'package:optialeader/feature/doctor/ui/screens/add_activity_page.dart';
+
 final List<RouteBase> userSubRoutes = [
   GoRoute(
     path: 'acadimicData',
@@ -60,9 +63,20 @@ final List<RouteBase> userSubRoutes = [
   GoRoute(
     path: 'announcementsDetailsDoctor',
     builder: (context, state) {
-      // استقبال الـ ID من الرابط
       final String id = state.uri.queryParameters['id'] ?? '';
       return AnnouncementDetailsDoctorPage(announcementId: id);
+    },
+  ),
+  
+  GoRoute(
+    path: 'doctorNominationRequest', 
+    builder: (context, state) {
+      final Map<String, dynamic> args = state.extra as Map<String, dynamic>? ?? {};
+      
+      return DoctorNominationPage(
+        announcement: args['announcement'] as AnnouncementModel,
+        doctorId: args['doctorId'] as String? ?? '',
+      );
     },
   ),
 ];

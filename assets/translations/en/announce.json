@@ -15,7 +15,14 @@
       "applicants_label": "Number of Applicants",
       "person_unit": "Person",
       "deadline_label": "Estimated Deadline",
-      "posted_label": "Posted On"
+      "posted_label": "Posted On",
+      "target_role": "Competition Type",
+      "college": "College",
+      "department": "Department"
+    },
+    "delete": {
+      "confirm_title": "Confirm Deletion",
+      "confirm_body": "Are you sure you want to delete this announcement? This action cannot be undone."
     },
     "ERROR_FETCH_ANNOUNCEMENTS": "An error occurred while fetching data",
     "ERROR_ADD_ANNOUNCEMENT": "Failed to add announcement",
@@ -29,15 +36,25 @@
     "title": "Edit Announcement",
     "field_title": "Title",
     "hint_title": "Enter announcement title",
+    "field_target_role": "Competition / Role Type",
+    "field_college": "College",
+    "hint_college": "Select College",
+    "field_department": "Department",
+    "hint_department": "Select Department",
     "field_desc": "Description",
     "hint_desc": "Enter announcement details here...",
+    "field_image": "Announcement Image",
+    "hint_image": "Tap to select an image",
     "field_date": "Expiry Date",
     "field_status": "Status",
     "save_button": "Save Changes",
-    "success_msg": "Announcement updated successfully"
+    "success_msg": "Announcement updated successfully",
+    "error_title_desc_required": "Title and description are required!",
+    "error_college_dept_required": "You must select a college and department for this type of announcement"
   },
   "common": {
     "cancel": "Cancel",
+    "delete": "Delete",
     "app_name": "University System"
   }
 }

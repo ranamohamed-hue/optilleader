@@ -5,8 +5,17 @@ import 'package:optialeader/core/services/hive_service.dart';
 import 'package:optialeader/core/theming/logic/theme_cubit.dart';
 import 'package:optialeader/feature/admin/data/repo/admin_approval/admin_aproval_repo_impl.dart';
 import 'package:optialeader/feature/admin/data/repo/announcement_repos/announcement_repo_impl.dart';
+
+// ✅ الإضافة الجديدة: استيراد الريبو الخاص بالطلبات
+import 'package:optialeader/feature/admin/data/repo/nomination_request/nomination_request_repo.dart';
+import 'package:optialeader/feature/admin/data/repo/nomination_request/nomination_request_repo_impl.dart';
+
 import 'package:optialeader/feature/admin/logic/admin_approval/admin_approval_cubit.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart';
+
+// ✅ الإضافة الجديدة: استيراد الكيوبيت الخاص بالطلبات
+import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomination_request_cubit.dart';
+import 'package:supabase/supabase.dart';
 import 'package:optialeader/feature/auth/data/repo/auth_repo_impl.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 import 'package:optialeader/feature/database_admin/data/repo/admin_repository/admin_repo_impl.dart';
@@ -24,26 +33,41 @@ import 'package:optialeader/feature/doctor/data/repo/research_paper/research_pap
 import 'package:optialeader/feature/doctor/data/repo/research_paper/research_paper_repo_impl.dart';
 import 'package:optialeader/feature/doctor/logic/activities/activity_cubit.dart';
 import 'package:optialeader/feature/doctor/logic/research_paper/research_paper_cubit.dart';
-import 'package:optialeader/feature/doctor/ui/screens/add_research_paper_page.dart';
+import 'package:optialeader/feature/notification/data/repo/notification_repo.dart';
 import 'package:optialeader/feature/notification/data/repo/notification_repo_impl.dart';
 import 'package:optialeader/feature/notification/logic/app_notification_cubit.dart';
 import 'package:optialeader/feature/setting/data/repo/setting_repo_impl.dart';
 import 'package:optialeader/feature/setting/logic/setting_cubit.dart';
 import 'package:provider/single_child_widget.dart';
 
+import 'package:optialeader/feature/doctor/data/repo/activities/activity_repo.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; 
+
 class AppProviders {
   static List<SingleChildWidget> providers({
     required HiveService hiveService,
   }) => [
-    //  الـ Repos لازم تتسجل الأول كـ RepositoryProvider عشان الكيوبيتات تقدر تقرأهم
-    RepositoryProvider(create: (context) => ResearchPaperRepoImpl()),
-    RepositoryProvider(create: (context) => ActivityRepoImpl()),
-    RepositoryProvider(create: (context) => NotificationRepoImpl()),
+   
+    RepositoryProvider<ResearchPaperRepo>(create: (context) => ResearchPaperRepoImpl()),
+    RepositoryProvider<ActivityRepo>(create: (context) => ActivityRepoImpl()),
+    RepositoryProvider<NotificationRepo>(create: (context) => NotificationRepoImpl()),
+    
 
+
+RepositoryProvider<NominationRequestRepository>(
+  create: (context) => NominationRequestRepositoryImpl(
+    FirebaseFirestore.instance,
+    Supabase.instance.client, // ✅ تمرير Supabase Client
+  ),
+),
+
+    // -------------------------------------------------------------
+    // ✅ الـ Cubits
+    // -------------------------------------------------------------
+    
     // كيوبيت الثيم
     BlocProvider(create: (context) => ThemeCubit()),
 
-    // كيوبيت المصادقة
     // كيوبيت المصادقة
     BlocProvider(
       create: (context) => AuthCubit(
@@ -54,6 +78,7 @@ class AppProviders {
         ),
       ),
     ),
+    
     // كيوبيت الادمن
     BlocProvider(create: (context) => AdminDataCubit(AdminRepoImpl())),
 
@@ -69,12 +94,11 @@ class AppProviders {
           DatabseAdminCubit(DatabaseAdminRepoImpl(FirebaseFirestore.instance)),
     ),
 
-    //  كيوبيت الاعلانات - إضافة الـ 2 باراميتر اللي ناقصين
+    // كيوبيت الاعلانات
     BlocProvider(
       create: (context) => AnnouncementCubit(
         AnnouncementRepositoryImpl(FirebaseFirestore.instance),
-        context.read<NotificationRepoImpl>(), //  الإشعارات
-        FirebaseFirestore.instance, //  الفايرستور
+        context.read<NotificationRepo>(),
       )..fetchAnnouncements(),
     ),
 
@@ -86,43 +110,50 @@ class AppProviders {
       create: (context) => SearchCubit(SearchRepo(FirebaseFirestore.instance)),
     ),
 
-    //  الـ Cubits بتاعة الأبحاث والأنشطة
+    // كيوبيت الأنشطة
     BlocProvider(
       create: (context) => ActivityCubit(
-        context.read<ActivityRepoImpl>(),
-        context.read<NotificationRepoImpl>(),
+        context.read<ActivityRepo>(),
+        context.read<NotificationRepo>(),
       ),
     ),
 
+    // كيوبيت الأبحاث
     BlocProvider(
       create: (context) => ResearchCubit(
-        context.read<ResearchPaperRepoImpl>(),
-        context.read<NotificationRepoImpl>(),
+        context.read<ResearchPaperRepo>(),
+        context.read<NotificationRepo>(),
       ),
     ),
 
-    //  كيوبيت الإشعارات
-    //  كيوبيت الإشعارات
+    // كيوبيت الإشعارات
     BlocProvider(
       create: (context) {
         final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
         return NotificationCubit(
-          notificationRepo: context.read<NotificationRepoImpl>(),
+          notificationRepo: context.read<NotificationRepo>(),
           userId: uid,
         )..fetchNotifications();
       },
     ),
 
-    //  كيوبيت الموافقات للأدمن
-    //  كيوبيت الموافقات للأدمن
+    // كيوبيت الموافقات للأدمن
     BlocProvider(
       create: (context) => AdminApprovalCubit(
         adminApprovalRepo: AdminApprovalRepoImpl(
           firebaseFirestore: FirebaseFirestore.instance,
-          researchPaperRepo: context.read<ResearchPaperRepoImpl>(),
-          activityRepo: context.read<ActivityRepoImpl>(),
-          notificationRepo: context.read<NotificationRepoImpl>(),
+          researchPaperRepo: context.read<ResearchPaperRepo>(),
+          activityRepo: context.read<ActivityRepo>(),
+          notificationRepo: context.read<NotificationRepo>(),
         ),
+      ),
+    ),
+
+    // ✅ الإضافة الجديدة: كيوبيت طلبات الترشح (متاح لكل المستخدمين)
+    BlocProvider(
+      create: (context) => NominationRequestCubit(
+        context.read<NominationRequestRepository>(), // قراءة الريبو
+        context.read<NotificationRepo>(),            // قراءة ريبو الإشعارات
       ),
     ),
   ];

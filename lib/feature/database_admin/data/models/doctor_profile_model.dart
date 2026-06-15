@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:optialeader/feature/doctor/data/model/activities_model.dart';
 import 'package:optialeader/feature/doctor/data/model/research_paper_model.dart';
+import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 
 class DoctorProfileModel {
   final String? uid;
@@ -21,6 +22,20 @@ class DoctorProfileModel {
   final DateTime? birthDate;
   final String profileImage;
 
+  // البيانات الأكاديمية والوظيفية
+  final String universityAr;
+  final String universityEn;
+  final String facultyAr;
+  final String facultyEn;
+  final String departmentAr;
+  final String departmentEn;
+
+  // القيادات الأكاديمية
+  final DateTime? professorRankDate;
+  final List<String> previousLeadershipRoles;
+  final bool hasCriminalRecord;
+  final bool holdsPartyPosition;
+
   // بيانات التواصل
   final String email;
   final String phone;
@@ -28,9 +43,11 @@ class DoctorProfileModel {
   final String addressEn;
   final String? alternativeEmail;
 
-  // البيانات الأكاديمية
-  final List<Map<String, dynamic>>
-  academicHistory; // دي هتفضل Map مؤقتاً لحد ما نعرف هيكلها
+  // البيانات الأكاديمية (تاريخ الشهادات)
+  final List<Map<String, dynamic>> academicHistory;
+
+  // البيانات الجديدة: ملفات الأرشيف
+  final List<Map<String, dynamic>> digitalArchive;
 
   // البيانات الأهلية والإدارية
   final bool disciplinaryClearance;
@@ -38,10 +55,9 @@ class DoctorProfileModel {
   final bool isOnVacation;
   final bool isActive;
 
-  // الأبحاث والأنشطة (✅ تم التعديل)
+  // الأبحاث والأنشطة
   final String? cvUrl;
   final List<ResearchPaperModel> researchPapers;
-  final List<ActivityModel> trainingCourses;
   final List<ActivityModel> activities;
 
   DoctorProfileModel({
@@ -60,23 +76,33 @@ class DoctorProfileModel {
     required this.employeeId,
     this.birthDate,
     required this.profileImage,
+    this.universityAr = '',
+    this.universityEn = '',
+    this.facultyAr = '',
+    this.facultyEn = '',
+    this.departmentAr = '',
+    this.departmentEn = '',
+    this.professorRankDate,
+    this.previousLeadershipRoles = const [],
+    this.hasCriminalRecord = false,
+    this.holdsPartyPosition = false,
     required this.email,
     required this.phone,
     required this.addressAr,
     required this.addressEn,
     this.alternativeEmail,
     required this.academicHistory,
+    required this.digitalArchive, // مطلوب
     required this.disciplinaryClearance,
     required this.hasPermanentPosition,
     required this.isOnVacation,
     this.isActive = true,
     this.cvUrl = "",
     this.researchPapers = const [],
-    this.trainingCourses = const [],
     this.activities = const [],
   });
+
   factory DoctorProfileModel.fromJson(Map<String, dynamic> json, String id) {
-    // ✅ أفضل طريقة لقراءة الـ List of Models بأمان
     List<ResearchPaperModel> parseResearchPapers(List<dynamic>? list) {
       if (list == null) return [];
       List<ResearchPaperModel> result = [];
@@ -103,15 +129,61 @@ class DoctorProfileModel {
       return result;
     }
 
-    // استخراج بيانات الـ profile القديمة عشان تتوافق مع الباقي
     final profile = json['profile'] as Map<String, dynamic>? ?? {};
+
+    DateTime? parseDate(dynamic dateField) {
+      if (dateField == null) return null;
+      if (dateField is Timestamp) return dateField.toDate();
+      return DateTime.tryParse(dateField.toString());
+    }
+
+    final List<ActivityModel> allActivities = [];
+    allActivities.addAll(
+      parseActivities(json['scientific_work']?['activities']),
+    );
+    allActivities.addAll(
+      parseActivities(json['scientific_work']?['training_courses']),
+    );
+    allActivities.addAll(
+      parseActivities(json['scientific_work']?['other_activities']),
+    );
+
+    List<Map<String, dynamic>> historyList = [];
+    final historyData = json['academic_profile']?['history'];
+    if (historyData != null && historyData is List) {
+      for (var item in historyData) {
+        if (item is Map<String, dynamic>) {
+          historyList.add({
+            'degree': item['degree'] ?? '',
+            'major': item['major'] ?? '',
+            'date': parseDate(item['date']),
+            'place': item['place'] ?? '',
+            'type': item['type'] ?? 'degree',
+          });
+        }
+      }
+    }
+
+    // قراءة ملفات الأرشيف
+    List<Map<String, dynamic>> archiveList = [];
+    if (json['digital_archive'] != null && json['digital_archive'] is List) {
+      for (var item in json['digital_archive']) {
+        if (item is Map<String, dynamic>) {
+          archiveList.add({
+            'title': item['title'] ?? '',
+            'description': item['description'] ?? '',
+            'category': item['category'] ?? '',
+            'file_url': item['file_url'] ?? '',
+            'uploaded_at': item['uploaded_at'] ?? '',
+          });
+        }
+      }
+    }
 
     return DoctorProfileModel(
       uid: id,
       role: json['role'] ?? 'doctor',
       isFirstLogin: json['isFirstLogin'] ?? true,
-
-      // بيانات الهوية (متوافقة مع هيكل profile القديم)
       nameAr: profile['display_name']?['ar'] ?? '',
       nameEn: profile['display_name']?['en'] ?? '',
       nationalityAr: profile['nationality_ar'] ?? '',
@@ -124,26 +196,48 @@ class DoctorProfileModel {
       socialStatusEn: profile['social_status_en'] ?? '',
       nationalId: json['national_id'] ?? '',
       employeeId: json['employee_id'] ?? '',
-      birthDate: profile['birth_date'] != null
-          ? (profile['birth_date'] is Timestamp
-                ? (profile['birth_date'] as Timestamp).toDate()
-                : DateTime.tryParse(profile['birth_date'].toString()))
-          : null,
+      birthDate: parseDate(profile['birth_date']),
       profileImage: profile['profile_image'] ?? '',
-
-      // بيانات التواصل (متوافقة مع الهيكل القديم)
+      universityAr:
+          profile['university_ar'] ??
+          json['academic_profile']?['university_ar'] ??
+          '',
+      universityEn:
+          profile['university_en'] ??
+          json['academic_profile']?['university_en'] ??
+          '',
+      facultyAr:
+          profile['faculty_ar'] ??
+          json['academic_profile']?['faculty_ar'] ??
+          '',
+      facultyEn:
+          profile['faculty_en'] ??
+          json['academic_profile']?['faculty_en'] ??
+          '',
+      departmentAr:
+          profile['department_ar'] ??
+          json['academic_profile']?['department_ar'] ??
+          '',
+      departmentEn:
+          profile['department_en'] ??
+          json['academic_profile']?['department_en'] ??
+          '',
+      professorRankDate: parseDate(
+        json['academic_profile']?['professor_rank_date'],
+      ),
+      previousLeadershipRoles: List<String>.from(
+        json['leadership_data']?['previous_roles'] ?? [],
+      ),
+      hasCriminalRecord: json['security_data']?['has_criminal_record'] ?? false,
+      holdsPartyPosition:
+          json['security_data']?['holds_party_position'] ?? false,
       email: json['university_email'] ?? '',
       phone: profile['phone']?['phone1'] ?? '',
       addressAr: profile['address']?['ar'] ?? '',
       addressEn: profile['address']?['en'] ?? '',
       alternativeEmail: json['alternative_email'] ?? '',
-
-      // البيانات الأكاديمية
-      academicHistory: List<Map<String, dynamic>>.from(
-        json['academic_profile']?['history'] ?? [],
-      ),
-
-      // البيانات الأهلية والإدارية
+      academicHistory: historyList,
+      digitalArchive: archiveList,
       disciplinaryClearance:
           json['eligibility_data']?['disciplinary_clearance'] ?? true,
       hasPermanentPosition:
@@ -152,24 +246,40 @@ class DoctorProfileModel {
       isActive:
           json['is_active'] ?? json['eligibility_data']?['is_active'] ?? true,
       cvUrl: json['academic_profile']?['cv_url'],
-
-      // الأبحاث والأنشطة (بطريقة آمنة)
       researchPapers: parseResearchPapers(
         json['scientific_work']?['research_papers'],
       ),
-      trainingCourses: parseActivities(
-        json['scientific_work']?['training_courses'],
-      ),
-      activities: parseActivities(json['scientific_work']?['other_activities']),
+      activities: allActivities,
     );
   }
 
   Map<String, dynamic> toMap() {
+    List<Map<String, dynamic>> historyMap = academicHistory.map((historyItem) {
+      return {
+        'degree': historyItem['degree'],
+        'major': historyItem['major'],
+        'date': historyItem['date'] != null
+            ? Timestamp.fromDate(historyItem['date'] as DateTime)
+            : null,
+        'place': historyItem['place'],
+        'type': historyItem['type'],
+      };
+    }).toList();
+
+    List<Map<String, dynamic>> archiveMap = digitalArchive.map((item) {
+      return {
+        'title': item['title'],
+        'description': item['description'],
+        'category': item['category'],
+        'file_url': item['file_url'],
+        'uploaded_at': item['uploaded_at'],
+      };
+    }).toList();
+
     return {
       'uid': uid ?? '',
       'role': role,
       'isFirstLogin': isFirstLogin,
-      // متوافق مع باقي المستخدمين
       'university_email': email,
       'alternative_email': alternativeEmail ?? "",
       'national_id': nationalId,
@@ -187,19 +297,35 @@ class DoctorProfileModel {
         'social_status_ar': socialStatusAr,
         'social_status_en': socialStatusEn,
         'birth_date': birthDate,
+        'university_ar': universityAr,
+        'university_en': universityEn,
+        'faculty_ar': facultyAr,
+        'faculty_en': facultyEn,
+        'department_ar': departmentAr,
+        'department_en': departmentEn,
       },
-      // بيانات الدكتور الخاصة
-      'academic_profile': {'history': academicHistory, 'cv_url': cvUrl},
+      'academic_profile': {
+        'history': historyMap,
+        'cv_url': cvUrl,
+        'professor_rank_date': professorRankDate != null
+            ? Timestamp.fromDate(professorRankDate!)
+            : null,
+      },
       'eligibility_data': {
         'is_on_vacation': isOnVacation,
         'has_permanent_position': hasPermanentPosition,
         'disciplinary_clearance': disciplinaryClearance,
         'is_active': isActive,
       },
+      'leadership_data': {'previous_roles': previousLeadershipRoles},
+      'security_data': {
+        'has_criminal_record': hasCriminalRecord,
+        'holds_party_position': holdsPartyPosition,
+      },
+      'digital_archive': archiveMap,
       'scientific_work': {
         'research_papers': researchPapers.map((x) => x.toMap()).toList(),
-        'training_courses': trainingCourses.map((x) => x.toMap()).toList(),
-        'other_activities': activities.map((x) => x.toMap()).toList(),
+        'activities': activities.map((x) => x.toMap()).toList(),
       },
     };
   }
@@ -220,6 +346,16 @@ class DoctorProfileModel {
     String? employeeId,
     DateTime? birthDate,
     String? profileImage,
+    String? universityAr,
+    String? universityEn,
+    String? facultyAr,
+    String? facultyEn,
+    String? departmentAr,
+    String? departmentEn,
+    DateTime? professorRankDate,
+    List<String>? previousLeadershipRoles,
+    bool? hasCriminalRecord,
+    bool? holdsPartyPosition,
     String? email,
     String? phone,
     String? addressAr,
@@ -231,9 +367,9 @@ class DoctorProfileModel {
     bool? isOnVacation,
     bool? isActive,
     String? cvUrl,
-    List<ResearchPaperModel>? researchPapers, // ✅
-    List<ActivityModel>? trainingCourses, // ✅
-    List<ActivityModel>? activities, // ✅
+    List<ResearchPaperModel>? researchPapers,
+    List<ActivityModel>? activities,
+    List<Map<String, dynamic>>? digitalArchive,
   }) {
     return DoctorProfileModel(
       uid: uid ?? this.uid,
@@ -251,12 +387,24 @@ class DoctorProfileModel {
       employeeId: employeeId ?? this.employeeId,
       birthDate: birthDate ?? this.birthDate,
       profileImage: profileImage ?? this.profileImage,
+      universityAr: universityAr ?? this.universityAr,
+      universityEn: universityEn ?? this.universityEn,
+      facultyAr: facultyAr ?? this.facultyAr,
+      facultyEn: facultyEn ?? this.facultyEn,
+      departmentAr: departmentAr ?? this.departmentAr,
+      departmentEn: departmentEn ?? this.departmentEn,
+      professorRankDate: professorRankDate ?? this.professorRankDate,
+      previousLeadershipRoles:
+          previousLeadershipRoles ?? this.previousLeadershipRoles,
+      hasCriminalRecord: hasCriminalRecord ?? this.hasCriminalRecord,
+      holdsPartyPosition: holdsPartyPosition ?? this.holdsPartyPosition,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       addressAr: addressAr ?? this.addressAr,
       addressEn: addressEn ?? this.addressEn,
       alternativeEmail: alternativeEmail ?? this.alternativeEmail,
       academicHistory: academicHistory ?? this.academicHistory,
+      digitalArchive: digitalArchive ?? this.digitalArchive,
       disciplinaryClearance:
           disciplinaryClearance ?? this.disciplinaryClearance,
       hasPermanentPosition: hasPermanentPosition ?? this.hasPermanentPosition,
@@ -264,8 +412,57 @@ class DoctorProfileModel {
       isActive: isActive ?? this.isActive,
       cvUrl: cvUrl ?? this.cvUrl,
       researchPapers: researchPapers ?? this.researchPapers,
-      trainingCourses: trainingCourses ?? this.trainingCourses,
       activities: activities ?? this.activities,
     );
+  }
+
+  // ==========================================================
+  // الـ Getters بتاعة الإحصائيات والمتطلبات
+  // ==========================================================
+
+  int get totalAchievements => researchPapers.length + activities.length;
+
+  int get totalApprovedAchievements {
+    final approvedResearch = researchPapers
+        .where((p) => p.status == VerificationStatus.approved)
+        .length;
+    final approvedActivities = activities
+        .where((a) => a.status == VerificationStatus.approved)
+        .length;
+    return approvedResearch + approvedActivities;
+  }
+
+  int get totalPendingAchievements {
+    final pendingResearch = researchPapers
+        .where((p) => p.status == VerificationStatus.pending)
+        .length;
+    final pendingActivities = activities
+        .where((a) => a.status == VerificationStatus.pending)
+        .length;
+    return pendingResearch + pendingActivities;
+  }
+
+  int get totalConferences =>
+      activities.where((a) => a.type == 'conference').length;
+  int get totalWorkshops =>
+      activities.where((a) => a.type == 'workshop').length;
+  int get totalCourses => activities.where((a) => a.type == 'course').length;
+
+  int get totalApprovedResearch => researchPapers
+      .where((p) => p.status == VerificationStatus.approved)
+      .length;
+
+  int get yearsAsProfessor {
+    if (professorRankDate == null) return 0;
+    final now = DateTime.now();
+    int years = now.year - professorRankDate!.year;
+
+    // التحقق من هل أكمل السنة الحالية بالكامل
+    if (now.month < professorRankDate!.month ||
+        (now.month == professorRankDate!.month &&
+            now.day < professorRankDate!.day)) {
+      years--;
+    }
+    return years;
   }
 }

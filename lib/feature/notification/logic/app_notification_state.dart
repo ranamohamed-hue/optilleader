@@ -1,4 +1,3 @@
-
 import 'package:optialeader/feature/notification/data/model/app_notification_model.dart';
 
 abstract class NotificationState {}
