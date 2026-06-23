@@ -1,108 +1,159 @@
 import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:optialeader/feature/doctor/data/model/activities_model.dart';
-import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
+import 'package:optialeader/feature/doctor/data/model/conferance_model.dart';
+
+import 'package:optialeader/feature/doctor/data/model/courses_model.dart';
+import 'package:optialeader/feature/doctor/data/model/exhibition_venue_model.dart';
 import 'package:optialeader/feature/doctor/data/repo/activities/activity_repo.dart';
 import 'package:optialeader/feature/doctor/logic/activities/acativity_state.dart';
 import 'package:optialeader/feature/notification/data/model/app_notification_model.dart';
 import 'package:optialeader/feature/notification/data/repo/notification_repo.dart';
 
 class ActivityCubit extends Cubit<ActivityState> {
-  final ActivityRepo activityRepo;
-  final NotificationRepo notificationRepo; // محتاجينه عشان addNewActivity بس
+  final ActivitiesRepo activitiesRepo;
+  final NotificationRepo notificationRepo;
 
-  ActivityCubit(this.activityRepo, this.notificationRepo)
+  ActivityCubit(this.activitiesRepo, this.notificationRepo)
     : super(ActivityInitial());
 
-  Future<void> addNewActivity({
+  // ============================================================
+  // ============== دوال المؤتمرات ==============================
+  // ============================================================
+  Future<void> addConference({
     required String doctorUid,
-    required ActivityModel activity,
-    File? proofFile,
+    required ConferenceModel conference,
+    File? certFile,
   }) async {
     emit(ActivityLoading());
-
-    final result = await activityRepo.addActivity(
-      doctorUid: doctorUid,
-      activity: activity,
-      proofFile: proofFile,
+    final result = await activitiesRepo.addConference(
+      doctorUid,
+      conference,
+      certFile: certFile,
     );
-
     result.fold((error) => emit(ActivityError(error: error)), (_) async {
       emit(ActivitySuccess());
-
-      // ✅ إرسال إشعار للأدمن إن في نشاط جديد (ده موجود صح)
-      try {
-        final notification = AppNotificationModel(
-          id: '',
-          title: 'طلب اعتماد نشاط جديد',
-          message: 'تم إضافة نشاط بعنوان: "${activity.title}" يحتاج موافقتك',
-          type: NotificationType.newActivitySubmitted,
-          target: NotificationTarget.adminOnly,
-          timestamp: Timestamp.now(),
-          receiverId: '',
-          relatedId: activity.id,
-          doctorUid: doctorUid,
-        );
-
-        await notificationRepo.sendRoleBasedNotification(notification);
-        print(
-          "✅ Notifications sent to admins successfully via Role-Based logic",
-        );
-      } catch (e) {
-        print("🚨 Error sending admin notification: $e");
-      }
+      _sendNotification(doctorUid, conference.title, 'مؤتمر');
     });
   }
 
-  Future<void> deleteActivity({
+  Future<void> deleteConference({
     required String doctorUid,
-    required String activityId,
+    required String confId,
   }) async {
     emit(ActivityLoading());
-    final result = await activityRepo.deleteActivity(doctorUid, activityId);
+    final result = await activitiesRepo.deleteConference(doctorUid, confId);
     result.fold(
       (error) => emit(ActivityError(error: error)),
       (_) => emit(ActivitySuccess()),
     );
   }
 
-  // ✅ تم مسح الإشعار من هنا عشان الـ AdminApprovalRepoImpl هو اللي يبعته
-  Future<void> approveActivity(String doctorUid, String activityId) async {
+  // ============================================================
+  // ============== دوال الدورات ================================
+  // ============================================================
+  Future<void> addCourse({
+    required String doctorUid,
+    required CourseModel course,
+    File? certFile,
+  }) async {
     emit(ActivityLoading());
-    final result = await activityRepo.updateActivityStatus(
+    final result = await activitiesRepo.addCourse(
       doctorUid,
-      activityId,
-      VerificationStatus.approved,
+      course,
+      certFile: certFile,
     );
+    result.fold((error) => emit(ActivityError(error: error)), (_) async {
+      emit(ActivitySuccess());
+      _sendNotification(doctorUid, course.title, 'دورة تدريبية');
+    });
+  }
 
+  Future<void> deleteCourse({
+    required String doctorUid,
+    required String courseId,
+  }) async {
+    emit(ActivityLoading());
+    final result = await activitiesRepo.deleteCourse(doctorUid, courseId);
     result.fold(
       (error) => emit(ActivityError(error: error)),
-      (_) => emit(
-        ActivitySuccess(),
-      ), // خلاص، أتحتت الحالة والإشعار راح من الـ Repo
+      (_) => emit(ActivitySuccess()),
     );
   }
 
-  // ✅ تم مسح الإشعار من هنا برضو
-  Future<void> rejectActivity(
-    String doctorUid,
-    String activityId,
-    String reason,
-  ) async {
+  // ============================================================
+  // ============== دوال المعارض ================================
+  // ============================================================
+  Future<void> addExhibition({
+    required String doctorUid,
+    required ArtExhibitionModel exhibition,
+    File? proofFile,
+  }) async {
     emit(ActivityLoading());
-    final result = await activityRepo.updateActivityStatus(
+    final result = await activitiesRepo.addExhibition(
       doctorUid,
-      activityId,
-      VerificationStatus.rejected,
-      rejectionReason: reason,
+      exhibition,
+      proofFile: proofFile,
     );
+    result.fold((error) => emit(ActivityError(error: error)), (_) async {
+      emit(ActivitySuccess());
+      _sendNotification(doctorUid, exhibition.title, 'معرض فني');
+    });
+  }
 
+  Future<void> deleteExhibition({
+    required String doctorUid,
+    required String exhId,
+  }) async {
+    emit(ActivityLoading());
+    final result = await activitiesRepo.deleteExhibition(doctorUid, exhId);
     result.fold(
       (error) => emit(ActivityError(error: error)),
-      (_) => emit(
-        ActivitySuccess(),
-      ), // خلاص، أتحتت الحالة والإشعار راح من الـ Repo
+      (_) => emit(ActivitySuccess()),
     );
+  }
+
+  // ============================================================
+  // ============== دوال الأنشطة الأكاديمية =====================
+  // ============================================================
+  Future<void> saveAcademicActivities({
+    required String doctorUid,
+    required Map<String, dynamic> activitiesMap,
+  }) async {
+    emit(ActivityLoading());
+    final result = await activitiesRepo.saveAcademicActivities(
+      doctorUid,
+      activitiesMap,
+    );
+    result.fold(
+      (error) => emit(ActivityError(error: error)),
+      (_) => emit(ActivitySuccess()),
+    );
+  }
+
+  // ============================================================
+  // ============== إرسال الإشعارات =============================
+  // ============================================================
+  Future<void> _sendNotification(
+    String doctorUid,
+    String title,
+    String type,
+  ) async {
+    try {
+      final notification = AppNotificationModel(
+        id: '',
+        title: 'طلب اعتماد $type جديد',
+        message: 'تم إضافة $type بعنوان: "$title" يحتاج موافقتك',
+        type: NotificationType.newActivitySubmitted,
+        target: NotificationTarget.adminOnly,
+        timestamp: Timestamp.now(),
+        receiverId: '',
+        relatedId: '',
+        doctorUid: doctorUid,
+      );
+      await notificationRepo.sendRoleBasedNotification(notification);
+    } catch (e) {
+      print("Error sending notification: $e");
+    }
   }
 }

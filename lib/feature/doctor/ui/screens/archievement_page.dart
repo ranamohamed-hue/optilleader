@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-
+import 'package:easy_localization/easy_localization.dart';
 import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 
-import 'package:optialeader/feature/doctor/data/model/activities_model.dart';
+import 'package:optialeader/feature/doctor/data/model/conferance_model.dart';
+import 'package:optialeader/feature/doctor/data/model/courses_model.dart';
+import 'package:optialeader/feature/doctor/data/model/exhibition_venue_model.dart';
 import 'package:optialeader/feature/doctor/data/model/research_paper_model.dart';
 import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 
-class AchievementsLogPage extends StatelessWidget {
+class AchievementsLogPage extends StatefulWidget {
   final String doctorUid;
 
   const AchievementsLogPage({super.key, required this.doctorUid});
 
+  @override
+  State<AchievementsLogPage> createState() => _AchievementsLogPageState();
+}
+
+class _AchievementsLogPageState extends State<AchievementsLogPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -38,18 +44,30 @@ class AchievementsLogPage extends StatelessWidget {
             appBar: AppBar(
               toolbarHeight: 80.h,
               automaticallyImplyLeading: false,
-              leading: IconButton(
-                icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
-                onPressed: () {
-                  if (context.canPop()) {
-                    context.pop();
-                  } else {
-                    context.go(Routes.user);
-                  }
-                },
-              ),
               title: Row(
                 children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios_new,
+                      size: 30.sp,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go(Routes.user);
+                      }
+                    },
+                  ),
+                  SizedBox(width: 10.w),
+                  Text(
+                    'achievements_new.title'.tr(),
+                    style: theme.appBarTheme.titleTextStyle,
+                  ),
+                  SizedBox(width: 5.w),
+                  Icon(Icons.emoji_events, color: colorScheme.secondary),
+                  const Spacer(),
                   Container(
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
@@ -60,24 +78,17 @@ class AchievementsLogPage extends StatelessWidget {
                       ),
                     ),
                     child: CircleAvatar(
-                      radius: 20.r,
+                      radius: 30.r,
                       backgroundColor: colorScheme.secondary.withOpacity(0.2),
                       backgroundImage:
                           (doctor?.profileImage.isNotEmpty ?? false)
                           ? CachedNetworkImageProvider(doctor!.profileImage)
                           : null,
                       child: (doctor?.profileImage.isEmpty ?? true)
-                          ? Icon(Icons.person, color: Colors.white, size: 20.sp)
+                          ? Icon(Icons.person, color: Colors.white, size: 30.sp)
                           : null,
                     ),
                   ),
-                  SizedBox(width: 12.w),
-                  Text(
-                    'achievements.title'.tr(),
-                    style: theme.appBarTheme.titleTextStyle,
-                  ),
-                  const Spacer(),
-                  Icon(Icons.emoji_events, color: colorScheme.secondary),
                 ],
               ),
               bottom: TabBar(
@@ -87,10 +98,10 @@ class AchievementsLogPage extends StatelessWidget {
                 labelColor: colorScheme.secondary,
                 unselectedLabelColor: Colors.white70,
                 tabs: [
-                  Tab(text: "achievements.tabs.research".tr()),
-                  Tab(text: "achievements.tabs.conferences".tr()),
-                  Tab(text: "achievements.tabs.activities".tr()),
-                  Tab(text: "achievements.tabs.courses".tr()),
+                  Tab(text: "tabs.research".tr()),
+                  Tab(text: "tabs.conferences".tr()),
+                  Tab(text: "tabs.activities".tr()),
+                  Tab(text: "tabs.courses".tr()),
                 ],
               ),
             ),
@@ -100,27 +111,9 @@ class AchievementsLogPage extends StatelessWidget {
                   child: TabBarView(
                     children: [
                       _buildResearchList(context, doctor?.researchPapers ?? []),
-                      _buildActivitiesList(
-                        context,
-                        (doctor?.activities ?? [])
-                            .where((a) => a.type == 'conference')
-                            .toList(),
-                      ),
-                      _buildActivitiesList(
-                        context,
-                        (doctor?.activities ?? [])
-                            .where(
-                              (a) =>
-                                  a.type != 'conference' && a.type != 'course',
-                            )
-                            .toList(),
-                      ),
-                      _buildActivitiesList(
-                        context,
-                        (doctor?.activities ?? [])
-                            .where((a) => a.type == 'course')
-                            .toList(),
-                      ),
+                      _buildConferencesList(context, doctor?.conferences ?? []),
+                      _buildExhibitionsList(context, doctor?.exhibitions ?? []),
+                      _buildCoursesList(context, doctor?.courses ?? []),
                     ],
                   ),
                 ),
@@ -133,7 +126,6 @@ class AchievementsLogPage extends StatelessWidget {
                         height: 50.h,
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            // ✅ استخدام maybeOf عشان نتجنب أي مشاكل لو الـ Context لسه مجهز
                             final int currentIndex =
                                 DefaultTabController.maybeOf(
                                   innerContext,
@@ -141,11 +133,11 @@ class AchievementsLogPage extends StatelessWidget {
                                 0;
                             if (currentIndex == 0) {
                               context.push(
-                                '${Routes.addResearch}?uid=$doctorUid',
+                                '${Routes.addResearch}?uid=${widget.doctorUid}',
                               );
                             } else {
                               context.push(
-                                '${Routes.addActivity}?uid=$doctorUid',
+                                '${Routes.addActivity}?uid=${widget.doctorUid}',
                               );
                             }
                           },
@@ -154,7 +146,7 @@ class AchievementsLogPage extends StatelessWidget {
                             color: colorScheme.primary,
                           ),
                           label: Text(
-                            'achievements.add_new'.tr(),
+                            'achievements_new.add_new'.tr(),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16.sp,
@@ -183,14 +175,8 @@ class AchievementsLogPage extends StatelessWidget {
     BuildContext context,
     List<ResearchPaperModel> papers,
   ) {
-    if (papers.isEmpty) {
-      return Center(
-        child: Text(
-          "achievements.no_research".tr(),
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
+    if (papers.isEmpty)
+      return _buildEmptyState('achievements_new.no_research'.tr());
     return ListView.builder(
       padding: EdgeInsets.all(16.w),
       itemCount: papers.length,
@@ -206,30 +192,78 @@ class AchievementsLogPage extends StatelessWidget {
     );
   }
 
-  Widget _buildActivitiesList(
+  Widget _buildConferencesList(
     BuildContext context,
-    List<ActivityModel> activities,
+    List<ConferenceModel> conferences,
   ) {
-    if (activities.isEmpty) {
-      return Center(
-        child: Text(
-          "achievements.no_activities".tr(),
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
+    if (conferences.isEmpty)
+      return _buildEmptyState('achievements_new.no_conferences'.tr());
     return ListView.builder(
       padding: EdgeInsets.all(16.w),
-      itemCount: activities.length,
+      itemCount: conferences.length,
       itemBuilder: (context, index) {
-        final activity = activities[index];
+        final conf = conferences[index];
         return _buildItemCard(
-          title: activity.title,
-          subtitle: activity.organization,
-          date: activity.date,
-          status: activity.status,
+          title: conf.title,
+          // ✅ تم تصحيح المنطق ليتطابق مع الترجمة
+          subtitle: conf.isInternational
+              ? 'achievements_new.type_conference_international'.tr()
+              : 'achievements_new.type_conference_local'.tr(),
+          date: "",
+          status: conf.status,
         );
       },
+    );
+  }
+
+  Widget _buildExhibitionsList(
+    BuildContext context,
+    List<ArtExhibitionModel> exhibitions,
+  ) {
+    if (exhibitions.isEmpty)
+      return _buildEmptyState('achievements_new.no_Exhibitions'.tr());
+    return ListView.builder(
+      padding: EdgeInsets.all(16.w),
+      itemCount: exhibitions.length,
+      itemBuilder: (context, index) {
+        final exh = exhibitions[index];
+        return _buildItemCard(
+          title: exh.title,
+          subtitle:
+              '${'achievements_new.number_of_Exhibitions'.tr()}: ${exh.numberOfWorks}',
+          date: "",
+          status: exh.status,
+        );
+      },
+    );
+  }
+
+  Widget _buildCoursesList(BuildContext context, List<CourseModel> courses) {
+    // ✅ تم تصحيح مفتاح الترجمة ليعرض "لا توجد دورات"
+    if (courses.isEmpty)
+      return _buildEmptyState('achievements_new.no_courses'.tr());
+    return ListView.builder(
+      padding: EdgeInsets.all(16.w),
+      itemCount: courses.length,
+      itemBuilder: (context, index) {
+        final course = courses[index];
+        return _buildItemCard(
+          title: course.title,
+          subtitle: course.organization,
+          date: course.date,
+          status: course.status,
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Text(
+        message,
+        style: TextStyle(color: Colors.grey, fontSize: 14.sp),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 
@@ -278,11 +312,13 @@ class AchievementsLogPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 _buildStatusChip(status),
-                SizedBox(height: 4.h),
-                Text(
-                  date,
-                  style: TextStyle(color: Colors.grey, fontSize: 11.sp),
-                ),
+                if (date.isNotEmpty) ...[
+                  SizedBox(height: 4.h),
+                  Text(
+                    date,
+                    style: TextStyle(color: Colors.grey, fontSize: 11.sp),
+                  ),
+                ],
               ],
             ),
           ],
@@ -300,17 +336,17 @@ class AchievementsLogPage extends StatelessWidget {
       case VerificationStatus.approved:
         color = Colors.green;
         icon = Icons.check_circle;
-        text = 'achievements.status.accepted'.tr();
+        text = 'status.accepted'.tr();
         break;
       case VerificationStatus.rejected:
         color = Colors.red;
         icon = Icons.cancel;
-        text = 'achievements.status.rejected'.tr();
+        text = 'status.rejected'.tr();
         break;
       case VerificationStatus.pending:
         color = Colors.orange;
         icon = Icons.hourglass_empty;
-        text = 'achievements.status.under_review'.tr();
+        text = 'status.under_review'.tr();
         break;
     }
 

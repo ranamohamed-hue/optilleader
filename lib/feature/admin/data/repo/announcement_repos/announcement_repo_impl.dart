@@ -16,8 +16,7 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
 
   @override
   Future<Either<String, String>> addAnnouncement(
-    AnnouncementModel
-    announcement, 
+    AnnouncementModel announcement,
   ) async {
     try {
       final docRef = await _collection.add(announcement.toMap());
@@ -130,7 +129,7 @@ class AnnouncementRepositoryImpl implements IAnnouncementRepository {
       return Left("ERROR_IMAGE_UPLOAD_SUPABASE: ${e.toString()}");
     }
   }
-    // في AnnouncementRepositoryImpl
+
   @override
   Future<void> deleteAnnouncementImage(String imageUrl) async {
     if (imageUrl.contains('supabase.co')) {

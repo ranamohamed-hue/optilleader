@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:optialeader/feature/admin/data/model/nomination_request_model.dart';
 import 'package:optialeader/feature/judge/data/model/interview_scoring_model.dart';
 import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomination_request_cubit.dart';
 import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomonation_request_state.dart';
 
 class InterviewEvaluationScreen extends StatefulWidget {
   final String requestId;
+  final NominationRequestModel request;
 
   const InterviewEvaluationScreen({
     super.key,
     required this.requestId,
+    required this.request,
   });
 
   @override
@@ -21,41 +24,106 @@ class InterviewEvaluationScreen extends StatefulWidget {
 }
 
 class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
-  final TextEditingController _personalController = TextEditingController();
   final TextEditingController _scientificController = TextEditingController();
-  final TextEditingController _communicationController =
-      TextEditingController();
   final TextEditingController _leadershipController = TextEditingController();
+  final TextEditingController _studentActivitiesController =
+      TextEditingController();
+  final TextEditingController _communityActivitiesController =
+      TextEditingController();
+  final TextEditingController _humanRelationsController =
+      TextEditingController();
+
   final TextEditingController _notesController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _timeController = TextEditingController();
 
   DateTime? _selectedInterviewDate;
+  TimeOfDay? _selectedTime;
 
   final Map<String, double> _maxScores = {
-    'personal': 15,
     'scientific': 40,
-    'communication': 25,
-    'leadership': 20,
+    'leadership': 25,
+    'studentActivities': 15,
+    'communityActivities': 10,
+    'humanRelations': 10,
   };
 
   @override
+  void initState() {
+    super.initState();
+    _loadExistingEvaluation();
+  }
+
+  void _loadExistingEvaluation() {
+    final evaluation = widget.request.interviewEvaluation;
+    if (evaluation != null) {
+      _scientificController.text = (evaluation['scientificScore'] ?? 0)
+          .toString();
+      _leadershipController.text = (evaluation['leadershipScore'] ?? 0)
+          .toString();
+      _studentActivitiesController.text =
+          (evaluation['studentActivitiesScore'] ?? 0).toString();
+      _communityActivitiesController.text =
+          (evaluation['communityActivitiesScore'] ?? 0).toString();
+      _humanRelationsController.text = (evaluation['humanRelationsScore'] ?? 0)
+          .toString();
+
+      _notesController.text = [
+        evaluation['scientificNotes'],
+        evaluation['leadershipNotes'],
+        evaluation['studentActivitiesNotes'],
+        evaluation['communityActivitiesNotes'],
+        evaluation['humanRelationsNotes'],
+      ].where((n) => n != null && n.toString().isNotEmpty).join(' | ');
+    }
+
+    if (widget.request.interviewDate != null) {
+      _selectedInterviewDate = widget.request.interviewDate;
+    }
+    if (widget.request.interviewLocation != null) {
+      _locationController.text = widget.request.interviewLocation!;
+    }
+    if (widget.request.interviewTime != null) {
+      _timeController.text = widget.request.interviewTime!;
+    }
+  }
+
+  @override
   void dispose() {
-    _personalController.dispose();
     _scientificController.dispose();
-    _communicationController.dispose();
     _leadershipController.dispose();
+    _studentActivitiesController.dispose();
+    _communityActivitiesController.dispose();
+    _humanRelationsController.dispose();
     _notesController.dispose();
+    _locationController.dispose();
+    _timeController.dispose();
     super.dispose();
   }
 
   Future<void> _pickDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedInterviewDate ?? DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
     if (picked != null) {
       setState(() => _selectedInterviewDate = picked);
+    }
+  }
+
+  Future<void> _pickTime() async {
+    TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime ?? TimeOfDay.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedTime = picked;
+        _timeController.text =
+            '${picked.hour}:${picked.minute.toString().padLeft(2, '0')}';
+      });
     }
   }
 
@@ -68,10 +136,39 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
   }
 
   double get _currentTotal {
-    return _parseDouble(_personalController.text) +
-        _parseDouble(_scientificController.text) +
-        _parseDouble(_communicationController.text) +
-        _parseDouble(_leadershipController.text);
+    return _parseDouble(_scientificController.text) +
+        _parseDouble(_leadershipController.text) +
+        _parseDouble(_studentActivitiesController.text) +
+        _parseDouble(_communityActivitiesController.text) +
+        _parseDouble(_humanRelationsController.text);
+  }
+
+  void _scheduleInterview() {
+    if (_selectedInterviewDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('evaluation.schedule.date_required'.tr())),
+      );
+      return;
+    }
+    if (_locationController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('evaluation.schedule.location_required'.tr())),
+      );
+      return;
+    }
+    if (_timeController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('evaluation.schedule.time_required'.tr())),
+      );
+      return;
+    }
+
+    context.read<NominationRequestCubit>().scheduleInterview(
+      request: widget.request,
+      interviewDate: _selectedInterviewDate!,
+      location: _locationController.text.trim(),
+      time: _timeController.text.trim(),
+    );
   }
 
   void _submitEvaluation({bool isDraft = false}) {
@@ -84,11 +181,14 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
 
     final model = InterviewScoringModel(
       interviewDate: _selectedInterviewDate!,
-      personalScore: _parseDouble(_personalController.text),
       scientificScore: _parseDouble(_scientificController.text),
-      communicationScore: _parseDouble(_communicationController.text),
       leadershipScore: _parseDouble(_leadershipController.text),
-      notes: _notesController.text,
+      studentActivitiesScore: _parseDouble(_studentActivitiesController.text),
+      communityActivitiesScore: _parseDouble(
+        _communityActivitiesController.text,
+      ),
+      humanRelationsScore: _parseDouble(_humanRelationsController.text),
+      scientificNotes: _notesController.text,
       isDraft: isDraft,
     );
 
@@ -104,6 +204,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
 
     context.read<NominationRequestCubit>().submitInterviewEvaluation(
       requestId: widget.requestId,
+      request: widget.request,
       evaluationModel: model,
     );
   }
@@ -121,10 +222,6 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
       ),
       body: BlocListener<NominationRequestCubit, NominationRequestState>(
         listener: (context, state) {
-          if (state is NominationRequestLoading) {
-            // Optional: Show loading overlay
-          }
-          
           if (state is NominationRequestActionSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -134,11 +231,11 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
             );
             Navigator.pop(context);
           }
-          
+
           if (state is NominationRequestError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.message),
+                content: Text(state.message.tr()),
                 backgroundColor: Colors.red,
               ),
             );
@@ -149,40 +246,58 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildDateCard(colorScheme),
+              _buildDoctorInfoCard(colorScheme),
               SizedBox(height: 20.h),
+              _buildScheduleCard(colorScheme),
+              SizedBox(height: 20.h),
+
               _buildScoreCard(
-                titleKey: 'evaluation.sections.personal',
-                maxScore: _maxScores['personal']!,
-                controller: _personalController,
+                title: 'evaluation.scores.scientific'.tr(),
+                criteria: 'evaluation.criteria.scientific'.tr(),
+                maxScore: _maxScores['scientific']!,
+                controller: _scientificController,
                 color: Colors.blue,
               ),
               SizedBox(height: 15.h),
               _buildScoreCard(
-                titleKey: 'evaluation.sections.scientific',
-                maxScore: _maxScores['scientific']!,
-                controller: _scientificController,
+                title: 'evaluation.scores.leadership'.tr(),
+                criteria: 'evaluation.criteria.leadership'.tr(),
+                maxScore: _maxScores['leadership']!,
+                controller: _leadershipController,
                 color: Colors.green,
               ),
               SizedBox(height: 15.h),
               _buildScoreCard(
-                titleKey: 'evaluation.sections.communication',
-                maxScore: _maxScores['communication']!,
-                controller: _communicationController,
+                title: 'evaluation.scores.studentActivities'.tr(),
+                criteria: 'evaluation.criteria.studentActivities'.tr(),
+                maxScore: _maxScores['studentActivities']!,
+                controller: _studentActivitiesController,
                 color: Colors.orange,
               ),
               SizedBox(height: 15.h),
               _buildScoreCard(
-                titleKey: 'evaluation.sections.leadership',
-                maxScore: _maxScores['leadership']!,
-                controller: _leadershipController,
+                title: 'evaluation.scores.communityActivities'.tr(),
+                criteria: 'evaluation.criteria.communityActivities'.tr(),
+                maxScore: _maxScores['communityActivities']!,
+                controller: _communityActivitiesController,
                 color: Colors.purple,
               ),
+              SizedBox(height: 15.h),
+              _buildScoreCard(
+                title: 'evaluation.scores.humanRelations'.tr(),
+                criteria: 'evaluation.criteria.humanRelations'.tr(),
+                maxScore: _maxScores['humanRelations']!,
+                controller: _humanRelationsController,
+                color: Colors.teal,
+              ),
+
               SizedBox(height: 20.h),
               _buildTotalCard(colorScheme),
               SizedBox(height: 20.h),
               _buildNotesCard(colorScheme),
               SizedBox(height: 40.h),
+
+              // ✅ الأزرار المعدلة لعلاج الـ Overflow
               Row(
                 children: [
                   Expanded(
@@ -192,7 +307,10 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
                         side: BorderSide(color: colorScheme.primary),
                         padding: EdgeInsets.symmetric(vertical: 15.h),
                       ),
-                      child: Text('evaluation.actions.save_draft'.tr()),
+                      child: Text(
+                        'evaluation.actions.save_draft'.tr(),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                   SizedBox(width: 15.w),
@@ -207,6 +325,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
                       child: Text(
                         'evaluation.actions.approve'.tr(),
                         style: TextStyle(color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
@@ -220,34 +339,184 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
     );
   }
 
-  Widget _buildDateCard(ColorScheme colorScheme) {
-    return InkWell(
-      onTap: _pickDate,
-      child: Container(
-        padding: EdgeInsets.all(15.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              _selectedInterviewDate == null
-                  ? 'evaluation.interview_date.hint'.tr()
-                  : DateFormat('yyyy-MM-dd').format(_selectedInterviewDate!),
-              style: TextStyle(fontSize: 14.sp, color: Colors.black87),
+  // ✅ كارت بيانات الدكتور المعدل
+  Widget _buildDoctorInfoCard(ColorScheme colorScheme) {
+    final achievementsTotal = widget.request.scores?.achievementsTotal ?? 0.0;
+
+    return Container(
+      padding: EdgeInsets.all(15.w),
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 25.r,
+            backgroundColor: colorScheme.primary.withOpacity(0.1),
+            backgroundImage: widget.request.doctorImageUrl != null
+                ? NetworkImage(widget.request.doctorImageUrl!)
+                : null,
+            child: widget.request.doctorImageUrl == null
+                ? Icon(Icons.person, color: colorScheme.primary)
+                : null,
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.request.doctorName,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  '${'evaluation.doctor_info.job'.tr()}: ${widget.request.targetRole.tr()}',
+                  style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  '${'evaluation.doctor_info.auto_score'.tr()}: ${achievementsTotal.toStringAsFixed(1)}',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: Colors.green[700],
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-            Icon(Icons.calendar_today, color: colorScheme.primary),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ كارت تحديد الموعد المعدل
+  Widget _buildScheduleCard(ColorScheme colorScheme) {
+    return Container(
+      padding: EdgeInsets.all(15.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.event_available,
+                color: colorScheme.primary,
+                size: 20.sp,
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                'evaluation.schedule.title'.tr(),
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 15.h),
+          InkWell(
+            onTap: _pickDate,
+            child: Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _selectedInterviewDate == null
+                        ? 'evaluation.schedule.pick_date'.tr()
+                        : DateFormat(
+                            'yyyy-MM-dd',
+                          ).format(_selectedInterviewDate!),
+                    style: TextStyle(fontSize: 14.sp),
+                  ),
+                  Icon(
+                    Icons.calendar_today,
+                    color: colorScheme.primary,
+                    size: 18.sp,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 12.h),
+          TextField(
+            controller: _timeController,
+            readOnly: true,
+            onTap: _pickTime,
+            decoration: InputDecoration(
+              labelText: 'evaluation.schedule.time'.tr(),
+              prefixIcon: Icon(Icons.access_time, color: colorScheme.primary),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+          ),
+          SizedBox(height: 12.h),
+          TextField(
+            controller: _locationController,
+            decoration: InputDecoration(
+              labelText: 'evaluation.schedule.location'.tr(),
+              prefixIcon: Icon(Icons.location_on, color: colorScheme.primary),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+          ),
+          SizedBox(height: 15.h),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _scheduleInterview,
+              icon: Icon(Icons.send, size: 18.sp),
+              label: Flexible(
+                child: Text(
+                  'evaluation.schedule.submit_btn'.tr(),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildScoreCard({
-    required String titleKey,
+    required String title,
+    required String criteria,
     required double maxScore,
     required TextEditingController controller,
     required Color color,
@@ -278,7 +547,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
               SizedBox(width: 10.w),
               Expanded(
                 child: Text(
-                  titleKey.tr(),
+                  title,
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
@@ -288,6 +557,17 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
               ),
             ],
           ),
+          Padding(
+            padding: EdgeInsets.only(top: 8.h, right: 34.w),
+            child: Text(
+              criteria,
+              style: TextStyle(
+                fontSize: 11.sp,
+                color: Colors.grey[600],
+                height: 1.4,
+              ),
+            ),
+          ),
           SizedBox(height: 15.h),
           Row(
             children: [
@@ -296,7 +576,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
                   controller: controller,
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'evaluation.criteria.input_score'.tr(),
+                    labelText: 'evaluation.scores.score_label'.tr(),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.r),
                     ),
@@ -309,7 +589,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
               ),
               SizedBox(width: 15.w),
               Text(
-                'evaluation.criteria.max_score'.tr(args: ['$maxScore']),
+                '/ $maxScore',
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: Colors.grey[600],
@@ -323,6 +603,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
     );
   }
 
+  // ✅ كارت المجموع الكلي المعدل
   Widget _buildTotalCard(ColorScheme colorScheme) {
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -332,11 +613,12 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
         border: Border.all(color: colorScheme.primary),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'evaluation.criteria.total_score'.tr(),
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+          Expanded(
+            child: Text(
+              'evaluation.total'.tr(),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+            ),
           ),
           Text(
             '${_currentTotal.toStringAsFixed(1)} / 100',
@@ -356,7 +638,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'evaluation.notes.title'.tr(),
+          'evaluation.notes.label'.tr(),
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
         ),
         SizedBox(height: 10.h),
@@ -369,7 +651,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
               borderRadius: BorderRadius.circular(12.r),
             ),
             filled: true,
-            fillColor: Colors.grey[50],
+            fillColor: Colors.grey.shade50,
           ),
         ),
       ],

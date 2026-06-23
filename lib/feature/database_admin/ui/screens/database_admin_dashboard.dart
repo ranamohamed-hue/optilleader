@@ -273,11 +273,11 @@ class _HomeTab extends StatelessWidget {
                                       width: 70.r,
                                       height: 70.r,
                                       fit: BoxFit.cover,
-                                      placeholder: (_, __) =>
+                                      placeholder: (_, _) =>
                                           const CircularProgressIndicator(
                                             color: AppColors.darkGold,
                                           ),
-                                      errorWidget: (_, __, ___) => Icon(
+                                      errorWidget: (_, _, _) => Icon(
                                         Icons.person,
                                         color: Colors.white.withOpacity(0.7),
                                       ),
@@ -505,8 +505,9 @@ class _SettingsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<DatabseAdminCubit>().state;
-    if (state is DatabaseAdminSuccess)
+    if (state is DatabaseAdminSuccess) {
       return SettingsScreen(uid: state.profile.uid, role: 'database_admin');
+    }
     return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

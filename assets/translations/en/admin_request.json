@@ -2,6 +2,7 @@
   "admin_pending": {
     "title": "Pending Requests",
     "no_pending": "No pending requests currently",
+    "review_count": "Has {0} review requests",
     "papers_count": "{0} Papers",
     "activities_count": "{0} Activities",
     "journal": "Journal:",

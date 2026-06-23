@@ -27,7 +27,7 @@ class ResearchPaperRepoImpl extends ResearchPaperRepo {
     final fileBytes = await file.readAsBytes();
 
     await _supabase.storage
-        .from('files') // بنستخدم نفس البوكت بتاع الملفات
+        .from('files')
         .uploadBinary(storagePath, fileBytes, fileOptions: const FileOptions(upsert: true));
 
     final url = _supabase.storage.from('files').getPublicUrl(storagePath);
@@ -44,6 +44,7 @@ class ResearchPaperRepoImpl extends ResearchPaperRepo {
     required ResearchPaperModel paper,
     required File paperFile,
     File? indexingProofFile,
+    File? certifiedReportFile, // ✅ الجديد
   }) async {
     try {
       // 1. رفع ملف البحث
@@ -58,15 +59,25 @@ class ResearchPaperRepoImpl extends ResearchPaperRepo {
         indexingProofType = indexingUpload.fileType;
       }
 
-      // 3. تحديث الموديل بالروابط الحقيقية
+      // ✅ 3. رفع التقرير المعتمد (لو موجود)
+      String? certifiedReportUrl;
+      String? certifiedReportType;
+      if (certifiedReportFile != null) {
+        final reportUpload = await _uploadFileToSupabase(certifiedReportFile, doctorUid, 'certified_report');
+        certifiedReportUrl = reportUpload.url;
+        certifiedReportType = reportUpload.fileType;
+      }
+
+      // 4. تحديث الموديل بالروابط الحقيقية
       final paperWithFiles = paper.copyWith(
         paperFileUrl: paperUpload.url,
         paperFileType: paperUpload.fileType,
         indexingProofUrl: indexingProofUrl,
         indexingProofType: indexingProofType,
+        certifiedReportFileUrl: certifiedReportUrl, // ✅
       );
 
-      // 4. حفظ في Firestore (في الـ Array بتاعة الأبحاث)
+      // 5. حفظ في Firestore
       await _usersCollection.doc(doctorUid).update({
         'scientific_work.research_papers': FieldValue.arrayUnion([paperWithFiles.toMap()]),
       });
@@ -93,7 +104,7 @@ class ResearchPaperRepoImpl extends ResearchPaperRepo {
         );
 
         if (paperToDelete != null) {
-          //  محاولة حذف الملفات من Supabase
+          // حذف الملفات من Supabase
           try {
             if (paperToDelete['paperFileUrl'] != null) {
               final uri = Uri.parse(paperToDelete['paperFileUrl']);
@@ -104,6 +115,14 @@ class ResearchPaperRepoImpl extends ResearchPaperRepo {
           try {
             if (paperToDelete['indexingProofUrl'] != null) {
               final uri = Uri.parse(paperToDelete['indexingProofUrl']);
+              final filePath = uri.pathSegments.sublist(uri.pathSegments.indexOf('files') + 1).join('/');
+              await _supabase.storage.from('files').remove([filePath]);
+            }
+          } catch (_) {}
+          // ✅ حذف التقرير المعتمد
+          try {
+            if (paperToDelete['certifiedReportFileUrl'] != null) {
+              final uri = Uri.parse(paperToDelete['certifiedReportFileUrl']);
               final filePath = uri.pathSegments.sublist(uri.pathSegments.indexOf('files') + 1).join('/');
               await _supabase.storage.from('files').remove([filePath]);
             }
@@ -145,6 +164,35 @@ class ResearchPaperRepoImpl extends ResearchPaperRepo {
       return right(unit);
     } catch (e) {
       return left("فشل تحديث حالة البحث: ${e.toString()}");
+    }
+  }
+
+  // ✅ دالة جديدة: تحديث درجة الأدمن (الـ 90 درجة)
+  @override
+  Future<Either<String, Unit>> updateAdminScore({
+    required String doctorUid,
+    required String paperId,
+    required double adminScore,
+  }) async {
+    try {
+      final docRef = _usersCollection.doc(doctorUid);
+      final docSnapshot = await docRef.get();
+
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data() as Map<String, dynamic>;
+        final List<dynamic> papers = List.from(data['scientific_work']?['research_papers'] ?? []);
+
+        for (int i = 0; i < papers.length; i++) {
+          if (papers[i]['id'] == paperId) {
+            papers[i]['adminScore'] = adminScore;
+            break;
+          }
+        }
+        await docRef.update({'scientific_work.research_papers': papers});
+      }
+      return right(unit);
+    } catch (e) {
+      return left("فشل تحديث درجة الأدمن: ${e.toString()}");
     }
   }
 }

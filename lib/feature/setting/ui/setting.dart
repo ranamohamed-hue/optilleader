@@ -74,7 +74,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  String _getHomeRoute() {
+    String _getHomeRoute() {
     switch (widget.role) {
       case 'admin':
         return Routes.admin;
@@ -82,6 +82,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return Routes.databaseAdmin;
       case 'judge':
         return Routes.judge;
+      case 'employee': 
+        return Routes.employee;
       default:
         return Routes.user;
     }
@@ -189,7 +191,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Scaffold(
           appBar: AppBar(
             leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
+              icon: Icon(Icons.arrow_back_ios_new, size: 30.sp),
               onPressed: () {
                 if (widget.onBack != null) {
                   widget.onBack!();
@@ -462,7 +464,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         context.read<SettingCubit>().uploadProfileImage(
                           uid: widget.uid,
                           imageFile: File(pickedFile.path),
-                          currentUser: user!,
+                          currentUser: user,
                           role: widget.role,
                         );
                       }
@@ -494,12 +496,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         width: 94.r,
                                         height: 94.r,
                                         fit: BoxFit.cover,
-                                        placeholder: (_, __) => Icon(
+                                        placeholder: (_, _) => Icon(
                                           Icons.person,
                                           size: 45.sp,
                                           color: colorScheme.primary,
                                         ),
-                                        errorWidget: (_, __, ___) => Icon(
+                                        errorWidget: (_, _, _) => Icon(
                                           Icons.person,
                                           size: 45.sp,
                                           color: colorScheme.primary,

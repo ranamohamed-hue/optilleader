@@ -6,7 +6,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/services/hive_service.dart';
 import 'package:optialeader/core/services/folder_json_loader.dart';
-import 'package:optialeader/core/services/hive_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'package:optialeader/core/routing/app_router.dart';
@@ -40,7 +39,7 @@ void main() async {
 
   /// Localization
   await EasyLocalization.ensureInitialized();
-
+// أضف هذا السطر
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('ar')],
@@ -50,6 +49,7 @@ void main() async {
       startLocale: const Locale('ar'),
       child: MultiBlocProvider(
         providers: AppProviders.providers(hiveService:hiveService),
+        
         child: const MyApp(),
       ),
     ),

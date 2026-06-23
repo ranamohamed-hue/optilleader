@@ -5,6 +5,8 @@ class Routes {
   static const admin = '/admin';
   static const judge = '/judge';
   static const user = '/user';
+  static const employee = '/employee';
+  static const employeeCourses = '/employee/courses';
   static const changePassword = '/change-password';
   static const settings = '/settings';
 
@@ -14,30 +16,33 @@ class Routes {
   static const userSearch = '/admin/user-search';
   //static const fullemployeereports = '/admin/fullemployeereports';
   // مسار صفحة تفاصيل الطلبات المعلقة للأدمن
-static const adminDetails = '/admin/pending-requests/details';
+  static const adminDetails = '/admin/pending-requests/details';
   //صفحات مرتبطة بصفحة الاعلانات
   static const announcementDetails = '/admin/announcements/details';
   static const editAnnountmentPage = '/admin/announcements/edit';
   static const adminPendingRequestsPage = '/admin/pending-requests';
-  static const nominationRequestDetails = '/admin/nomination-request-details'; 
-  //صفحات خاصه بادارة الطلبات 
-  static const fullEmployeeReport='/admin/orders-list/fullEmployeeReport';
+  static const nominationRequestDetails = '/admin/nomination-request-details';
+  //صفحات خاصه بادارة الطلبات
+  static const fullEmployeeReport = '/admin/orders-list/fullEmployeeReport';
+
   //صفحات خاصه بأدمن قاعدة البيانات
   static const addDoctorPage = '/databaseAdmin/addDoctorPage';
   static const addAdminPage = '/databaseAdmin/addAdminPage';
   static const addJudgePage = '/databaseAdmin/addJudgePage';
-  static const searchPage='/databaseAdmin/searchPage';
+  static const searchPage = '/databaseAdmin/searchPage';
   static const String usersListPage = '/databaseAdmin/users-list';
   //صفحات خاصه بالمحكم
   static const judgeEvaluation = '/judge/evaluationScreen';
-  static const judgeOrderList = '/judge/orders-list'; 
+  static const judgeOrderList = '/judge/orders-list';
+  static const judgeCategories = '/judge/categories-screen';
+
   static const acadiminData = '/user/acadimicData';
   static const archievementPage = '/user/archievementPage';
   static const careerInfo = '/user/careerInfo';
   static const digitalArchieve = '/user/digitalArchieve';
   static const uploadFiles = '/user/uploadFiles';
-  static const announcementsDetailsDoctor = '/user/announcementsDetailsDoctor';  
-static const doctorNominationRequest = '/user/doctorNominationRequest';
+  static const announcementsDetailsDoctor = '/user/announcementsDetailsDoctor';
+  static const doctorNominationRequest = '/user/doctorNominationRequest';
   // \ مسارات صفحات رفع الأبحاث والأنشطة
   static const addResearch = '/user/addResearch';
   static const addActivity = '/user/addActivity';

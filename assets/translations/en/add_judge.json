@@ -25,6 +25,9 @@
     "auth_error": "An error occurred while creating the account",
     "view_profile": "View Profile",
     "edit_mode": "Edit",
-    "lock_mode": "Lock Editing"
+    "lock_mode": "Lock Editing",
+    "digital_archive": "Digital Archive",
+    "no_archive": "No files in archive",
+    "add_archive": "Add File to Archive"
   }
 }

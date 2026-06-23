@@ -5,11 +5,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/helper/file_halper.dart';
 import 'package:uuid/uuid.dart';
-import 'package:optialeader/feature/doctor/data/model/activities_model.dart';
+import 'package:optialeader/feature/doctor/logic/activities/mandatory_leadership_data.dart';
 import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 import 'package:optialeader/feature/doctor/logic/activities/activity_cubit.dart';
 import 'package:optialeader/feature/doctor/logic/activities/acativity_state.dart';
 import 'package:optialeader/feature/doctor/ui/widgets/file_picker_field.dart';
+import 'package:optialeader/feature/doctor/data/model/courses_model.dart';
+import 'package:optialeader/feature/doctor/data/model/conferance_model.dart';
 
 class AddActivityPage extends StatefulWidget {
   final String doctorUid;
@@ -27,11 +29,24 @@ class _AddActivityPageState extends State<AddActivityPage> {
   final _durationHoursController = TextEditingController();
 
   String _selectedType = 'conference';
-  String _selectedParticipationType = 'attendee';
 
-  // التعديل: القيمة الابتدائية لمنع الخطأ في الـ Dropdown
+  // لمؤتمرات
+  bool _isInternational = true;
+  bool _isSpecialized = true;
+  bool _isPublished = false;
+  ParticipationType _participationType = ParticipationType.paperPresentation;
+
+  // لدورات
   CourseCategory _selectedCategory = CourseCategory.administrative;
   CourseScope _selectedScope = CourseScope.international;
+  CourseType _courseType = CourseType.graded;
+
+  // قائمة الدورات التأهيلية من الكلاس الموحد
+  final List<Map<String, String>> _mandatoryCoursesList =
+      MandatoryLeadershipData.courses;
+
+  final Set<String> _selectedMandatoryCourses = {};
+  final Map<String, PickedFileData?> _mandatoryCourseFiles = {};
 
   PickedFileData? _proofFile;
 
@@ -45,30 +60,130 @@ class _AddActivityPageState extends State<AddActivityPage> {
   }
 
   void _submit() {
-    if (!_formKey.currentState!.validate()) return;
+    // التحقق من الحقول المطلوبة للنشاط العادي
+    final hasNormalActivity =
+        _titleController.text.trim().isNotEmpty ||
+        _organizationController.text.trim().isNotEmpty;
 
-    final activity = ActivityModel(
-      id: const Uuid().v4(),
-      type: _selectedType,
-      title: _titleController.text.trim(),
-      organization: _organizationController.text.trim(),
-      date: _dateController.text.trim(),
-      durationHours: int.tryParse(_durationHoursController.text.trim()),
-      participationType: _selectedParticipationType,
-      courseCategory: _selectedType == 'course'
-          ? _selectedCategory
-          : CourseCategory.none,
-      courseScope: _selectedType == 'course'
-          ? _selectedScope
-          : CourseScope.none,
-      status: VerificationStatus.pending,
-    );
+    if (hasNormalActivity && !_formKey.currentState!.validate()) return;
 
-    context.read<ActivityCubit>().addNewActivity(
-      doctorUid: widget.doctorUid,
-      activity: activity,
-      proofFile: _proofFile?.file,
-    );
+    // التحقق من ملف الشهادة للنشاط العادي
+    if (hasNormalActivity) {
+      if (_selectedType == 'conference' && _proofFile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('addActivity.fileRequired'.tr()),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      if (_selectedType == 'course' &&
+          _courseType == CourseType.graded &&
+          _proofFile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('addActivity.fileRequired'.tr()),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
+    // التحقق من ملفات الشهادات للدورات التأهيلية المختارة
+    if (_selectedMandatoryCourses.isNotEmpty) {
+      for (var courseData in _mandatoryCoursesList) {
+        final key = courseData['key']!;
+        if (!_selectedMandatoryCourses.contains(key)) continue;
+
+        if (_mandatoryCourseFiles[key] == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${courseData['titleAr']} - ${'addActivity.fileRequired'.tr()}',
+                ),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+          return;
+        }
+      }
+    }
+
+    // إذا مفيش نشاط عادي ولا دورات تأهيلية، لا تفعل شيء
+    if (!hasNormalActivity && _selectedMandatoryCourses.isEmpty) return;
+
+    final cubit = context.read<ActivityCubit>();
+
+    // حفظ النشاط العادي (مؤتمر أو دورة تقييمية)
+    if (hasNormalActivity) {
+      if (_selectedType == 'conference') {
+        final conf = ConferenceModel(
+          id: const Uuid().v4(),
+          title: _titleController.text.trim(),
+          isInternational: _isInternational,
+          isSpecialized: _isSpecialized,
+          isPublished: _isPublished,
+          participationType: _participationType,
+          certificateUrl: '',
+          status: VerificationStatus.pending,
+        );
+        cubit.addConference(
+          doctorUid: widget.doctorUid,
+          conference: conf,
+          certFile: _proofFile!.file,
+        );
+      } else if (_courseType == CourseType.graded) {
+        final course = CourseModel(
+          id: const Uuid().v4(),
+          title: _titleController.text.trim(),
+          organization: _organizationController.text.trim(),
+          date: _dateController.text.trim(),
+          durationHours: int.tryParse(_durationHoursController.text.trim()),
+          type: _courseType,
+          courseCategory: _selectedCategory,
+          courseScope: _selectedScope,
+          certificateUrl: '',
+          status: VerificationStatus.pending,
+        );
+        cubit.addCourse(
+          doctorUid: widget.doctorUid,
+          course: course,
+          certFile: _proofFile!.file,
+        );
+      }
+    }
+
+    // حفظ الدورات التأهيلية المختارة (بالاسم العربي الحقيقي)
+    if (_selectedMandatoryCourses.isNotEmpty) {
+      for (var courseData in _mandatoryCoursesList) {
+        final key = courseData['key']!;
+        if (!_selectedMandatoryCourses.contains(key)) continue;
+
+        final file = _mandatoryCourseFiles[key]!;
+
+        final mandatoryCourse = CourseModel(
+          id: const Uuid().v4(),
+          title: courseData['titleAr']!,
+          organization: '',
+          date: '',
+          type: CourseType.mandatory,
+          courseCategory: CourseCategory.none,
+          courseScope: CourseScope.none,
+          certificateUrl: '',
+          status: VerificationStatus.approved,
+        );
+        cubit.addCourse(
+          doctorUid: widget.doctorUid,
+          course: mandatoryCourse,
+          certFile: file.file,
+        );
+      }
+    }
   }
 
   @override
@@ -101,7 +216,13 @@ class _AddActivityPageState extends State<AddActivityPage> {
             child: Form(
               key: _formKey,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // قسم الدورات التأهيلية
+                  _buildMandatoryCoursesSection(),
+
+                  SizedBox(height: 20.h),
+
                   DropdownButtonFormField<String>(
                     value: _selectedType,
                     decoration: InputDecoration(
@@ -110,11 +231,7 @@ class _AddActivityPageState extends State<AddActivityPage> {
                     items: [
                       DropdownMenuItem(
                         value: 'conference',
-                        child: Text('addActivity.typeConference'.tr()),
-                      ),
-                      DropdownMenuItem(
-                        value: 'workshop',
-                        child: Text('addActivity.typeWorkshop'.tr()),
+                        child: Text('addActivity.typeConferenceWorkshop'.tr()),
                       ),
                       DropdownMenuItem(
                         value: 'course',
@@ -123,13 +240,10 @@ class _AddActivityPageState extends State<AddActivityPage> {
                     ],
                     onChanged: (v) => setState(() {
                       _selectedType = v!;
-                      // لو رجعنا لغير الدورة، نرجع القيم الافتراضية
-                      if (_selectedType != 'course') {
-                        _selectedCategory = CourseCategory.administrative;
-                        _selectedScope = CourseScope.international;
-                      }
+                      _courseType = CourseType.graded;
                     }),
                   ),
+
                   SizedBox(height: 12.h),
 
                   TextFormField(
@@ -140,6 +254,7 @@ class _AddActivityPageState extends State<AddActivityPage> {
                     validator: (v) =>
                         v!.isEmpty ? 'validation.required'.tr() : null,
                   ),
+
                   SizedBox(height: 12.h),
 
                   TextFormField(
@@ -150,6 +265,7 @@ class _AddActivityPageState extends State<AddActivityPage> {
                     validator: (v) =>
                         v!.isEmpty ? 'validation.required'.tr() : null,
                   ),
+
                   SizedBox(height: 12.h),
 
                   Row(
@@ -178,33 +294,54 @@ class _AddActivityPageState extends State<AddActivityPage> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 12.h),
 
-                  DropdownButtonFormField<String>(
-                    value: _selectedParticipationType,
-                    decoration: InputDecoration(
-                      labelText: 'addActivity.participationType'.tr(),
+                  SizedBox(height: 20.h),
+
+                  // حقول المؤتمرات
+                  if (_selectedType == 'conference') ...[
+                    SwitchListTile(
+                      title: Text('addActivity.isInternational'.tr()),
+                      value: _isInternational,
+                      onChanged: (v) => setState(() => _isInternational = v),
                     ),
-                    items: [
-                      DropdownMenuItem(
-                        value: 'attendee',
-                        child: Text('addActivity.partAttendee'.tr()),
+                    SwitchListTile(
+                      title: Text('addActivity.isSpecialized'.tr()),
+                      value: _isSpecialized,
+                      onChanged: (v) => setState(() => _isSpecialized = v),
+                    ),
+                    SwitchListTile(
+                      title: Text('addActivity.isPublished'.tr()),
+                      value: _isPublished,
+                      onChanged: (v) => setState(() => _isPublished = v),
+                    ),
+                    DropdownButtonFormField<ParticipationType>(
+                      value: _participationType,
+                      decoration: InputDecoration(
+                        labelText: 'addActivity.participationType'.tr(),
                       ),
-                      DropdownMenuItem(
-                        value: 'speaker',
-                        child: Text('addActivity.partSpeaker'.tr()),
-                      ),
-                      DropdownMenuItem(
-                        value: 'organizer',
-                        child: Text('addActivity.partOrganizer'.tr()),
-                      ),
-                    ],
-                    onChanged: (v) =>
-                        setState(() => _selectedParticipationType = v!),
-                  ),
+                      items: [
+                        DropdownMenuItem(
+                          value: ParticipationType.paperPresentation,
+                          child: Text('addActivity.partPaperPresentation'.tr()),
+                        ),
+                        DropdownMenuItem(
+                          value: ParticipationType.abstractPresentation,
+                          child: Text(
+                            'addActivity.partAbstractPresentation'.tr(),
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: ParticipationType.attendanceOnly,
+                          child: Text('addActivity.partAttendanceOnly'.tr()),
+                        ),
+                      ],
+                      onChanged: (v) => setState(() => _participationType = v!),
+                    ),
+                  ],
 
-                  if (_selectedType == 'course') ...[
-                    SizedBox(height: 12.h),
+                  // حقول الدورات التقييمية
+                  if (_selectedType == 'course' &&
+                      _courseType == CourseType.graded) ...[
                     DropdownButtonFormField<CourseCategory>(
                       value: _selectedCategory,
                       decoration: InputDecoration(
@@ -247,11 +384,14 @@ class _AddActivityPageState extends State<AddActivityPage> {
                   ],
 
                   SizedBox(height: 20.h),
+
+                  // ملف الشهادة للنشاط العادي فقط
                   FilePickerField(
                     label: 'addActivity.proofFile'.tr(),
                     selectedFile: _proofFile,
                     onFileSelected: (file) => setState(() => _proofFile = file),
                   ),
+
                   SizedBox(height: 30.h),
 
                   SizedBox(
@@ -277,12 +417,134 @@ class _AddActivityPageState extends State<AddActivityPage> {
                             ),
                     ),
                   ),
+
+                  SizedBox(height: 20.h),
                 ],
               ),
             ),
           ),
         );
       },
+    );
+  }
+
+  // ويدجت قسم الدورات التأهيلية
+  Widget _buildMandatoryCoursesSection() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 20.h),
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.deepPurple.shade50,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.deepPurple, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.playlist_add_check_rounded,
+                color: Colors.deepPurple,
+                size: 22.sp,
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'addActivity.mandatory_courses_title'.tr(),
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.deepPurple.shade900,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'addActivity.mandatory_courses_subtitle'.tr(),
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: Colors.deepPurple.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 15.h),
+
+          ..._mandatoryCoursesList.map((courseData) {
+            final key = courseData['key']!;
+            final titleAr = courseData['titleAr']!;
+            final isSelected = _selectedMandatoryCourses.contains(key);
+
+            return Container(
+              margin: EdgeInsets.only(bottom: 12.h),
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: isSelected ? Colors.deepPurple : Colors.grey.shade300,
+                  width: isSelected ? 1.5 : 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        if (isSelected) {
+                          _selectedMandatoryCourses.remove(key);
+                          _mandatoryCourseFiles.remove(key);
+                        } else {
+                          _selectedMandatoryCourses.add(key);
+                        }
+                      });
+                    },
+                    child: Row(
+                      children: [
+                        Icon(
+                          isSelected
+                              ? Icons.check_box_rounded
+                              : Icons.check_box_outline_blank,
+                          color: isSelected ? Colors.deepPurple : Colors.grey,
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Text(
+                            titleAr,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13.sp,
+                              color: isSelected
+                                  ? Colors.deepPurple
+                                  : Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isSelected) ...[
+                    SizedBox(height: 10.h),
+                    FilePickerField(
+                      label: '$titleAr - ${'addActivity.proofFile'.tr()}',
+                      selectedFile: _mandatoryCourseFiles[key],
+                      onFileSelected: (file) =>
+                          setState(() => _mandatoryCourseFiles[key] = file),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          }).toList(),
+        ],
+      ),
     );
   }
 }

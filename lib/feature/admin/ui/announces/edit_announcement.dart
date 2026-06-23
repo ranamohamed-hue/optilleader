@@ -9,6 +9,9 @@ import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart';
 import 'package:intl/intl.dart';
 
+import 'package:optialeader/feature/admin/ui/announces/administrative_roles_data.dart';
+import 'package:optialeader/feature/admin/ui/announces/mansoura_universities_data.dart';
+
 class EditAnnouncementPage extends StatefulWidget {
   final AnnouncementModel? announcement;
 
@@ -29,26 +32,17 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
   XFile? _pickedImage;
   final ImagePicker _picker = ImagePicker();
 
+  // 🏛️ بيانات الكلية والقسم
   String? _selectedCollegeId;
   String? _selectedCollegeName;
   String? _selectedDepartmentId;
   String? _selectedDepartmentName;
 
-  // ملاحظة: البيانات هنا ثابتة للعرض، في التطبيق الفعلي يجب جلبها من الـ API
-  final List<Map<String, String>> _colleges = [
-    {'id': 'col_01', 'name': 'كلية الهندسة'},
-    {'id': 'col_02', 'name': 'كلية الطب'},
-    {'id': 'col_03', 'name': 'كلية الحاسب الآلي'},
-  ];
-
-  final List<Map<String, String>> _departments = [
-    {'id': 'dep_01', 'name': 'قسم الحاسب', 'collegeId': 'col_01'},
-    {'id': 'dep_02', 'name': 'قسم المدني', 'collegeId': 'col_01'},
-    {'id': 'dep_03', 'name': 'قسم الكهرباء', 'collegeId': 'col_01'},
-    {'id': 'dep_04', 'name': 'قسم الجراحة', 'collegeId': 'col_02'},
-    {'id': 'dep_05', 'name': 'قسم الباطنة', 'collegeId': 'col_02'},
-    {'id': 'dep_06', 'name': 'قسم علوم الحاسب', 'collegeId': 'col_03'},
-  ];
+  // 📋 بيانات الإدارات (للـ admin_manager)
+  String? _selectedAdminSectorId;
+  String? _selectedAdminSectorName;
+  String? _selectedAdminSubDeptId;
+  String? _selectedAdminSubDeptName;
 
   @override
   void initState() {
@@ -60,18 +54,17 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
     _selectedTargetRole = widget.announcement?.targetRole ?? 'general';
     _dateController = TextEditingController();
 
+    // 🏛️ استرجاع بيانات الكلية والقسم
     _selectedCollegeId = widget.announcement?.collegeId;
     _selectedCollegeName = widget.announcement?.collegeName;
     _selectedDepartmentId = widget.announcement?.departmentId;
     _selectedDepartmentName = widget.announcement?.departmentName;
 
-    // حماية من Crash إذا لم يكن المعرف موجوداً في القائمة الثابتة
-    if (_selectedCollegeId != null && !_colleges.any((c) => c['id'] == _selectedCollegeId)) {
-      _colleges.add({'id': _selectedCollegeId!, 'name': _selectedCollegeName ?? ''});
-    }
-    if (_selectedDepartmentId != null && !_departments.any((d) => d['id'] == _selectedDepartmentId)) {
-      _departments.add({'id': _selectedDepartmentId!, 'name': _selectedDepartmentName ?? '', 'collegeId': _selectedCollegeId ?? ''});
-    }
+    // 📋 استرجاع بيانات الإدارات
+    _selectedAdminSectorId = widget.announcement?.adminSectorId;
+    _selectedAdminSectorName = widget.announcement?.adminSectorName;
+    _selectedAdminSubDeptId = widget.announcement?.adminSubDeptId;
+    _selectedAdminSubDeptName = widget.announcement?.adminSubDeptName;
   }
 
   @override
@@ -99,6 +92,11 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    // 🧠 التحكم الذكي في إظهار الحقول
+    final bool showCollege = MansouraUniversitiesData.targetRoleRequiresFaculty(_selectedTargetRole);
+    final bool showDepartment = MansouraUniversitiesData.targetRoleRequiresDepartment(_selectedTargetRole);
+    final bool showAdminDept = _selectedTargetRole == 'admin_manager';
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -147,13 +145,31 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
                     _buildTargetRoleDropdown(colorScheme),
                     const SizedBox(height: 25),
 
-                    if (_selectedTargetRole != 'general') ...[
+                    // =============================================
+                    // 🏛️ كلية وأقسام الأكاديميين
+                    // =============================================
+                    if (showCollege) ...[
                       _buildFieldLabel("edit_announcement.field_college".tr(), Icons.domain, colorScheme),
                       _buildCollegeDropdown(colorScheme),
                       const SizedBox(height: 25),
+                    ],
 
+                    if (showDepartment) ...[
                       _buildFieldLabel("edit_announcement.field_department".tr(), Icons.meeting_room, colorScheme),
                       _buildDepartmentDropdown(colorScheme),
+                      const SizedBox(height: 25),
+                    ],
+
+                    // =============================================
+                    // 📋 قطاعات وإدارات الوظائف الإدارية
+                    // =============================================
+                    if (showAdminDept) ...[
+                      _buildFieldLabel("edit_announcement.field_admin_sector".tr(), Icons.account_balance, colorScheme),
+                      _buildAdminSectorDropdown(colorScheme),
+                      const SizedBox(height: 25),
+
+                      _buildFieldLabel("edit_announcement.field_admin_sub_dept".tr(), Icons.corporate_fare, colorScheme),
+                      _buildAdminSubDeptDropdown(colorScheme),
                       const SizedBox(height: 25),
                     ],
 
@@ -180,8 +196,8 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
                                     child: CachedNetworkImage(
                                       imageUrl: widget.announcement!.imageUrl!,
                                       fit: BoxFit.cover,
-                                      placeholder: (_, __) => Center(child: CircularProgressIndicator(color: colorScheme.secondary)),
-                                      errorWidget: (_, __, ___) => Icon(Icons.broken_image, color: colorScheme.error, size: 40),
+                                      placeholder: (_, _) => Center(child: CircularProgressIndicator(color: colorScheme.secondary)),
+                                      errorWidget: (_, _, _) => Icon(Icons.broken_image, color: colorScheme.error, size: 40),
                                     ),
                                   )
                                 : Column(
@@ -254,7 +270,13 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
     );
   }
 
+  // ============================================================
+  // 🏛️ دروب داون الكلية (من الكلاس الجديد)
+  // ============================================================
   Widget _buildCollegeDropdown(ColorScheme colorScheme) {
+    final isArabic = context.locale.languageCode == 'ar';
+    final colleges = MansouraUniversitiesData.faculties;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -270,21 +292,30 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
           icon: Icon(Icons.keyboard_arrow_down_rounded, color: colorScheme.secondary),
           style: TextStyle(color: colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
           onChanged: (val) {
+            final college = MansouraUniversitiesData.getFacultyById(val!);
             setState(() {
               _selectedCollegeId = val;
-              _selectedCollegeName = _colleges.firstWhere((c) => c['id'] == val)['name'];
+              _selectedCollegeName = isArabic ? college!.nameAr : college!.nameEn;
+              // مسح القسم لما يغير الكلية
               _selectedDepartmentId = null;
               _selectedDepartmentName = null;
             });
           },
-          items: _colleges.map((c) => DropdownMenuItem(value: c['id'], child: Text(c['name']!))).toList(),
+          items: colleges.map((c) => DropdownMenuItem(
+            value: c.id,
+            child: Text(isArabic ? c.nameAr : c.nameEn),
+          )).toList(),
         ),
       ),
     );
   }
 
+  // ============================================================
+  // 🏢 دروب داون القسم (ديناميكي حسب الكلية)
+  // ============================================================
   Widget _buildDepartmentDropdown(ColorScheme colorScheme) {
-    final filteredDepts = _departments.where((d) => d['collegeId'] == _selectedCollegeId).toList();
+    final isArabic = context.locale.languageCode == 'ar';
+    final departments = MansouraUniversitiesData.getDepartmentsByFacultyId(_selectedCollegeId ?? '');
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -295,23 +326,107 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: _selectedDepartmentId,
+          value: departments.any((d) => d.id == _selectedDepartmentId) ? _selectedDepartmentId : null,
           isExpanded: true,
           hint: Text("edit_announcement.hint_department".tr()),
           icon: Icon(Icons.keyboard_arrow_down_rounded, color: colorScheme.secondary),
           style: TextStyle(color: colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
           onChanged: (val) {
+            final dept = departments.firstWhere((d) => d.id == val);
             setState(() {
               _selectedDepartmentId = val;
-              _selectedDepartmentName = filteredDepts.firstWhere((d) => d['id'] == val)['name'];
+              _selectedDepartmentName = isArabic ? dept.nameAr : dept.nameEn;
             });
           },
-          items: filteredDepts.map((d) => DropdownMenuItem(value: d['id'], child: Text(d['name']!))).toList(),
+          items: departments.map((d) => DropdownMenuItem(
+            value: d.id,
+            child: Text(isArabic ? d.nameAr : d.nameEn),
+          )).toList(),
         ),
       ),
     );
   }
 
+  // ============================================================
+  // 📋 دروب داون القطاع/الإدارة العامة
+  // ============================================================
+  Widget _buildAdminSectorDropdown(ColorScheme colorScheme) {
+    final isArabic = context.locale.languageCode == 'ar';
+    final sectors = AdministrativeRolesData.departments;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedAdminSectorId,
+          isExpanded: true,
+          hint: Text("edit_announcement.hint_admin_sector".tr()),
+          icon: Icon(Icons.keyboard_arrow_down_rounded, color: colorScheme.secondary),
+          style: TextStyle(color: colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+          onChanged: (val) {
+            final sector = AdministrativeRolesData.getDepartmentById(val!);
+            setState(() {
+              _selectedAdminSectorId = val;
+              _selectedAdminSectorName = isArabic ? sector!.nameAr : sector!.nameEn;
+              // مسح الإدارة الفرعية لما يغير القطاع
+              _selectedAdminSubDeptId = null;
+              _selectedAdminSubDeptName = null;
+            });
+          },
+          items: sectors.map((s) => DropdownMenuItem(
+            value: s.id,
+            child: Text(isArabic ? s.nameAr : s.nameEn),
+          )).toList(),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 📁 دروب داون الإدارة الفرعية (ديناميكي حسب القطاع)
+  // ============================================================
+  Widget _buildAdminSubDeptDropdown(ColorScheme colorScheme) {
+    final isArabic = context.locale.languageCode == 'ar';
+    final subDepts = AdministrativeRolesData.getSubDepartmentsByDepartmentId(_selectedAdminSectorId ?? '');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: subDepts.any((s) => s.id == _selectedAdminSubDeptId) ? _selectedAdminSubDeptId : null,
+          isExpanded: true,
+          hint: Text("edit_announcement.hint_admin_sub_dept".tr()),
+          icon: Icon(Icons.keyboard_arrow_down_rounded, color: colorScheme.secondary),
+          style: TextStyle(color: colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+          onChanged: (val) {
+            final subDept = subDepts.firstWhere((s) => s.id == val);
+            setState(() {
+              _selectedAdminSubDeptId = val;
+              _selectedAdminSubDeptName = isArabic ? subDept.nameAr : subDept.nameEn;
+            });
+          },
+          items: subDepts.map((s) => DropdownMenuItem(
+            value: s.id,
+            child: Text(isArabic ? s.nameAr : s.nameEn),
+          )).toList(),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // 🎯 دروب داون نوع المسابقة
+  // ============================================================
   Widget _buildTargetRoleDropdown(ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -329,12 +444,15 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
           onChanged: (val) {
             setState(() {
               _selectedTargetRole = val!;
-              if (_selectedTargetRole == 'general') {
-                _selectedCollegeId = null;
-                _selectedCollegeName = null;
-                _selectedDepartmentId = null;
-                _selectedDepartmentName = null;
-              }
+              // ✅ مسح كل الحقول الاختيارية لما يغير النوع
+              _selectedCollegeId = null;
+              _selectedCollegeName = null;
+              _selectedDepartmentId = null;
+              _selectedDepartmentName = null;
+              _selectedAdminSectorId = null;
+              _selectedAdminSectorName = null;
+              _selectedAdminSubDeptId = null;
+              _selectedAdminSubDeptName = null;
             });
           },
           items: AnnouncementModel.targetRoleList.map((v) => DropdownMenuItem(value: v, child: Text(v.tr()))).toList(),
@@ -343,6 +461,9 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
     );
   }
 
+  // ============================================================
+  // 🧩 عناصر الـ UI المساعدة
+  // ============================================================
   Widget _buildFieldLabel(String label, IconData icon, ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, left: 4, right: 4),
@@ -426,15 +547,34 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
     );
   }
 
+  // ============================================================
+  // 💾 حفظ/تحديث البيانات
+  // ============================================================
   void _handleUpdate(BuildContext context) async {
     if (_titleController.text.trim().isEmpty || _bodyController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("edit_announcement.error_title_desc_required".tr())));
       return;
     }
 
-    if (_selectedTargetRole != 'general' && (_selectedCollegeId == null || _selectedDepartmentId == null)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("edit_announcement.error_college_dept_required".tr())));
-      return;
+    // ✅ تحقق ذكي حسب نوع المسابقة
+    final showCollege = MansouraUniversitiesData.targetRoleRequiresFaculty(_selectedTargetRole);
+    final showDepartment = MansouraUniversitiesData.targetRoleRequiresDepartment(_selectedTargetRole);
+    final showAdminDept = _selectedTargetRole == 'admin_manager';
+
+    if (showAdminDept) {
+      if (_selectedAdminSectorId == null || _selectedAdminSubDeptId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("edit_announcement.error_sector_subdept_required".tr())));
+        return;
+      }
+    } else if (showCollege || showDepartment) {
+      if (showCollege && _selectedCollegeId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("edit_announcement.error_college_required".tr())));
+        return;
+      }
+      if (showDepartment && _selectedDepartmentId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("edit_announcement.error_dept_required".tr())));
+        return;
+      }
     }
 
     if (widget.announcement != null) {
@@ -448,6 +588,10 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
         collegeName: _selectedCollegeName,
         departmentId: _selectedDepartmentId,
         departmentName: _selectedDepartmentName,
+        adminSectorId: _selectedAdminSectorId,
+        adminSectorName: _selectedAdminSectorName,
+        adminSubDeptId: _selectedAdminSubDeptId,
+        adminSubDeptName: _selectedAdminSubDeptName,
       );
       await context.read<AnnouncementCubit>().updateAnnouncement(updatedModel, imagePath: _pickedImage?.path);
     } else {
@@ -462,6 +606,10 @@ class _EditAnnouncementPageState extends State<EditAnnouncementPage> {
         collegeName: _selectedCollegeName,
         departmentId: _selectedDepartmentId,
         departmentName: _selectedDepartmentName,
+        adminSectorId: _selectedAdminSectorId,
+        adminSectorName: _selectedAdminSectorName,
+        adminSubDeptId: _selectedAdminSubDeptId,
+        adminSubDeptName: _selectedAdminSubDeptName,
       );
       await context.read<AnnouncementCubit>().addAnnouncement(newAnnouncement, imagePath: _pickedImage?.path);
     }

@@ -33,8 +33,9 @@
       "dean": "عميد الكلية",
       "vice_dean": "وكيل الكلية",
       "head_dept": "رئيس القسم",
-      "professor": "أستاذ جامعي",
-      "other": "أخرى"
+      "other": "أخرى",
+       "quality_manager": "مدير الجودة",
+      "admin_manager": "مدير الإدارة"
     }
   },
   "judge_orders": {

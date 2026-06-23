@@ -1,44 +1,70 @@
 {
   "report": {
-    "title": "Request Details",
+    "title": "تفاصيل الطلب",
     "header": {
-      "role_label": "Running for role:"
+      "role_label": "الترشح لوظيفة:"
     },
     "system_points": {
-      "title": "Automated Evaluation Scores",
-      "point_unit": "Points",
-      "total": "Total Score"
+      "title": "نتائج التقييم التلقائي",
+      "point_unit": "نقطة",
+      "total": "مجموع النقاط"
     },
     "declaration": {
-      "open_link_msg": "Declaration file will open in the browser",
-      "view_file": "View attached declaration file"
+      "open_link_msg": "سيتم فتح ملف الإقرار في المتصفح",
+      "view_file": "عرض ملف الإقرار المرفق"
     },
     "actions": {
-      "transfer_title": "Transfer to Evaluator",
-      "choose_judge": "Choose Evaluator",
-      "judge_required": "Please select an evaluator first",
-      "reject": "Reject",
-      "transfer": "Transfer",
-      "approve": "Approve"
+      "transfer_title": "نقل إلى مقيم",
+      "choose_judge": "اختيار المحكم",
+      "judge_required": "يرجى اختيار المحكم أولاً",
+      "reject": "رفض",
+      "transfer": "نقل",
+      "approve": "اعتماد"
     },
     "reject_dialog": {
-      "title": "Rejection Reason",
-      "hint": "Write the reason here...",
-      "cancel": "Cancel",
-      "confirm": "Confirm Rejection"
+      "title": "سبب الرفض",
+      "hint": "اكتب السبب هنا...",
+      "cancel": "إلغاء",
+      "confirm": "تأكيد الرفض"
     },
     "evaluation_report": {
-      "title": "Psychological & Behavioral Evaluation Report",
-      "evaluator_name": "Evaluator Name:",
-      "not_specified": "Not Specified",
-      "interview_date": "Interview Date:",
-      "not_set": "Not Set",
-      "score": "Evaluation Score:",
-      "notes_label": "Evaluator Notes:",
-      "no_notes": "No notes",
-      "final_decision": "Final Decision:",
-      "final_reject": "Final Reject",
-      "final_approve": "Final Approve"
+      "title": "تقرير التقييم النفسي والسلوكي",
+      "evaluator_name": "اسم المحكم:",
+      "not_specified": "غير محدد",
+      "interview_date": "تاريخ المقابلة:",
+      "not_set": "لم يتم التحديد",
+      "score": "درجة التقييم:",
+      "notes_label": "ملاحظات المحكم:",
+      "no_notes": "لا توجد ملاحظات",
+      "final_decision": "القرار النهائي:",
+      "final_reject": "رفض نهائي",
+      "final_approve": "قبول نهائي"
+    },
+    "messages": {
+      "update_success": "تم تحديث الدرجة بنجاح",
+      "error_calculate": "حدث خطأ أثناء الحساب",
+      "repeat_calculate": "اعادة الحساب"
+    },
+        "categories":{
+      "activity_or_research":"النشاط/البحث",
+      "type":"النوع",
+      "details":"التفاصيل",
+      "degree":"الدرجة",
+      "no_degree":"لا توجد درجات محسوبة لهذا الطلب",
+      "judge_error":"خطأ في تحميل المحكمين",
+      "no_judge":"لا يوجد محكمين نشطين حالياً",
+      "category":"التصنيف",
+      "scope":"النطاق",
+      "status":"الحالة"
+    },
+    "evaluation": {
+      "scores": {
+        "scientific": "القسم العلمي",
+        "leadership": "التطوير والقيادة",
+        "student_activities": "الأنشطة الطلابية",
+        "community_activities": "الأنشطة المجتمعية",
+        "human_relation": "العلاقات الانسانية"
+      }
     }
   }
 }

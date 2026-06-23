@@ -47,7 +47,7 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
             toolbarHeight: 90.h,
             automaticallyImplyLeading: false,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios_new, size: 20.sp),
+              icon: Icon(Icons.arrow_back_ios_new, size: 30.sp),
               onPressed: () {
                 if (context.canPop()) {
                   context.pop();
@@ -58,27 +58,6 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
             ),
             title: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: colorScheme.secondary,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: CircleAvatar(
-                    radius: 22.r,
-                    backgroundColor: colorScheme.secondary.withOpacity(0.2),
-                    backgroundImage: (doctor?.profileImage.isNotEmpty ?? false)
-                        ? CachedNetworkImageProvider(doctor!.profileImage)
-                        : null,
-                    child: (doctor?.profileImage.isEmpty ?? true)
-                        ? Icon(Icons.person, color: Colors.white, size: 20.sp)
-                        : null,
-                  ),
-                ),
-                SizedBox(width: 12.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,18 +68,42 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
                         style: textTheme.titleSmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                          fontSize: 18,
                         ),
                       ),
+                      SizedBox(height: 5),
                       Text(
                         isArabic
                             ? (doctor?.nameAr ?? '-')
                             : (doctor?.nameEn ?? '-'),
                         style: textTheme.bodySmall?.copyWith(
                           color: Colors.white70,
+                          fontSize: 18,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
+                  ),
+                ),
+                SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colorScheme.secondary,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    radius: 30.r,
+                    backgroundColor: colorScheme.secondary.withOpacity(0.2),
+                    backgroundImage: (doctor?.profileImage.isNotEmpty ?? false)
+                        ? CachedNetworkImageProvider(doctor!.profileImage)
+                        : null,
+                    child: (doctor?.profileImage.isEmpty ?? true)
+                        ? Icon(Icons.person, color: Colors.white, size: 20.sp)
+                        : null,
                   ),
                 ),
               ],
@@ -148,7 +151,7 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
                       dateStr,
                       isLast: isLast,
                     );
-                  }).toList()
+                  })
                 else
                   _buildEmptyCard(context, 'career.no_history'.tr()),
                 SizedBox(height: 25.h),
@@ -348,7 +351,7 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
               doctor!.previousLeadershipRoles.isNotEmpty)
             ...doctor.previousLeadershipRoles
                 .map((role) => _buildHistoryItem(context, role, ''))
-                .toList()
+                
           else
             _buildHistoryItem(context, 'career.no_previous_roles'.tr(), ''),
         ],
@@ -417,6 +420,7 @@ class _CareerInfoPageState extends State<CareerInfoPage> {
             context,
             Icons.calendar_today_rounded,
             'career.labels.hire_date'.tr(),
+
             '-',
           ),
         ],

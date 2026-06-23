@@ -1,47 +1,47 @@
 {
   "evaluation": {
-    "title": "Applicant Evaluation",
-    "applicant_card": {
-      "role_label": "Nominated for role:"
+    "title": "Interview Evaluation",
+    "total": "Total Score",
+    "doctor_info": {
+      "job": "Role",
+      "auto_score": "System Auto-Score"
     },
-    "interview_date": {
-      "label": "Interview Date",
-      "hint": "Tap to select interview date",
-      "required": "Please select the interview date"
+    "schedule": {
+      "title": "Schedule Interview",
+      "pick_date": "Select Interview Date",
+      "time": "Interview Time",
+      "location": "Interview Location",
+      "submit_btn": "Save and Notify Doctor"
     },
-    "sections": {
-      "personal": "1. Personal Attributes & Appearance (Max: 15)",
-      "scientific": "2. Scientific & Professional Competence (Max: 40)",
-      "communication": "3. Communication & Presentation Skills (Max: 25)",
-      "leadership": "4. Leadership & Management Development (Max: 20)"
+    "scores": {
+      "scientific": "Scientific Section",
+      "leadership": "Leadership & Development",
+      "studentActivities": "Student Activities",
+      "communityActivities": "Community Activities",
+      "humanRelations": "Human Relations",
+      "score_label": "Score"
     },
     "criteria": {
-      "appearance": "General Appearance & Grooming",
-      "confidence": "Self-Confidence & Public Address",
-      "poise": "Composure & Good Conduct",
-      "input_score": "Score",
-      "max_score": "Max Score: {0}",
-      "sub_total": "Sub Total:",
-      "total_score": "Total Score:",
-      "details_hint": "Evaluation content appears here..."
-    },
-    "errors": {
-      "invalid_scores": "Some scores exceed the maximum limit!"
+      "scientific": "CV, published research, scientific production",
+      "leadership": "Faculty interaction, crisis resolution, tech skills, self-funding, regulations knowledge, teamwork, participatory decisions, accepting criticism",
+      "studentActivities": "Participation in activities (scouts, trips), future vision for development",
+      "communityActivities": "Contribution to community service and awareness, community participation policies",
+      "humanRelations": "Supporting positive relationships, privacy respect, reputation, and scientific standing"
     },
     "notes": {
-      "title": "Additional Notes & Recommendations",
-      "hint": "Write your notes here...",
-      "no_notes": "No notes"
+      "label": "Judge Notes",
+      "hint": "Enter your notes here..."
     },
     "actions": {
-      "approve": "Approve Evaluation",
-      "save_draft": "Save Draft"
+      "save_draft": "Save Draft",
+      "approve": "Approve Evaluation"
+    },
+    "errors": {
+      "date_required": "Please select the interview date first",
+      "location_required": "Please set the interview location",
+      "time_required": "Please set the interview time",
+      "invalid_scores": "Please check the entered scores"
     }
   },
-  "judge_orders": {
-    "title": "Evaluation Requests",
-    "role_label": "Role:",
-    "evaluate": "Evaluate",
-    "no_requests": "No evaluation requests available"
-  }
+  "success": "Operation successful"
 }

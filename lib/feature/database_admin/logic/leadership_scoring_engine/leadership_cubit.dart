@@ -3,6 +3,7 @@ import 'package:optialeader/feature/database_admin/data/models/doctor_profile_mo
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 import 'package:optialeader/feature/database_admin/logic/leadership_scoring_engine/leadership_scoring_engine.dart';
+import 'package:optialeader/feature/database_admin/logic/leadership_scoring_engine/leadership_criteria_engine.dart';
 import 'package:optialeader/feature/database_admin/logic/leadership_scoring_engine/leadership_state.dart';
 
 class LeadershipCubit extends Cubit<LeadershipState> {
@@ -10,21 +11,28 @@ class LeadershipCubit extends Cubit<LeadershipState> {
 
   LeadershipCubit({required this.doctorDataCubit}) : super(LeadershipInitial());
 
-  // 1. حساب نقاط الدورات
+  // 1. حساب نقاط الدورات (من الموديل الجديد)
   void calculateLeadershipScore() {
     emit(LeadershipLoading());
     final doctorState = doctorDataCubit.state;
 
     if (doctorState is DoctorLoaded) {
       final DoctorProfileModel doctor = doctorState.doctor!;
-      final int coursePoints = LeadershipScoringEngine.calculateCoursePoints(doctor.activities);
-      emit(LeadershipScoreLoaded(coursePoints: coursePoints));
+      
+      double totalCoursePoints = 0.0;
+      for (var course in doctor.courses) {
+        if (course.status.name == 'approved' && !course.isMandatory) {
+          totalCoursePoints += course.points;
+        }
+      }
+      
+      emit(LeadershipScoreLoaded(coursePoints: totalCoursePoints));
     } else {
       emit(LeadershipError("بيانات الدكتور غير متاحة"));
     }
   }
 
-  // 2. حساب نسب مادة 22
+  // 2. حساب نسب مادة 22 (من الموديل الجديد)
   void calculateArticle22Percentages() {
     emit(LeadershipLoading());
     final doctorState = doctorDataCubit.state;
@@ -34,63 +42,74 @@ class LeadershipCubit extends Cubit<LeadershipState> {
       Map<String, double> participationMap = {};
 
       for (var paper in doctor.researchPapers) {
-        double percentage = LeadershipScoringEngine.calculateParticipationPercentage(
-          authorOrder: paper.authorOrder,
-          authorsInSameSpecialty: paper.authorsInSameSpecialty,
-          isTopTierJournal: paper.isTopTierJournal,
-        );
-        participationMap[paper.id] = percentage;
+        participationMap[paper.id] = paper.participationPercentage;
       }
 
-      // ✅ بعتنا الـ Map للـ UI
       emit(Article22Loaded(participationMap: participationMap));
     } else {
       emit(LeadershipError("بيانات الدكتور غير متاحة"));
     }
   }
 
-  // 3. التحقق من الشروط الإجبارية
-  void checkMandatoryCriteria({required String targetRole}) {
+  // ✅ 3. التحقق من الشروط الإجبارية (تم تحديثه ليكون آسync ويجلب الدكاترة)
+  Future<void> checkMandatoryCriteria({required String targetRole}) async {
     emit(LeadershipLoading());
     final doctorState = doctorDataCubit.state;
 
     if (doctorState is DoctorLoaded) {
       final DoctorProfileModel doctor = doctorState.doctor!;
       
-      // ✅ شغلنا محرك الشروط من الـ Engine
-      final criteria = LeadershipScoringEngine.checkMandatoryCriteria(
+      // ✅ جلب الدكاترة ديناميكياً لو كان الشرط يتطلب ذلك (مثل أقدم 3)
+      List<DoctorProfileModel> departmentDoctors = [];
+      if (targetRole == 'head_department') {
+        try {
+          departmentDoctors = await doctorDataCubit.getAllDoctorsOnce();
+        } catch (_) {}
+      }
+      
+      // ✅ تمرير الدكاترة للمحرك
+      final criteria = LeadershipCriteriaEngine.checkMandatoryCriteria(
         doctor: doctor, 
-        targetRole: targetRole
+        targetRole: targetRole,
+        departmentDoctors: departmentDoctors, // ✅ تمت الإضافة
       );
 
-      // ✅ بعتهاللـ UI عشان يرسم الـ ✅ و ❌
       emit(MandatoryCriteriaLoaded(criteria: criteria));
     } else {
       emit(LeadershipError("بيانات الدكتور غير متاحة"));
     }
   }
  
-  void loadNominationData({required String targetRole}) {
+  // ✅ 4. تجميع البيانات لصفحة التقديم (تم تحديثه ليكون آسync ويجلب الدكاترة)
+  Future<void> loadNominationData({required String targetRole}) async {
     emit(LeadershipLoading());
     final doctorState = doctorDataCubit.state;
 
     if (doctorState is DoctorLoaded) {
       final DoctorProfileModel doctor = doctorState.doctor!;
 
-      // 1. حساب الدرجات الآلية (الدورات وغيرها)
+      // ✅ جلب الدكاترة ديناميكياً لو كان الشرط يتطلب ذلك
+      List<DoctorProfileModel> departmentDoctors = [];
+      if (targetRole == 'head_department') {
+        try {
+          departmentDoctors = await doctorDataCubit.getAllDoctorsOnce();
+        } catch (_) {}
+      }
+
+      // 1. حساب الدرجات الآلية
       final scores = LeadershipScoringEngine.calculateTotalScore(doctor);
 
-      // 2. التحقق من الشروط الإجبارية
-      final criteria = LeadershipScoringEngine.checkMandatoryCriteria(
+      // 2. التحقق من الشروط الإجبارية (بتمرير الدكاترة)
+      final criteria = LeadershipCriteriaEngine.checkMandatoryCriteria(
         doctor: doctor,
         targetRole: targetRole,
+        departmentDoctors: departmentDoctors,
       );
 
       // 3. إرسال البيانات مجتمعة للـ UI
       emit(NominationDataLoaded(scores: scores, criteria: criteria));
     } else {
-      emit(LeadershipError("error_fetch_requests")); // ✅ Key للترجمة
+      emit(LeadershipError("error_fetch_requests"));
     }
   }
-
 }

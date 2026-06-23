@@ -66,15 +66,13 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
             Icon(Icons.waving_hand_rounded, color: Colors.orange, size: 28.sp),
             SizedBox(width: 10.w),
             Text(
-              isArabic ? 'أهلاً بك!' : 'Welcome!',
+              'dashboard_user.welcome'.tr(),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
         ),
         content: Text(
-          isArabic
-              ? 'يسعدنا انضمامك لمنصة OptiLeader.\nيمكنك البدء في استكشاف الميزات الخاصة بك من القائمة.'
-              : 'Welcome to OptiLeader platform.\nYou can start exploring your features from the menu.',
+          'dashboard_user.message'.tr(),
           style: TextStyle(fontSize: 15.sp, height: 1.5),
         ),
         actions: [
@@ -91,7 +89,7 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
               ),
               onPressed: () => Navigator.pop(dialogContext),
               child: Text(
-                isArabic ? 'لنبدأ!' : "Let's Start!",
+                'dashboard_user.lets_start'.tr(),
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
               ),
             ),
@@ -145,13 +143,13 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'dashboard.welcome'.tr(),
+                    'dashboard_user.welcome'.tr(),
                     style: TextStyle(color: Colors.white70, fontSize: 15.sp),
                   ),
                   Text(
                     context.locale.languageCode == 'ar'
-                        ? (doctor?.nameAr ?? 'dashboard.doctor_default'.tr())
-                        : (doctor?.nameEn ?? 'dashboard.doctor_default'.tr()),
+                        ? (doctor?.nameAr ?? 'dashboard_user.doctor_default'.tr())
+                        : (doctor?.nameEn ?? 'dashboard_user.doctor_default'.tr()),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 15.sp,
@@ -174,8 +172,9 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
             ),
             body: RefreshIndicator(
               onRefresh: () async {
-                if (uid.isNotEmpty)
+                if (uid.isNotEmpty) {
                   await context.read<DoctorDataCubit>().getDoctorProfile(uid);
+                }
               },
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(
@@ -194,10 +193,10 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                       childAspectRatio: 1.15,
                       children: [
                         _buildStatCard(
-                          'dashboard.achievements'.tr(),
+                          'dashboard_user.achievements'.tr(),
                           Icons.emoji_events_outlined,
                           goldAccent,
-                          'dashboard.achievements_msg'.tr(
+                          'dashboard_user.achievements_msg'.tr(
                             args: ['${doctor?.totalAchievements ?? 0}'],
                           ),
                           primaryNavy,
@@ -206,28 +205,28 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                           ),
                         ),
                         _buildStatCard(
-                          'dashboard.academic_data'.tr(),
+                          'dashboard_user.academic_data'.tr(),
                           Icons.school_outlined,
                           goldAccent,
                           (doctor?.academicHistory != null &&
                                   doctor!.academicHistory.isNotEmpty)
                               ? (doctor.academicHistory.first['degree'] ??
-                                    'dashboard.no_credentials'.tr())
-                              : 'dashboard.no_credentials'.tr(),
+                                    'dashboard_user.no_credentials'.tr())
+                              : 'dashboard_user.no_credentials'.tr(),
                           primaryNavy,
                           onTap: () =>
                               context.push('${Routes.acadiminData}?uid=$uid'),
                         ),
                         _buildStatusCard(
-                          'dashboard.requests_status'.tr(),
+                          'dashboard_user.requests_status'.tr(),
                           '${doctor?.totalPendingAchievements ?? 0}',
-                          'dashboard.pending'.tr(),
+                          'dashboard_user.pending'.tr(),
                           Colors.red.shade50,
                           Colors.red.shade900,
                           onTap: () => context.push(Routes.notification),
                         ),
                         _buildProgressCard(
-                          'dashboard.career_path'.tr(),
+                          'dashboard_user.career_path'.tr(),
                           _calculateCareerProgress(doctor),
                           primaryNavy,
                           goldAccent,
@@ -240,7 +239,7 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                     _buildSectionTitle(
                       primaryNavy,
                       goldAccent,
-                      'dashboard.latest_opportunities'.tr(),
+                      'dashboard_user.latest_opportunities'.tr(),
                     ),
                     SizedBox(height: 10.h),
                     BlocBuilder<AnnouncementCubit, AnnouncementState>(
@@ -251,7 +250,7 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                               child: Padding(
                                 padding: EdgeInsets.symmetric(vertical: 20.h),
                                 child: Text(
-                                  'لا توجد فرص أو إعلانات متاحة حالياً',
+                              'dashboard_user.no_opportunities'.tr(),
                                   style: TextStyle(
                                     color: Colors.grey.shade500,
                                     fontSize: 13.sp,
@@ -309,15 +308,16 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
                   Icon(Icons.error_outline, color: Colors.red, size: 48.sp),
                   SizedBox(height: 16.h),
                   Text(
-                    state.error ?? 'error_message'.tr(),
+                    state.error ?? 'dashboard_user.error_message'.tr(),
                     style: TextStyle(color: Colors.red, fontSize: 14.sp),
                   ),
                   SizedBox(height: 20.h),
                   ElevatedButton(
                     onPressed: () {
                       final uid = FirebaseAuth.instance.currentUser?.uid;
-                      if (uid != null)
+                      if (uid != null) {
                         context.read<DoctorDataCubit>().getDoctorProfile(uid);
+                      }
                     },
                     child: Text('retry'.tr()),
                   ),
@@ -379,7 +379,7 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
         TextButton(
           onPressed: () {},
           child: Text(
-            'dashboard.view_all'.tr(),
+            'dashboard_user.view_all'.tr(),
             style: TextStyle(
               color: gold,
               fontWeight: FontWeight.bold,
@@ -552,7 +552,7 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
             ),
             SizedBox(height: 6.h),
             Text(
-              'dashboard.completed_percent'.tr(
+              'dashboard_user.completed_percent'.tr(
                 args: ['${(progress * 100).toInt()}%'],
               ),
               style: TextStyle(
@@ -656,19 +656,19 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
       items: [
         BottomNavigationBarItem(
           icon: const Icon(Icons.settings_outlined),
-          label: 'dashboard.nav.settings'.tr(),
+          label: 'dashboard_user.nav.settings'.tr(),
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.notifications_none),
-          label: 'dashboard.nav.notifications'.tr(),
+          label: 'dashboard_user.nav.notifications'.tr(),
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.folder_open_outlined),
-          label: 'dashboard.nav.files'.tr(),
+          label: 'dashboard_user.nav.files'.tr(),
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.home_filled),
-          label: 'dashboard.nav.home'.tr(),
+          label: 'dashboard_user.nav.home'.tr(),
         ),
       ],
     );

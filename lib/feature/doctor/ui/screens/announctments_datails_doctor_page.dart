@@ -1,13 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:optialeader/core/routing/routes.dart';
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
+import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_cubit.dart';
+import 'package:optialeader/feature/database_admin/logic/leadership_scoring_engine/leadership_criteria_engine.dart';
+import 'package:optialeader/feature/admin/ui/announces/administrative_roles_data.dart';
+import 'package:optialeader/feature/admin/ui/announces/mansoura_universities_data.dart';
 
 class AnnouncementDetailsDoctorPage extends StatefulWidget {
   final String announcementId;
@@ -23,6 +28,111 @@ class AnnouncementDetailsDoctorPage extends StatefulWidget {
 
 class _AnnouncementDetailsDoctorPageState
     extends State<AnnouncementDetailsDoctorPage> {
+  bool _isCheckingEligibility = false;
+
+  Future<void> _handleApply(AnnouncementModel announcement) async {
+    final targetRole = announcement.targetRole;
+    if (targetRole.isEmpty || targetRole == 'general') {
+      _showErrorDialog("invalid_announcement_role".tr());
+      return;
+    }
+
+    setState(() => _isCheckingEligibility = true);
+
+    try {
+      final cubit = context.read<DoctorDataCubit>();
+
+      final (isEligible, unmetCriteria) = await cubit.checkEligibility(
+        targetRole: targetRole,
+      );
+
+      if (!mounted) return;
+
+      if (isEligible) {
+        context.push(
+          Routes.doctorNominationRequest,
+          extra: {'announcement': announcement},
+        );
+      } else {
+        _showIneligibleDialog(unmetCriteria);
+      }
+    } catch (e) {
+      if (mounted) _showErrorDialog("generic_error".tr());
+    } finally {
+      if (mounted) setState(() => _isCheckingEligibility = false);
+    }
+  }
+
+  void _showIneligibleDialog(List<CriterionStatus> unmetCriteria) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Row(
+          children: [
+            Icon(Icons.cancel_rounded, color: Colors.red, size: 28),
+            SizedBox(width: 10),
+            Text("announcement_details.ineligible_title".tr()),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "announcement_details.ineligible_body".tr(),
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 15),
+              ...unmetCriteria.map(
+                (c) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.close, color: Colors.red, size: 18),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          context.locale.languageCode == 'ar'
+                              ? c.titleAr
+                              : c.titleEn,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("common.ok".tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("error".tr()),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("common.ok".tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -66,12 +176,10 @@ class _AnnouncementDetailsDoctorPageState
         );
 
         final String currentLang = context.locale.languageCode;
-        final String title =
-            data['title_$currentLang'] ??
+        final String title = data['title_$currentLang'] ??
             data['title'] ??
             'announcement_details.no_title'.tr();
-        final String description =
-            data['description_$currentLang'] ??
+        final String description = data['description_$currentLang'] ??
             data['description'] ??
             'announcement_details.no_description'.tr();
         final String? imageUrl = data['imageUrl'];
@@ -80,38 +188,39 @@ class _AnnouncementDetailsDoctorPageState
         final Timestamp? createdAtTimestamp = data['createdAt'];
 
         String formattedDeadline = '';
-        if (deadlineTimestamp != null)
+        if (deadlineTimestamp != null) {
           formattedDeadline = DateFormat(
             'EEEE, d MMMM yyyy',
             currentLang,
           ).format(deadlineTimestamp.toDate());
+        }
 
         String postedDate = '';
-        if (createdAtTimestamp != null)
+        if (createdAtTimestamp != null) {
           postedDate = DateFormat(
             'd MMM yyyy',
             currentLang,
           ).format(createdAtTimestamp.toDate());
+        }
 
         return Scaffold(
           backgroundColor: theme.primaryColor,
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () {
-              final currentUser = FirebaseAuth.instance.currentUser;
-              if (currentUser == null) return;
-
-              // ✅✅ شلنا الدرجات الثابتة، وبنبعت بس الإعلان والـ ID، والصفحة الجاية هتحسب من الـ Cubit
-              context.push(
-                Routes.doctorNominationRequest,
-                extra: {
-                  'announcement': announcement,
-                  'doctorId': currentUser.uid,
-                },
-              );
-            },
+            onPressed: _isCheckingEligibility
+                ? null
+                : () => _handleApply(announcement),
             elevation: 4,
             backgroundColor: colorScheme.secondary,
-            icon: Icon(Icons.send_rounded, color: colorScheme.primary),
+            icon: _isCheckingEligibility
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: colorScheme.primary,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Icon(Icons.send_rounded, color: colorScheme.primary),
             label: Text(
               "announce.details.apply_button".tr(),
               style: TextStyle(
@@ -161,12 +270,10 @@ class _AnnouncementDetailsDoctorPageState
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              Colors.black.withOpacity(
-                                imageUrl != null ? 0.3 : 0.0,
-                              ),
-                              colorScheme.primary.withOpacity(
-                                imageUrl != null ? 0.8 : 1.0,
-                              ),
+                              Colors.black
+                                  .withOpacity(imageUrl != null ? 0.3 : 0.0),
+                              colorScheme.primary
+                                  .withOpacity(imageUrl != null ? 0.8 : 1.0),
                             ],
                           ),
                         ),
@@ -192,20 +299,19 @@ class _AnnouncementDetailsDoctorPageState
                                 children: [
                                   Text(
                                     "announce.details.badge_title_user".tr(),
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 1.5,
-                                        ),
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.5,
+                                    ),
                                   ),
                                   Text(
                                     "common.app_name".tr(),
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.secondary.withOpacity(
-                                        0.9,
-                                      ),
-                                    ),
+                                    style:
+                                        theme.textTheme.bodySmall?.copyWith(
+                                          color: colorScheme.secondary
+                                              .withOpacity(0.9),
+                                        ),
                                   ),
                                 ],
                               ),
@@ -240,8 +346,10 @@ class _AnnouncementDetailsDoctorPageState
                 padding: EdgeInsets.all(20.w),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
+                    // ✅ تمرير الـ announcement للميثود عشان نستخدم بياناته
                     _buildDetailCard(
                       context,
+                      announcement: announcement,
                       title: title,
                       description: description,
                       deadline: formattedDeadline,
@@ -260,6 +368,7 @@ class _AnnouncementDetailsDoctorPageState
 
   Widget _buildDetailCard(
     BuildContext context, {
+    required AnnouncementModel announcement, // ✅ إضافة الموديل
     required String title,
     required String description,
     required String deadline,
@@ -267,6 +376,15 @@ class _AnnouncementDetailsDoctorPageState
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    // =============================================
+    // 🧠 تحديد ما يُعرض بناءً على نوع الإعلان
+    // =============================================
+    final bool showCollege =
+        MansouraUniversitiesData.targetRoleRequiresFaculty(announcement.targetRole);
+    final bool showDepartment =
+        MansouraUniversitiesData.targetRoleRequiresDepartment(announcement.targetRole);
+    final bool showAdminDept = announcement.targetRole == 'admin_manager';
 
     return Container(
       decoration: BoxDecoration(
@@ -297,6 +415,7 @@ class _AnnouncementDetailsDoctorPageState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ====== بادجة الفرصة ======
                 Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 16.w,
@@ -316,6 +435,8 @@ class _AnnouncementDetailsDoctorPageState
                   ),
                 ),
                 SizedBox(height: 25.h),
+                
+                // ====== العنوان ======
                 Text(
                   title,
                   style: theme.textTheme.headlineSmall?.copyWith(
@@ -325,6 +446,8 @@ class _AnnouncementDetailsDoctorPageState
                   ),
                 ),
                 SizedBox(height: 18.h),
+                
+                // ====== الوصف ======
                 Text(
                   description,
                   style: theme.textTheme.bodyLarge?.copyWith(
@@ -337,6 +460,18 @@ class _AnnouncementDetailsDoctorPageState
                   padding: EdgeInsets.symmetric(vertical: 30.h),
                   child: Divider(thickness: 0.8),
                 ),
+
+                // ====== نوع الوظيفة المستهدفة ======
+                _buildInfoRow(
+                  context,
+                  Icons.military_tech,
+                  "announce.details.target_role".tr(),
+                  announcement.targetRole.tr(),
+                  colorScheme.secondary,
+                ),
+                SizedBox(height: 20.h),
+
+                // ====== الموعد النهائي ======
                 if (deadline.isNotEmpty)
                   _buildInfoRow(
                     context,
@@ -346,6 +481,8 @@ class _AnnouncementDetailsDoctorPageState
                     Colors.redAccent,
                   ),
                 if (deadline.isNotEmpty) SizedBox(height: 20.h),
+                
+                // ====== تاريخ النشر ======
                 if (postedDate.isNotEmpty)
                   _buildInfoRow(
                     context,
@@ -354,6 +491,62 @@ class _AnnouncementDetailsDoctorPageState
                     postedDate,
                     Colors.blueGrey,
                   ),
+
+                // =============================================
+                // 🏛️ الكلية
+                // =============================================
+                if (showCollege && announcement.collegeName != null) ...[
+                  SizedBox(height: 20.h),
+                  _buildInfoRow(
+                    context,
+                    Icons.domain,
+                    "announce.details.college".tr(),
+                    announcement.collegeName!,
+                    Colors.deepPurple,
+                  ),
+                ],
+
+                // =============================================
+                // 🏢 القسم الأكاديمي
+                // =============================================
+                if (showDepartment && announcement.departmentName != null) ...[
+                  SizedBox(height: 20.h),
+                  _buildInfoRow(
+                    context,
+                    Icons.meeting_room,
+                    "announce.details.department".tr(),
+                    announcement.departmentName!,
+                    Colors.teal,
+                  ),
+                ],
+
+                // =============================================
+                // 📋 القطاع / الإدارة العامة
+                // =============================================
+                if (showAdminDept && announcement.adminSectorName != null) ...[
+                  SizedBox(height: 20.h),
+                  _buildInfoRow(
+                    context,
+                    Icons.account_balance,
+                    "announce.details.admin_sector".tr(),
+                    announcement.adminSectorName!,
+                    Colors.indigo,
+                  ),
+                ],
+
+                // =============================================
+                // 📁 الإدارة الفرعية
+                // =============================================
+                if (showAdminDept && announcement.adminSubDeptName != null) ...[
+                  SizedBox(height: 20.h),
+                  _buildInfoRow(
+                    context,
+                    Icons.corporate_fare,
+                    "announce.details.admin_sub_dept".tr(),
+                    announcement.adminSubDeptName!,
+                    Colors.amber.shade800,
+                  ),
+                ],
               ],
             ),
           ),
@@ -380,7 +573,7 @@ class _AnnouncementDetailsDoctorPageState
           child: Icon(icon, size: 20.sp, color: color),
         ),
         SizedBox(width: 15.w),
-        Expanded(
+        Expanded( // ✅ مفيد جداً هنا عشان أسماء الإدارات الطويلة متعملش overflow
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

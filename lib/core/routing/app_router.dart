@@ -3,13 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:optialeader/core/routing/router_refresh_notifier.dart';
 import 'package:optialeader/feature/admin/admin_routes.dart';
-import 'package:optialeader/feature/admin/ui/admin_pending_requests_page.dart';
 import 'package:optialeader/feature/admin/ui/dashboaer.dart'; // تأكدي من مسمى الملف ده (dashboard)
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_state.dart';
 import 'package:optialeader/feature/auth/ui/change_password_screen.dart';
 import 'package:optialeader/feature/auth/ui/signin_screen.dart';
+import 'package:optialeader/feature/database_admin/data/models/employee_model.dart';
 import 'package:optialeader/feature/database_admin/routing/database_admin_routes.dart';
+import 'package:optialeader/feature/employee/ui/employee_courses_page.dart';
+import 'package:optialeader/feature/employee/ui/employee_dashboard_screen.dart';
 import 'package:optialeader/feature/judge/routing/judge_rouring.dart';
 import 'package:optialeader/feature/judge/ui/screens/judge.dart';
 import 'package:optialeader/feature/notification/logic/app_notification_cubit.dart';
@@ -34,6 +36,8 @@ GoRouter createRouter(AuthCubit authCubit) {
         return Routes.judge;
       case UserRole.user:
         return Routes.user;
+      case UserRole.employee:
+        return Routes.employee; // أو شاشة خاصة بيه
     }
   }
 
@@ -113,33 +117,43 @@ GoRouter createRouter(AuthCubit authCubit) {
         builder: (context, state) => const DashboardUserPage(),
         routes: userSubRoutes,
       ),
+       GoRoute(
+        path: Routes.employee,
+        builder: (context, state) => const EmployeeDashboardScreen(), 
+      ),
 
-          /// --- SETTINGS ---
+      /// --- SETTINGS ---
       GoRoute(
         path: Routes.settings,
         builder: (context, state) {
           final args = state.extra as Map<String, dynamic>? ?? {};
           return SettingsScreen(
-            uid: args['uid'] as String? ?? '', 
+            uid: args['uid'] as String? ?? '',
             role: args['role'] as String? ?? 'user',
           );
-
         },
       ),
-        ///Notification
-        ///Notification
-        GoRoute(
-          path: Routes.notification,
-          builder: (context, state) {
-            //  بنستدعي الـ Cubit وبنشغل جلب البيانات بمجرد فتح الصفحة
-            final notificationCubit = context.read<NotificationCubit>();
-            notificationCubit.fetchNotifications(); 
-            
-            return const NotificationsScreen();
-          },
-        ),
-        
+
+      ///Notification
+      ///Notification
+      GoRoute(
+        path: Routes.notification,
+        builder: (context, state) {
+          //  بنستدعي الـ Cubit وبنشغل جلب البيانات بمجرد فتح الصفحة
+          final notificationCubit = context.read<NotificationCubit>();
+          notificationCubit.fetchNotifications();
+
+          return const NotificationsScreen();
+        },
+      ),
+      GoRoute(
+  path: Routes.employeeCourses,
+  builder: (context, state) => EmployeeCoursesPage(
+    // بنستقبل الـ employee model اللي هنبعتها من الداشبورد
+    employee: state.extra as EmployeeModel,
+  ),
+),
     ],
   );
-
+  
 }

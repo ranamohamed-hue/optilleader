@@ -11,22 +11,27 @@ class AnnouncementModel {
   String targetRole;
   DateTime createdAt;
 
+  // 🏛️ بيانات الكلية والقسم (للأدوار الأكاديمية)
   String? collegeId;
   String? collegeName;
   String? departmentId;
   String? departmentName;
 
-  // ✅ تعريف القوائم عشان الـ Dropdowns ما تقعش
+  // 📋 بيانات الإدارة (للدور الإداري admin_manager)
+  String? adminSectorId;
+  String? adminSectorName;
+  String? adminSubDeptId;
+  String? adminSubDeptName;
+
   static const List<String> targetRoleList = [
     'general',
     'dean',
-    'rector',
-    'vice_chancellor',
-    'head_department',
     'vice_dean',
+    'head_department',
     'quality_manager',
-    'administrative',
+    'admin_manager',
   ];
+
   static const List<String> statusList = ['Active', 'Pending', 'Closed'];
 
   AnnouncementModel({
@@ -43,6 +48,10 @@ class AnnouncementModel {
     this.collegeName,
     this.departmentId,
     this.departmentName,
+    this.adminSectorId,
+    this.adminSectorName,
+    this.adminSubDeptId,
+    this.adminSubDeptName,
   });
 
   factory AnnouncementModel.fromMap(
@@ -67,6 +76,11 @@ class AnnouncementModel {
       collegeName: map['collegeName'],
       departmentId: map['departmentId'],
       departmentName: map['departmentName'],
+      // ✅ قراءة بيانات الإدارة من Firestore
+      adminSectorId: map['adminSectorId'],
+      adminSectorName: map['adminSectorName'],
+      adminSubDeptId: map['adminSubDeptId'],
+      adminSubDeptName: map['adminSubDeptName'],
     );
   }
 
@@ -84,6 +98,11 @@ class AnnouncementModel {
       'collegeName': collegeName,
       'departmentId': departmentId,
       'departmentName': departmentName,
+      // ✅ حفظ بيانات الإدارة في Firestore
+      'adminSectorId': adminSectorId,
+      'adminSectorName': adminSectorName,
+      'adminSubDeptId': adminSubDeptId,
+      'adminSubDeptName': adminSubDeptName,
     };
   }
 
@@ -101,6 +120,10 @@ class AnnouncementModel {
     String? collegeName,
     String? departmentId,
     String? departmentName,
+    String? adminSectorId,
+    String? adminSectorName,
+    String? adminSubDeptId,
+    String? adminSubDeptName,
   }) {
     return AnnouncementModel(
       id: id ?? this.id,
@@ -116,6 +139,11 @@ class AnnouncementModel {
       collegeName: collegeName ?? this.collegeName,
       departmentId: departmentId ?? this.departmentId,
       departmentName: departmentName ?? this.departmentName,
+      // ✅ copyWith لبيانات الإدارة
+      adminSectorId: adminSectorId ?? this.adminSectorId,
+      adminSectorName: adminSectorName ?? this.adminSectorName,
+      adminSubDeptId: adminSubDeptId ?? this.adminSubDeptId,
+      adminSubDeptName: adminSubDeptName ?? this.adminSubDeptName,
     );
   }
 }

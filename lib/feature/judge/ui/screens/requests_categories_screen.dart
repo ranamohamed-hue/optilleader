@@ -2,39 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:go_router/go_router.dart';
+import 'package:optialeader/core/routing/routes.dart'; // ✅ إضافة الاستيراد
 import 'package:optialeader/feature/admin/data/model/nomination_request_model.dart';
 import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomination_request_cubit.dart';
 import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomonation_request_state.dart';
 
 class RequestsCategoriesScreen extends StatefulWidget {
-  const RequestsCategoriesScreen({super.key});
+  final String? filterStatus;
+
+  const RequestsCategoriesScreen({super.key, required this.filterStatus});
 
   @override
-  State<RequestsCategoriesScreen> createState() => _RequestsCategoriesScreenState();
+  State<RequestsCategoriesScreen> createState() =>
+      _RequestsCategoriesScreenState();
 }
 
 class _RequestsCategoriesScreenState extends State<RequestsCategoriesScreen> {
-  String? _filterStatus; // الحالة القادمة من الشاشة السابقة
+  late String? _filterStatus;
 
   final List<Map<String, dynamic>> _categories = [
     {'key': 'dean', 'icon': Icons.account_balance},
     {'key': 'vice_dean', 'icon': Icons.business_center},
-    {'key': 'head_dept', 'icon': Icons.class_},
-    {'key': 'professor', 'icon': Icons.school},
+    {'key': 'head_department', 'icon': Icons.class_},  
+    {'key': 'quality_manager', 'icon': Icons.verified},
+    {'key': 'admin_manager', 'icon': Icons.admin_panel_settings},
     {'key': 'other', 'icon': Icons.category},
   ];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      if (args != null && args.containsKey('status')) {
-        setState(() {
-          _filterStatus = args['status'] as String;
-        });
-      }
-    });
+    _filterStatus = widget.filterStatus;
   }
 
   @override
@@ -46,19 +45,27 @@ class _RequestsCategoriesScreenState extends State<RequestsCategoriesScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: navy,
-        title: Text(_getAppBarTitle(), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(
+          _getAppBarTitle(),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20.sp),
-          onPressed: () => Navigator.pop(context),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20.sp,
+          ),
+          onPressed: () => context.pop(), // ✅ استخدام context.pop() بدل Navigator
         ),
       ),
       body: BlocBuilder<NominationRequestCubit, NominationRequestState>(
         builder: (context, state) {
           List<NominationRequestModel> allRequests = [];
           if (state is NominationRequestLoaded) {
-            // ✅ الفلترة الأولى: فقط الطلبات التي تطابق الحالة (Pending/In Progress/Completed)
-            allRequests = state.requests.where((r) => r.status == _filterStatus).toList();
+            allRequests = state.requests
+                .where((r) => r.status == _filterStatus)
+                .toList();
           }
 
           return Padding(
@@ -76,13 +83,19 @@ class _RequestsCategoriesScreenState extends State<RequestsCategoriesScreen> {
                 final roleKey = category['key'] as String;
                 final icon = category['icon'] as IconData;
 
-                // ✅ الفلترة الثانية: حساب العدد بناءً على الدور (Role) داخل القائمة المفلترة
                 int count = 0;
                 if (roleKey == 'other') {
-                  final knownKeys = _categories.map((c) => c['key'] as String).where((k) => k != 'other').toList();
-                  count = allRequests.where((r) => !knownKeys.contains(r.targetRole)).length;
+                  final knownKeys = _categories
+                      .map((c) => c['key'] as String)
+                      .where((k) => k != 'other')
+                      .toList();
+                  count = allRequests
+                      .where((r) => !knownKeys.contains(r.targetRole))
+                      .length;
                 } else {
-                  count = allRequests.where((r) => r.targetRole == roleKey).length;
+                  count = allRequests
+                      .where((r) => r.targetRole == roleKey)
+                      .length;
                 }
 
                 return _buildCategoryCard(context, roleKey, icon, count);
@@ -95,26 +108,32 @@ class _RequestsCategoriesScreenState extends State<RequestsCategoriesScreen> {
   }
 
   String _getAppBarTitle() {
-    if (_filterStatus == 'pending') return 'dashboard.main_cards.new'.tr();
-    if (_filterStatus == 'in_progress') return 'dashboard.main_cards.reviewing'.tr();
-    if (_filterStatus == 'completed') return 'dashboard.main_cards.evaluated'.tr();
+    if (_filterStatus == NominationRequestModel.statusPendingEvaluator) {
+      return 'dashboard.main_cards.new'.tr();
+    }
+    if (_filterStatus == NominationRequestModel.statusEvaluated) {
+      return 'dashboard.main_cards.reviewing'.tr();
+    }
+    if (_filterStatus == NominationRequestModel.statusFinalApproved) {
+      return 'dashboard.main_cards.evaluated'.tr();
+    }
     return 'dashboardJudge.categories.title'.tr();
   }
 
-  Widget _buildCategoryCard(BuildContext context, String roleKey, IconData icon, int count) {
+  Widget _buildCategoryCard(
+    BuildContext context,
+    String roleKey,
+    IconData icon,
+    int count,
+  ) {
     final navy = Theme.of(context).primaryColor;
     final gold = Theme.of(context).colorScheme.secondary;
 
     return InkWell(
       onTap: () {
-        // ✅ الانتقال للقائمة النهائية وتمرير الحالة + الدور
-        Navigator.pushNamed(
-          context,
-          '/judge/orders-list',
-          arguments: {
-            'status': _filterStatus, 
-            'role': roleKey
-          },
+        context.push(
+          Routes.ordersList, // ✅ استخدام مسار Routes الصحيح
+          extra: {'status': _filterStatus, 'role': roleKey},
         );
       },
       borderRadius: BorderRadius.circular(18.r),
@@ -122,7 +141,9 @@ class _RequestsCategoriesScreenState extends State<RequestsCategoriesScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18.r),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10),
+          ],
           border: Border.all(color: navy.withOpacity(0.05)),
         ),
         child: Padding(
@@ -144,14 +165,22 @@ class _RequestsCategoriesScreenState extends State<RequestsCategoriesScreen> {
                 children: [
                   Text(
                     'dashboardJudge.categories.$roleKey'.tr(),
-                    style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold, color: navy),
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.bold,
+                      color: navy,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 5.h),
                   Text(
                     "$count ${'dashboard.main_cards.request'.tr()}",
-                    style: TextStyle(fontSize: 11.sp, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),

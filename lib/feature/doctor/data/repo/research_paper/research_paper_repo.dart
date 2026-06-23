@@ -4,12 +4,6 @@ import 'package:optialeader/feature/doctor/data/model/research_paper_model.dart'
 import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 
 abstract class ResearchPaperRepo {
-  Future<Either<String, Unit>> addResearchPaper({
-    required String doctorUid,
-    required ResearchPaperModel paper,
-    required File paperFile,
-    File? indexingProofFile,
-  });
 
   Future<Either<String, Unit>> deleteResearchPaper(
     String doctorUid,
@@ -21,5 +15,17 @@ abstract class ResearchPaperRepo {
     String paperId,
     VerificationStatus status, {
     String? rejectionReason,
+  });
+   Future<Either<String, Unit>> updateAdminScore({
+    required String doctorUid,
+    required String paperId,
+    required double adminScore,
+  });
+ Future<Either<String, Unit>> addResearchPaper({
+    required String doctorUid,
+    required ResearchPaperModel paper,
+    required File paperFile,
+    File? indexingProofFile,
+    File? certifiedReportFile, // ✅
   });
 }

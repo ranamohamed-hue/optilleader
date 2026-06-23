@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart'; 
-import 'package:easy_localization/easy_localization.dart'; 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:optialeader/feature/auth/data/models/user_model.dart';
 import 'package:optialeader/feature/auth/data/repo/auth_repo.dart';

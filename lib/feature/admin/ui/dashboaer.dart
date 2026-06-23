@@ -8,6 +8,9 @@ import 'package:go_router/go_router.dart';
 import 'package:optialeader/feature/database_admin/data/models/admin_profile_model.dart';
 import 'package:optialeader/feature/database_admin/logic/admin_data/admin_data_cubit.dart';
 import 'package:optialeader/feature/database_admin/logic/admin_data/admin_data_state.dart';
+import 'package:optialeader/feature/admin/data/model/nomination_request_model.dart';
+import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomination_request_cubit.dart';
+import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomonation_request_state.dart';
 import 'package:optialeader/feature/notification/logic/app_notification_cubit.dart';
 import 'package:optialeader/feature/notification/ui/notification_page.dart';
 import 'package:optialeader/feature/setting/ui/setting.dart';
@@ -40,6 +43,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (uid != null) {
         context.read<AdminDataCubit>().getAdminProfile(uid);
         context.read<NotificationCubit>().updateUserIdAndFetch(uid);
+        // ✅ جلب كل الطلبات عشان نعدّها في الداشبورد
+        context.read<NominationRequestCubit>().fetchAdminRequests(
+          status: NominationRequestModel.statusPendingAdmin,
+        );
       }
       _checkAndShowWelcomeDialog();
     });
@@ -72,11 +79,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Icon(Icons.waving_hand_rounded, color: AppColors.darkGold, size: 28.sp),
             SizedBox(width: 10.w),
-            // ✅ استخدام الترجمة
             Text('dashboard.welcome_title'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
-        // ✅ استخدام الترجمة
         content: Text('dashboard.welcome_body'.tr(), style: TextStyle(fontSize: 15.sp, height: 1.5)),
         actions: [
           SizedBox(
@@ -89,7 +94,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
               ),
               onPressed: () => Navigator.pop(dialogContext),
-              // ✅ استخدام الترجمة
               child: Text('dashboard.lets_start'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp)),
             ),
           ),
@@ -155,7 +159,7 @@ class _HomeTab extends StatelessWidget {
           final admin = state.admin!;
           String fullDisplayName = isArabic ? admin.nameAr : admin.nameEn;
           if (fullDisplayName.trim().isEmpty) {
-            fullDisplayName = FirebaseAuth.instance.currentUser?.displayName ?? 'dashboard.admin_role'.tr(); // ✅ ترجمة
+            fullDisplayName = FirebaseAuth.instance.currentUser?.displayName ?? 'dashboard.admin_role'.tr();
           }
 
           return SafeArea(
@@ -178,7 +182,7 @@ class _HomeTab extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('dashboard.greeting'.tr(), style: TextStyle(color: colorScheme.onPrimary.withOpacity(0.85), fontSize: 16.sp)), // ✅ ترجمة
+                            Text('dashboard.greeting'.tr(), style: TextStyle(color: colorScheme.onPrimary.withOpacity(0.85), fontSize: 16.sp)),
                             SizedBox(height: 4.h),
                             Text(
                               fullDisplayName,
@@ -200,8 +204,8 @@ class _HomeTab extends StatelessWidget {
                             child: admin.profileImage.isNotEmpty
                                 ? CachedNetworkImage(
                                     imageUrl: admin.profileImage, width: 60.r, height: 60.r, fit: BoxFit.cover,
-                                    placeholder: (_, __) => const CircularProgressIndicator(),
-                                    errorWidget: (_, __, ___) => const Icon(Icons.person),
+                                    placeholder: (_, _) => const CircularProgressIndicator(),
+                                    errorWidget: (_, _, _) => const Icon(Icons.person),
                                   )
                                 : const Icon(Icons.person),
                           ),
@@ -323,54 +327,72 @@ class _HomeTab extends StatelessWidget {
     );
   }
 
+  // ✅✅✅ هنا الـ BlocBuilder الجديد اللي بعدّ الطلبات الحقيقية
   Widget _buildCardsList(BuildContext context, AdminLoaded state) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.only(left: 15.w, right: 15.w, top: 0, bottom: 10.h),
-      child: Column(
-        children: [
-          _buildActionCard(
-            context,
-            title: 'dashboard.new_requests'.tr(), // طلبات الترشحات الجديدة
-            icon: Icons.note_add_rounded,
-            value: state.newRequestsCount.toString(),
-            color: colorScheme.primary,
-            onTap: () => context.push('/admin/orders-list'),
+    return BlocBuilder<NominationRequestCubit, NominationRequestState>(
+      builder: (context, reqState) {
+        // ✅ عدّ الطلبات بالستاتوسس الصحيحة
+        int newRequestsCount = 0;
+        int underReviewCount = 0;
+
+        if (reqState is NominationRequestLoaded) {
+          newRequestsCount = reqState.requests
+              .where((r) => r.status == NominationRequestModel.statusPendingAdmin)
+              .length;
+          underReviewCount = reqState.requests
+              .where((r) =>
+                  r.status == NominationRequestModel.statusPendingEvaluator ||
+                  r.status == NominationRequestModel.statusEvaluated)
+              .length;
+        }
+
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: EdgeInsets.only(left: 15.w, right: 15.w, top: 0, bottom: 10.h),
+          child: Column(
+            children: [
+              _buildActionCard(
+                context,
+                title: 'dashboard.new_requests'.tr(),
+                icon: Icons.note_add_rounded,
+                value: newRequestsCount.toString(),
+                color: colorScheme.primary,
+                onTap: () => context.push('/admin/orders-list'),
+              ),
+              SizedBox(height: 18.h),
+              _buildActionCard(
+                context,
+                title: 'dashboard.under_review'.tr(),
+                icon: Icons.gavel_rounded,
+                value: underReviewCount.toString(),
+                color: AppColors.darkGold,
+                onTap: () => context.push('/admin/orders-list'),
+              ),
+              SizedBox(height: 18.h),
+              _buildActionCard(
+                context,
+                title: 'dashboard.add_announcement'.tr(),
+                icon: Icons.campaign_rounded,
+                value: '+',
+                color: Colors.orange,
+                onTap: () => context.push('/admin/edit-announcement'),
+              ),
+              SizedBox(height: 18.h),
+              _buildActionCard(
+                context,
+                title: 'dashboard.pending_approvals'.tr(),
+                icon: Icons.pending_actions_rounded,
+                value: state.newRequestsCount.toString(),
+                color: Colors.teal,
+                onTap: () => context.push('/admin/pending-requests'),
+              ),
+            ],
           ),
-          SizedBox(height: 18.h),
-          _buildActionCard(
-            context,
-            title: 'dashboard.under_review'.tr(), // الطلبات تحت المراجعة/التحكيم
-            icon: Icons.gavel_rounded,
-            value: state.underReviewCount.toString(),
-            color: AppColors.darkGold,
-            onTap: () => context.push('/admin/orders-list'),
-          ),
-          SizedBox(height: 18.h),
-          _buildActionCard(
-            context,
-            title: 'dashboard.add_announcement'.tr(),
-            icon: Icons.campaign_rounded,
-            value: '+',
-            color: Colors.orange,
-            // ✅ تعديل المسار عشان يطابق الراوتر
-            onTap: () => context.push('/admin/edit-announcement'), 
-          ),
-          SizedBox(height: 18.h),
-          _buildActionCard(
-            context,
-            // ✅ تغيير العنوان عشان يختلف عن الكارت الأول (ده للأبحاث والأنشطة)
-            title: 'dashboard.pending_approvals'.tr(), 
-            icon: Icons.pending_actions_rounded,
-            value: state.newRequestsCount.toString(), // لو عندك متغير تاني للأبحاث يبقى نستبدله
-            color: Colors.teal, 
-            onTap: () => context.push('/admin/pending-requests'), 
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

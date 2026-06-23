@@ -18,11 +18,9 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  // في صفحة الإشعارات (داخل الـ initState أو عند فتح الصفحة)
   @override
   void initState() {
     super.initState();
-    // تنظيف المقروء فور فتح الصفحة لتقليل الحمل مستقبلاً
     context.read<NotificationCubit>().clearReadNotifications();
   }
 
@@ -34,14 +32,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        toolbarHeight: 60,
         title: Text('notifications.title'.tr()),
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'مسح المقروء',
+            tooltip: 'notifications.clear_read'.tr(),
             onPressed: () {
-              // استدعاء دالة التنظيف الجديدة
               context.read<NotificationCubit>().clearReadNotifications();
             },
           ),
@@ -128,7 +126,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       onDismissed: (direction) {
-        // استدعاء دالة الحذف التي أضفناها في الـ Cubit
         context.read<NotificationCubit>().deleteNotification(notification.id);
       },
       child: Card(
@@ -139,9 +136,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
         color: notification.isRead
             ? colorScheme.surface
-            : colorScheme.secondaryContainer.withOpacity(
-                0.15,
-              ), // تفاعل لوني فخم للإشعارات الجديدة
+            : colorScheme.secondaryContainer.withOpacity(0.15),
         child: ListTile(
           leading: CircleAvatar(
             backgroundColor: _getColorForType(
@@ -170,7 +165,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             _formatTimestamp(notification.timestamp),
             style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
           ),
-          // في ملف NotificationsScreen.dart
           onTap: () {
             if (!notification.isRead) {
               mainContext.read<NotificationCubit>().markAsRead(notification.id);
@@ -178,7 +172,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
             if (notification.type == NotificationType.newResearchSubmitted ||
                 notification.type == NotificationType.newActivitySubmitted) {
-              mainContext.go('/admin/pending-requests'); // ✅ أهم تعديل
+              mainContext.go('/admin/pending-requests');
             } else if (notification.type ==
                 NotificationType.announcementCreated) {
               mainContext.go(
@@ -226,7 +220,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case NotificationType.newResearchSubmitted:
         return Icons.science_outlined;
       case NotificationType.newActivitySubmitted:
-        return Icons.military_tech_outlined; // أيقونة أنسب للأنشطة والجوائز
+        return Icons.military_tech_outlined;
       case NotificationType.researchStatusUpdated:
         return Icons.fact_check;
       case NotificationType.activityStatusUpdated:
@@ -269,8 +263,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case NotificationType.newArbitrationRequest:
         return AppColors.darkGold;
       case NotificationType.newResearchSubmitted:
-        return AppColors
-            .darkGold; // جعلناها متناسقة مع ألوان المشروع الاحترافية
+        return AppColors.darkGold;
       case NotificationType.newActivitySubmitted:
         return Colors.blueAccent;
       case NotificationType.researchStatusUpdated:
@@ -290,9 +283,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (diff.inDays == 0) {
       String hour = date.hour.toString().padLeft(2, '0');
       String minute = date.minute.toString().padLeft(2, '0');
-      return 'اليوم $hour:$minute';
+      return 'notifications.time.today'.tr(args: ['$hour:$minute']);
     } else if (diff.inDays == 1) {
-      return 'أمس';
+      return 'notifications.time.yesterday'.tr();
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }

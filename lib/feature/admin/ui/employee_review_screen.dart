@@ -161,7 +161,7 @@ class EmployeeReviewScreen extends StatelessWidget {
             leading: Switch(
               value: isActive,
               onChanged: (v) {},
-              activeColor: Colors.green,
+              activeThumbColor: Colors.green,
             ),
           ),
           child,

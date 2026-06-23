@@ -10,7 +10,7 @@ import 'package:optialeader/feature/notification/data/repo/notification_repo.dar
 
 class ResearchCubit extends Cubit<ResearchState> {
   final ResearchPaperRepo researchRepo;
-  final NotificationRepo notificationRepo; // محتاجينه عشان addNewResearch بس
+  final NotificationRepo notificationRepo;
 
   ResearchCubit(this.researchRepo, this.notificationRepo)
       : super(ResearchInitial());
@@ -20,6 +20,7 @@ class ResearchCubit extends Cubit<ResearchState> {
     required ResearchPaperModel paper,
     required File paperFile,
     File? indexingProofFile,
+    File? certifiedReportFile, // ✅ الجديد
   }) async {
     emit(ResearchLoading());
     final result = await researchRepo.addResearchPaper(
@@ -27,6 +28,7 @@ class ResearchCubit extends Cubit<ResearchState> {
       paper: paper,
       paperFile: paperFile,
       indexingProofFile: indexingProofFile,
+      certifiedReportFile: certifiedReportFile, // ✅
     );
     
     result.fold(
@@ -34,14 +36,13 @@ class ResearchCubit extends Cubit<ResearchState> {
       (_) async {
         emit(ResearchSuccess());
         
-        // ✅ إرسال إشعار للأدمن إن في بحث جديد (ده موجود صح)
         try {
           final notification = AppNotificationModel(
             id: '',
             title: 'طلب اعتماد بحث جديد',
             message: 'تم إضافة بحث بعنوان: "${paper.titleAr}" يحتاج موافقتك',
             type: NotificationType.newResearchSubmitted,
-            target: NotificationTarget.adminOnly, // ✅ محدد إنه للأدمن بس
+            target: NotificationTarget.adminOnly,
             timestamp: Timestamp.now(),
             receiverId: '', 
             relatedId: paper.id,
@@ -49,9 +50,8 @@ class ResearchCubit extends Cubit<ResearchState> {
           );
 
           await notificationRepo.sendRoleBasedNotification(notification);
-          print("✅ Notifications sent to admins successfully via Role-Based logic");
         } catch (e) {
-          print("🚨 Error sending admin notification: $e");
+          print("خطأ في إرسال إشعار الأدمن: $e");
         }
       },
     );
@@ -66,7 +66,6 @@ class ResearchCubit extends Cubit<ResearchState> {
     );
   }
 
-  // ✅ تم مسح الإشعار من هنا عشان الـ AdminApprovalRepoImpl هو اللي يبعته
   Future<void> approveResearch(String doctorUid, String paperId) async {
     emit(ResearchLoading());
     final result = await researchRepo.updatePaperStatus(
@@ -77,11 +76,10 @@ class ResearchCubit extends Cubit<ResearchState> {
     
     result.fold(
       (error) => emit(ResearchError(error: error)),
-      (_) => emit(ResearchSuccess()), // خلاص، أتحتت الحالة والإشعار راح من الـ Repo
+      (_) => emit(ResearchSuccess()),
     );
   }
 
-  // ✅ تم مسح الإشعار من هنا برضو
   Future<void> rejectResearch(
     String doctorUid,
     String paperId,
@@ -97,7 +95,25 @@ class ResearchCubit extends Cubit<ResearchState> {
     
     result.fold(
       (error) => emit(ResearchError(error: error)),
-      (_) => emit(ResearchSuccess()), // خلاص، أتحتت الحالة والإشعار راح من الـ Repo
+      (_) => emit(ResearchSuccess()),
+    );
+  }
+
+  // ✅ دالة جديدة لتقييم الأدمن (الـ 90 درجة)
+  Future<void> updateAdminScore({
+    required String doctorUid,
+    required String paperId,
+    required double adminScore,
+  }) async {
+    emit(ResearchLoading());
+    final result = await researchRepo.updateAdminScore(
+      doctorUid: doctorUid,
+      paperId: paperId,
+      adminScore: adminScore,
+    );
+    result.fold(
+      (error) => emit(ResearchError(error: error)),
+      (_) => emit(ResearchSuccess()),
     );
   }
 }

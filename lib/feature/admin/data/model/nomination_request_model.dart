@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:optialeader/feature/admin/data/model/nomination_score_model.dart';
 
 class NominationRequestModel {
   String? id;
@@ -14,21 +15,22 @@ class NominationRequestModel {
   final String? departmentId;
   final String? departmentName;
 
-  // Automated Points
-  final double systemTotalPoints;
-  final Map<String, dynamic> systemPointsBreakdown;
+  // ✅ الدرجات الشاملة (الإنجازات + المقابلة)
+  final NominationScoreModel? scores;
 
   // Files
   final String? declarationFileUrl;
 
-  // Evaluator Data (Old Simple Fields - Optional or used for summary)
+  // Evaluator Data
   final String? evaluatorId;
   final String? evaluatorName;
   final DateTime? interviewDate;
-  final double? evaluatorPoints; // Simple total if needed
+  final String? interviewLocation;
+  final String? interviewTime;
+  final double? evaluatorPoints;
   final String? evaluatorNotes;
 
-  // ✅ Interview Evaluation (New Detailed Model)
+  // Interview Evaluation
   final Map<String, dynamic>? interviewEvaluation;
 
   // Status & Rejection
@@ -61,15 +63,16 @@ class NominationRequestModel {
     this.collegeName,
     this.departmentId,
     this.departmentName,
-    required this.systemTotalPoints,
-    required this.systemPointsBreakdown,
+    this.scores,
     this.declarationFileUrl,
     this.evaluatorId,
     this.evaluatorName,
     this.interviewDate,
+    this.interviewLocation,
+    this.interviewTime,
     this.evaluatorPoints,
     this.evaluatorNotes,
-    this.interviewEvaluation, // ✅ Added
+    this.interviewEvaluation,
     required this.status,
     this.rejectionReason,
     this.adminNotes,
@@ -81,6 +84,27 @@ class NominationRequestModel {
     Map<String, dynamic> map,
     String documentId,
   ) {
+    DateTime? parseDate(dynamic value) {
+      if (value == null) return null;
+      if (value is Timestamp) return value.toDate();
+      if (value is DateTime) return value;
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (_) {
+          return null;
+        }
+      }
+      return null;
+    }
+
+    double? parseDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value);
+      return null;
+    }
+
     return NominationRequestModel(
       id: documentId,
       doctorId: map['doctorId'] ?? '',
@@ -92,33 +116,26 @@ class NominationRequestModel {
       collegeName: map['collegeName'],
       departmentId: map['departmentId'],
       departmentName: map['departmentName'],
-      systemTotalPoints: (map['systemTotalPoints'] ?? 0).toDouble(),
-      systemPointsBreakdown: Map<String, dynamic>.from(
-        map['systemPointsBreakdown'] ?? {},
-      ),
+      // ✅ تحميل موديل الدرجات
+      scores: map['scores'] is Map
+          ? NominationScoreModel.fromMap(map['scores'] as Map<String, dynamic>)
+          : null,
       declarationFileUrl: map['declarationFileUrl'],
       evaluatorId: map['evaluatorId'],
       evaluatorName: map['evaluatorName'],
-      interviewDate: map['interviewDate'] != null
-          ? (map['interviewDate'] as Timestamp).toDate()
-          : null,
-      evaluatorPoints: map['evaluatorPoints'] != null
-          ? (map['evaluatorPoints'] as num).toDouble()
-          : null,
+      interviewDate: parseDate(map['interviewDate']),
+      interviewLocation: map['interviewLocation'],
+      interviewTime: map['interviewTime'],
+      evaluatorPoints: parseDouble(map['evaluatorPoints']),
       evaluatorNotes: map['evaluatorNotes'],
-      // ✅ Added fromMap logic
-      interviewEvaluation: map['interviewEvaluation'] != null
-          ? Map<String, dynamic>.from(map['interviewEvaluation'])
+      interviewEvaluation: map['interviewEvaluation'] is Map
+          ? Map<String, dynamic>.from(map['interviewEvaluation'] as Map)
           : null,
       status: map['status'] ?? statusPendingAdmin,
       rejectionReason: map['rejectionReason'],
       adminNotes: map['adminNotes'],
-      createdAt: map['createdAt'] != null
-          ? (map['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      updatedAt: map['updatedAt'] != null
-          ? (map['updatedAt'] as Timestamp).toDate()
-          : null,
+      createdAt: parseDate(map['createdAt']) ?? DateTime.now(),
+      updatedAt: parseDate(map['updatedAt']),
     );
   }
 
@@ -133,17 +150,18 @@ class NominationRequestModel {
       'collegeName': collegeName,
       'departmentId': departmentId,
       'departmentName': departmentName,
-      'systemTotalPoints': systemTotalPoints,
-      'systemPointsBreakdown': systemPointsBreakdown,
+      // ✅ حفظ موديل الدرجات
+      'scores': scores?.toMap(),
       'declarationFileUrl': declarationFileUrl,
       'evaluatorId': evaluatorId,
       'evaluatorName': evaluatorName,
       'interviewDate': interviewDate != null
           ? Timestamp.fromDate(interviewDate!)
           : null,
+      'interviewLocation': interviewLocation,
+      'interviewTime': interviewTime,
       'evaluatorPoints': evaluatorPoints,
       'evaluatorNotes': evaluatorNotes,
-      // ✅ Added toMap logic
       'interviewEvaluation': interviewEvaluation,
       'status': status,
       'rejectionReason': rejectionReason,
@@ -164,15 +182,16 @@ class NominationRequestModel {
     String? collegeName,
     String? departmentId,
     String? departmentName,
-    double? systemTotalPoints,
-    Map<String, dynamic>? systemPointsBreakdown,
+    NominationScoreModel? scores,
     String? declarationFileUrl,
     String? evaluatorId,
     String? evaluatorName,
     DateTime? interviewDate,
+    String? interviewLocation,
+    String? interviewTime,
     double? evaluatorPoints,
     String? evaluatorNotes,
-    Map<String, dynamic>? interviewEvaluation, // ✅ Added parameter
+    Map<String, dynamic>? interviewEvaluation,
     String? status,
     String? rejectionReason,
     String? adminNotes,
@@ -190,16 +209,16 @@ class NominationRequestModel {
       collegeName: collegeName ?? this.collegeName,
       departmentId: departmentId ?? this.departmentId,
       departmentName: departmentName ?? this.departmentName,
-      systemTotalPoints: systemTotalPoints ?? this.systemTotalPoints,
-      systemPointsBreakdown:
-          systemPointsBreakdown ?? this.systemPointsBreakdown,
+      // ✅ نسخ موديل الدرجات
+      scores: scores ?? this.scores,
       declarationFileUrl: declarationFileUrl ?? this.declarationFileUrl,
       evaluatorId: evaluatorId ?? this.evaluatorId,
       evaluatorName: evaluatorName ?? this.evaluatorName,
       interviewDate: interviewDate ?? this.interviewDate,
+      interviewLocation: interviewLocation ?? this.interviewLocation,
+      interviewTime: interviewTime ?? this.interviewTime,
       evaluatorPoints: evaluatorPoints ?? this.evaluatorPoints,
       evaluatorNotes: evaluatorNotes ?? this.evaluatorNotes,
-      // ✅ Added assignment
       interviewEvaluation: interviewEvaluation ?? this.interviewEvaluation,
       status: status ?? this.status,
       rejectionReason: rejectionReason ?? this.rejectionReason,

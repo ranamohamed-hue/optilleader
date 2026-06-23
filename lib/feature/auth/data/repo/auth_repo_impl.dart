@@ -17,6 +17,7 @@ class AuthRepoImpl implements AuthRepo {
     required this.hiveService,
   });
   // دالة عشان الـ Cubit يجيب البيانات المحفوظة
+  @override
   UserModel? getCachedUser() {
     final hiveUser = hiveService.getUser();
     return hiveUser?.toUserModel(); // حولناه لـ UserModel عشان التطبيق يفهمه

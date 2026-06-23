@@ -4,11 +4,16 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:optialeader/feature/admin/data/model/nomination_score_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:optialeader/feature/admin/data/model/nomination_request_model.dart';
 import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomination_request_cubit.dart';
 import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomonation_request_state.dart';
 import 'package:optialeader/feature/database_admin/data/models/judge_profile_model.dart';
+
+// ✅ Imports الضرورية التي كانت مفقودة
+import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
+import 'package:optialeader/feature/database_admin/logic/leadership_scoring_engine/leadership_scoring_engine.dart';
 
 class FullEmployeeReportScreen extends StatefulWidget {
   final NominationRequestModel request;
@@ -23,13 +28,77 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
   String? _selectedJudgeId;
   List<JudgeProfileModel> _judgesList = [];
 
+  Future<void> _recalculateScores() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('report.messages.repeat_calculate'.tr()),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    try {
+      String? doctorId = widget.request.doctorId;
+
+      final docSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(doctorId)
+          .get();
+
+      if (!docSnapshot.exists) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('خطأ: بيانات الدكتور غير موجودة')),
+          );
+        }
+        return;
+      }
+
+      final doctor = DoctorProfileModel.fromJson(
+        docSnapshot.data()!,
+        docSnapshot.id,
+      );
+
+      // ✅ بناء موديل الدرجات الجديد
+      final NominationScoreModel scores =
+          LeadershipScoringEngine.buildScoreModel(doctor);
+
+      // ✅ تحديث الطلب في قاعدة البيانات باستخدام الحقل الجديد scores
+      await FirebaseFirestore.instance
+          .collection('nomination_requests')
+          .doc(widget.request.id)
+          .update({'scores': scores.toMap()});
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('report.messages.update_success'.tr()),
+            backgroundColor: Colors.green,
+          ),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      print(e.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${'report.messages.error_calculate'.tr()} $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryNavy = theme.primaryColor;
     final goldAccent = theme.colorScheme.secondary;
     bool isEvaluated =
-        widget.request.status == NominationRequestModel.statusEvaluated;
+        widget.request.status == NominationRequestModel.statusEvaluated ||
+        widget.request.status ==
+            NominationRequestModel.statusFinalApprovedPendingAnnouncement;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -151,12 +220,9 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
   }
 
   Widget _buildSystemPointsCard(BuildContext context, Color navy, Color gold) {
-    final List<dynamic> itemsDetails =
-        (widget.request.systemPointsBreakdown['evaluated_items_details']
-            is List)
-        ? widget.request.systemPointsBreakdown['evaluated_items_details']
-              as List<dynamic>
-        : [];
+    final scores = widget.request.scores;
+    final List<dynamic> itemsDetails = scores?.itemsDetails ?? [];
+    final totalPoints = scores?.achievementsTotal ?? 0.0;
 
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -174,164 +240,76 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'report.system_points.title'.tr(),
-            style: TextStyle(
-              color: navy,
-              fontWeight: FontWeight.bold,
-              fontSize: 15.sp,
-            ),
-          ),
-          Divider(height: 20.h),
-
-          if (itemsDetails.isNotEmpty) ...[
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
-              decoration: BoxDecoration(
-                color: navy.withOpacity(0.05),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(8.r),
-                  topRight: Radius.circular(8.r),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'report.system_points.title'.tr(),
+                style: TextStyle(
+                  color: navy,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15.sp,
                 ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Text(
-                      "النشاط/البحث",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11.sp,
-                        color: navy,
-                      ),
+              if (itemsDetails.isEmpty)
+                InkWell(
+                  onTap: _recalculateScores,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8.w,
+                      vertical: 4.h,
                     ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      "النوع",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11.sp,
-                        color: navy,
-                      ),
-                      textAlign: TextAlign.center,
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade100,
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(color: Colors.orange),
                     ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      "التفاصيل",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11.sp,
-                        color: navy,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  Expanded(
-                    flex: 1,
-                    child: Text(
-                      "الدرجة",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11.sp,
-                        color: navy,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ...itemsDetails.map((detail) {
-              return Container(
-                padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 4.w),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Colors.grey.shade200),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        detail['title'] ?? '',
-                        style: TextStyle(fontSize: 11.sp),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        detail['type'] ?? '',
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        "${detail['category']} - ${detail['scope']}",
-                        style: TextStyle(fontSize: 9.sp),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 1,
-                      child: Text(
-                        "${(detail['points'] is double) ? (detail['points'] as double).toStringAsFixed(1) : detail['points']}",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11.sp,
-                          color: gold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-            SizedBox(height: 15.h),
-          ] else ...[
-            ...widget.request.systemPointsBreakdown.entries
-                .where((e) => e.key != 'evaluated_items_details')
-                .map(
-                  (entry) => Padding(
-                    padding: EdgeInsets.only(bottom: 8.h),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          entry.key,
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            color: Colors.grey[700],
-                          ),
+                        Icon(
+                          Icons.refresh,
+                          size: 12.sp,
+                          color: Colors.orange.shade900,
                         ),
+                        SizedBox(width: 4.w),
                         Text(
-                          "${entry.value} ${'report.system_points.point_unit'.tr()}",
+                          "report.messages.repeat_calculate".tr(),
                           style: TextStyle(
+                            fontSize: 11.sp,
+                            color: Colors.orange.shade900,
                             fontWeight: FontWeight.bold,
-                            fontSize: 13.sp,
-                            color: navy,
                           ),
                         ),
                       ],
                     ),
                   ),
-                )
-                .toList(),
+                ),
+            ],
+          ),
+          Divider(height: 20.h),
+
+          // ✅ عرض الكروت التفصيلية للأبحاث والأنشطة
+          if (itemsDetails.isNotEmpty) ...[
+            ...itemsDetails.map(
+              (detail) => _buildTransparencyCard(detail, navy, gold),
+            ),
+            SizedBox(height: 15.h),
+          ] else ...[
+            Center(
+              child: Padding(
+                padding: EdgeInsets.all(20.w),
+                child: Text(
+                  'report.categories.no_degree'.tr(),
+                  style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
           ],
 
-          Divider(height: 20.h),
+          Divider(height: 25.h),
+          // المجموع الكلي
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -339,19 +317,154 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
                 'report.system_points.total'.tr(),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 15.sp,
+                  fontSize: 16.sp,
                   color: navy,
                 ),
               ),
-              Text(
-                "${widget.request.systemTotalPoints} ${'report.system_points.point_unit'.tr()}",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15.sp,
-                  color: gold,
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: gold.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Text(
+                  "${totalPoints.toStringAsFixed(1)} ${'report.system_points.point_unit'.tr()}",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.sp,
+                    color: gold,
+                  ),
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ ويدجت جديد لعرض كارت تفصيلي لكل نشاط/بحث
+  Widget _buildTransparencyCard(
+    Map<String, dynamic> detail,
+    Color navy,
+    Color gold,
+  ) {
+    // استخراج البيانات مع وضع قيم افتراضية آمنة
+    final String title = detail['title'] ?? 'بدون عنوان';
+    final String type = detail['type'] ?? '-';
+    final String category = detail['category'] ?? '-';
+    final String scope = detail['scope'] ?? '-';
+    final String status = detail['status'] ?? '-';
+    final double points = (detail['points'] is double)
+        ? (detail['points'] as double)
+        : 0.0;
+
+    // لون الحالة (معتمد أو مرفوض)
+    Color statusColor = status == 'approved' ? Colors.green : Colors.grey;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // الصف الأول: العنوان والدرجة
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.description_outlined, size: 16.sp, color: navy),
+              SizedBox(width: 8.w),
+              // العنوان ياخد المساحة المتبقية
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.sp,
+                    color: Colors.black87,
+                  ),
+                  // عشان لو العنوان طويل يتعدل السطر
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              SizedBox(width: 10.w),
+              // عرض الدرجة بوضوح
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: gold.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+                child: Text(
+                  "${points.toStringAsFixed(1)}",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp,
+                    color: gold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10.h),
+
+          // الصف الثاني: التاجز (Tags) للتفاصيل
+          Wrap(
+            spacing: 8.w,
+            runSpacing: 6.h,
+            children: [
+              _buildInfoChip('report.categories.type'.tr(), type, navy),
+              _buildInfoChip(
+                'report.categories.category'.tr(),
+                category,
+                Colors.blueGrey,
+              ),
+              _buildInfoChip(
+                'report.categories.scope'.tr(),
+                scope,
+                Colors.purple,
+              ),
+              _buildInfoChip(
+                'report.categories.status'.tr(),
+                status,
+                statusColor,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ ويدجت مساعد لعمل شريط صغير (Chip) للتفاصيل
+  Widget _buildInfoChip(String label, String value, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6.r),
+        border: Border.all(color: color.withOpacity(0.3), width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "$label: ",
+            style: TextStyle(fontSize: 10.sp, color: Colors.grey[600]),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 10.sp,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -422,23 +535,26 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
                 .where('is_active', isEqualTo: true)
                 .snapshots(),
             builder: (context, snapshot) {
-              if (snapshot.hasError)
+              if (snapshot.hasError) {
                 return Center(
                   child: Text(
-                    'خطأ في تحميل المحكمين (تأكد من إنشاء الـ Index)',
+                    'report.categories.judge_error'.tr(),
                     style: TextStyle(color: Colors.red, fontSize: 12.sp),
                     textAlign: TextAlign.center,
                   ),
                 );
-              if (snapshot.connectionState == ConnectionState.waiting)
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return Center(
                   child: Text(
-                    'لا يوجد محكمين نشطين حالياً',
+                    'report.categories.no_judge'.tr(),
                     style: TextStyle(color: Colors.grey, fontSize: 12.sp),
                   ),
                 );
+              }
 
               _judgesList = snapshot.data!.docs
                   .map(
@@ -448,6 +564,8 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
                     ),
                   )
                   .toList();
+
+              // ✅ تم تصحيح الخطأ (initialValue -> value)
               return DropdownButtonFormField<String>(
                 value: _selectedJudgeId,
                 decoration: InputDecoration(
@@ -525,7 +643,8 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
                       );
                       return;
                     }
-                    String evaluatorName = 'غير معروف';
+                    String evaluatorName =
+                        'report.evaluation_report.not_specified'.tr();
                     for (var judge in _judgesList) {
                       if (judge.uid == _selectedJudgeId) {
                         evaluatorName = judge.nameAr;
@@ -570,6 +689,8 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
     Color gold,
   ) {
     final request = widget.request;
+    final evaluation = request.interviewEvaluation ?? {};
+
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
@@ -589,7 +710,7 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
               ),
               SizedBox(width: 8.w),
               Text(
-                "تقرير التقييم النفسي والسلوكي",
+                "report.evaluation_report.title".tr(),
                 style: TextStyle(
                   color: Colors.orange.shade900,
                   fontWeight: FontWeight.bold,
@@ -602,28 +723,61 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
           _buildReportRow(
             context,
             Icons.person_outline,
-            "اسم المحكم:",
-            request.evaluatorName ?? 'غير محدد',
+            'report.evaluation_report.evaluator_name'.tr(),
+            request.evaluatorName ??
+                'report.evaluation_report.not_specified'.tr(),
           ),
           SizedBox(height: 12.h),
+          // ✅ تم تصحيح المسافات الزائدة والنقط
           _buildReportRow(
             context,
             Icons.calendar_month,
-            "موعد المقابلة:",
+            'report.evaluation_report.interview_date'.tr(),
             request.interviewDate != null
                 ? "${request.interviewDate!.day}/${request.interviewDate!.month}/${request.interviewDate!.year}"
-                : 'لم يحدد',
+                : 'report.evaluation_report.not_set'.tr(),
           ),
           SizedBox(height: 12.h),
+          // ✅ تم تصحيح المسافات والترجمة
           _buildReportRow(
             context,
             Icons.score_rounded,
-            "درجة التقييم:",
-            "${request.evaluatorPoints ?? 0} نقطة",
+            'report.evaluation_report.score'.tr(),
+            "${request.evaluatorPoints ?? 0} ${'report.system_points.point_unit'.tr()}",
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 20.h),
+
+          // ✅ تم تصحيح مسارات الترجمة لتتشابه مع الـ JSON الجديد
+          _buildScoreDetailRow(
+            'report.evaluation.scores.scientific'.tr(),
+            evaluation['scientificScore'],
+            40,
+          ),
+          _buildScoreDetailRow(
+            'report.evaluation.scores.leadership'.tr(),
+            evaluation['leadershipScore'],
+            25,
+          ),
+          _buildScoreDetailRow(
+            'report.evaluation.scores.student_activities'.tr(),
+            evaluation['studentActivitiesScore'],
+            15,
+          ),
+          _buildScoreDetailRow(
+            'report.evaluation.scores.community_activities'.tr(),
+            evaluation['communityActivitiesScore'],
+            10,
+          ),
+          _buildScoreDetailRow(
+            'report.evaluation.scores.human_relation'.tr(),
+            evaluation['humanRelationsScore'],
+            10,
+          ),
+
+          SizedBox(height: 20.h),
+          // ✅ تم تصحيح المسافات وإضافة .tr()
           Text(
-            "ملاحظات المحكم:",
+            'report.evaluation_report.notes_label'.tr(),
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: navy,
@@ -640,13 +794,15 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
               border: Border.all(color: Colors.orange.shade100),
             ),
             child: Text(
-              request.evaluatorNotes ?? 'لا توجد ملاحظات',
+              request.evaluatorNotes ??
+                  'report.evaluation_report.no_notes'.tr(),
               style: TextStyle(fontSize: 13.sp, color: Colors.grey[800]),
             ),
           ),
           SizedBox(height: 30.h),
+          // ✅ تم تصحيح المسافات وإضافة .tr()
           Text(
-            "القرار النهائي:",
+            'report.evaluation_report.final_decision'.tr(),
             style: TextStyle(
               color: navy,
               fontWeight: FontWeight.bold,
@@ -664,7 +820,7 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
                   ),
                   icon: const Icon(Icons.cancel_outlined, color: Colors.red),
                   label: Text(
-                    'رفض نهائي',
+                    'report.evaluation_report.final_reject'.tr(),
                     style: TextStyle(
                       color: Colors.red,
                       fontWeight: FontWeight.bold,
@@ -689,8 +845,9 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
                             .statusFinalApprovedPendingAnnouncement,
                       ),
                   icon: const Icon(Icons.verified_rounded, color: Colors.white),
+                  // ✅ تم تصحيح المسافة الزائدة
                   label: Text(
-                    'موافقة نهائية',
+                    'report.evaluation_report.final_approve'.tr(),
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -706,6 +863,29 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScoreDetailRow(String label, dynamic score, double max) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 12.sp, color: Colors.grey[700]),
+          ),
+          Text(
+            '${(score ?? 0.0).toStringAsFixed(1)} / $max',
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.green[700],
+            ),
           ),
         ],
       ),
@@ -748,13 +928,17 @@ class _FullEmployeeReportScreenState extends State<FullEmployeeReportScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text(
-          "سبب الرفض",
+        // ✅ تم إضافة .tr()
+        title: Text(
+          'report.reject_dialog.title'.tr(),
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         content: TextField(
           controller: reasonController,
-          decoration: const InputDecoration(hintText: "اكتب السبب هنا..."),
+          // ✅ تم إضافة .tr()
+          decoration: InputDecoration(
+            hintText: 'report.reject_dialog.hint'.tr(),
+          ),
           maxLines: 3,
         ),
         actions: [

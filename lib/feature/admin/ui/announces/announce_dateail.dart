@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
 import 'package:optialeader/feature/admin/logic/announcement_logic/announcement_cubit.dart';
+import 'package:optialeader/feature/admin/ui/announces/administrative_roles_data.dart';
+import 'package:optialeader/feature/admin/ui/announces/mansoura_universities_data.dart';
 
 // استيراد دالة اللون إذا كانت في ملف آخر، أو تعريفها هنا
 Color getAnnouncementStatusColor(String status, ColorScheme colorScheme) {
@@ -50,9 +51,9 @@ class AnnouncementDetailsPage extends StatelessWidget {
 
     if (confirm == true && context.mounted) {
       context.read<AnnouncementCubit>().deleteAnnouncement(
-        announcement.id!,
-        announcement.imageUrl,
-      );
+            announcement.id!,
+            announcement.imageUrl,
+          );
       context.pop();
     }
   }
@@ -191,7 +192,8 @@ class AnnouncementDetailsPage extends StatelessWidget {
                               Text(
                                 "common.app_name".tr(),
                                 style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.secondary.withOpacity(0.9),
+                                  color:
+                              colorScheme.secondary.withOpacity(0.9),
                                 ),
                               ),
                             ],
@@ -239,6 +241,13 @@ class AnnouncementDetailsPage extends StatelessWidget {
       context.locale.languageCode,
     ).format(announcement.createdAt);
 
+    // =============================================
+    // 🧠 تحديد ما يُعرض بناءً على نوع الإعلان
+    // =============================================
+    final bool showCollege = MansouraUniversitiesData.targetRoleRequiresFaculty(announcement.targetRole);
+    final bool showDepartment = MansouraUniversitiesData.targetRoleRequiresDepartment(announcement.targetRole);
+    final bool showAdminDept = announcement.targetRole == 'admin_manager';
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -268,6 +277,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ====== حالة الإعلان ======
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -289,6 +299,8 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 25),
+
+                // ====== العنوان ======
                 Text(
                   announcement.title,
                   style: theme.textTheme.headlineSmall?.copyWith(
@@ -298,6 +310,8 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
+
+                // ====== الوصف ======
                 Text(
                   announcement.description,
                   style: theme.textTheme.bodyLarge?.copyWith(
@@ -311,31 +325,7 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   child: Divider(thickness: 0.8),
                 ),
 
-                _buildInfoRow(
-                  context,
-                  Icons.groups_rounded,
-                  "announce.details.applicants_label".tr(),
-                  "${announcement.applicants} ${'announce.details.person_unit'.tr()}",
-                  statusColor,
-                ),
-                const SizedBox(height: 20),
-                _buildInfoRow(
-                  context,
-                  Icons.timer_outlined,
-                  "announce.details.deadline_label".tr(),
-                  formattedDeadline,
-                  colorScheme.primary,
-                ),
-                const SizedBox(height: 20),
-                _buildInfoRow(
-                  context,
-                  Icons.calendar_today_rounded,
-                  "announce.details.posted_label".tr(),
-                  postedDate,
-                  Colors.blueGrey,
-                ),
-                const SizedBox(height: 20),
-
+                // ====== نوع الوظيفة المستهدفة ======
                 _buildInfoRow(
                   context,
                   Icons.military_tech,
@@ -344,7 +334,40 @@ class AnnouncementDetailsPage extends StatelessWidget {
                   colorScheme.secondary,
                 ),
 
-                if (announcement.collegeName != null) ...[
+                // ====== عدد المتقدمين ======
+                const SizedBox(height: 20),
+                _buildInfoRow(
+                  context,
+                  Icons.groups_rounded,
+                  "announce.details.applicants_label".tr(),
+                  "${announcement.applicants} ${'announce.details.person_unit'.tr()}",
+                  statusColor,
+                ),
+
+                // ====== الموعد النهائي ======
+                const SizedBox(height: 20),
+                _buildInfoRow(
+                  context,
+                  Icons.timer_outlined,
+                  "announce.details.deadline_label".tr(),
+                  formattedDeadline,
+                  colorScheme.primary,
+                ),
+
+                // ====== تاريخ النشر ======
+                const SizedBox(height: 20),
+                _buildInfoRow(
+                  context,
+                  Icons.calendar_today_rounded,
+                  "announce.details.posted_label".tr(),
+                  postedDate,
+                  Colors.blueGrey,
+                ),
+
+                // =============================================
+                // 🏛️ الكلية (لـ dean, vice_dean, head_department, quality_manager)
+                // =============================================
+                if (showCollege && announcement.collegeName != null) ...[
                   const SizedBox(height: 20),
                   _buildInfoRow(
                     context,
@@ -354,7 +377,11 @@ class AnnouncementDetailsPage extends StatelessWidget {
                     Colors.deepPurple,
                   ),
                 ],
-                if (announcement.departmentName != null) ...[
+
+                // =============================================
+                // 🏢 القسم الأكاديمي (لـ head_department فقط)
+                // =============================================
+                if (showDepartment && announcement.departmentName != null) ...[
                   const SizedBox(height: 20),
                   _buildInfoRow(
                     context,
@@ -362,6 +389,34 @@ class AnnouncementDetailsPage extends StatelessWidget {
                     "announce.details.department".tr(),
                     announcement.departmentName!,
                     Colors.teal,
+                  ),
+                ],
+
+                // =============================================
+                // 📋 القطاع / الإدارة العامة (لـ admin_manager فقط)
+                // =============================================
+                if (showAdminDept && announcement.adminSectorName != null) ...[
+                  const SizedBox(height: 20),
+                  _buildInfoRow(
+                    context,
+                    Icons.account_balance,
+                    "announce.details.admin_sector".tr(),
+                    announcement.adminSectorName!,
+                    Colors.indigo,
+                  ),
+                ],
+
+                // =============================================
+                // 📁 الإدارة الفرعية (لـ admin_manager فقط)
+                // =============================================
+                if (showAdminDept && announcement.adminSubDeptName != null) ...[
+                  const SizedBox(height: 20),
+                  _buildInfoRow(
+                    context,
+                    Icons.corporate_fare,
+                    "announce.details.admin_sub_dept".tr(),
+                    announcement.adminSubDeptName!,
+                    Colors.amber.shade800,
                   ),
                 ],
               ],

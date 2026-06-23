@@ -148,9 +148,16 @@ class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
                             int completedCount = 0;
 
                             if (reqState is NominationRequestLoaded) {
-                              newCount = reqState.requests.where((r) => r.status == 'pending').length;
-                              reviewingCount = reqState.requests.where((r) => r.status == 'in_progress').length;
-                              completedCount = reqState.requests.where((r) => r.status == 'completed').length;
+                              // ✅ استخدام ستاتوسس الـ Model الصحيحة
+                              newCount = reqState.requests
+                                  .where((r) => r.status == NominationRequestModel.statusPendingEvaluator)
+                                  .length;
+                              reviewingCount = reqState.requests
+                                  .where((r) => r.status == NominationRequestModel.statusEvaluated)
+                                  .length;
+                              completedCount = reqState.requests
+                                  .where((r) => r.status == NominationRequestModel.statusFinalApproved)
+                                  .length;
                             }
 
                             return Column(
@@ -161,7 +168,7 @@ class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
                                   newCount.toString(), 
                                   Icons.inbox, 
                                   Colors.blue, 
-                                  'pending'
+                                  NominationRequestModel.statusPendingEvaluator,
                                 ),
                                 SizedBox(height: 15.h),
                                 _buildMainStatCard(
@@ -170,7 +177,7 @@ class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
                                   reviewingCount.toString(), 
                                   Icons.hourglass_empty, 
                                   Colors.orange, 
-                                  'in_progress'
+                                  NominationRequestModel.statusEvaluated,
                                 ),
                                 SizedBox(height: 15.h),
                                 _buildMainStatCard(
@@ -179,7 +186,7 @@ class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
                                   completedCount.toString(), 
                                   Icons.check_circle, 
                                   Colors.green, 
-                                  'completed'
+                                  NominationRequestModel.statusFinalApproved,
                                 ),
                               ],
                             );
@@ -188,7 +195,7 @@ class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
                         
                         SizedBox(height: 30.h),
                         
-                        // ✅ إضافة قسم أحدث الطلبات (Last 3)
+                        // ✅ قسم أحدث الطلبات (Last 3)
                         BlocBuilder<NominationRequestCubit, NominationRequestState>(
                           builder: (context, reqState) {
                             if (reqState is NominationRequestLoaded && reqState.requests.isNotEmpty) {
@@ -213,15 +220,12 @@ class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
     );
   }
 
-  // ✅ دالة بناء قسم أحدث الطلبات
   Widget _buildRecentRequestsSection(BuildContext context, List<NominationRequestModel> allRequests) {
     final theme = Theme.of(context);
     final gold = theme.colorScheme.secondary;
     final navy = theme.primaryColor;
 
-    // ترتيب واختيار آخر 3 طلبات
     List<NominationRequestModel> recentList = List.from(allRequests);
-    // نفترض وجود حقل createdAt، إذا لم يوجد سيستخدم ترتيب القائمة الافتراضي
     recentList.sort((a, b) => b.createdAt.compareTo(a.createdAt)); 
     recentList = recentList.take(3).toList();
 
@@ -250,8 +254,6 @@ class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
               final request = recentList[index];
               return InkWell(
                 onTap: () {
-                  // الانتقال مباشرة للتقييم
-                  // ملاحظة: تأكد من أن المسار '/judge/evaluationScreen' معرف في الروات
                   context.push('/judge/evaluationScreen', extra: request);
                 },
                 borderRadius: index == recentList.length - 1 
@@ -312,10 +314,9 @@ class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
   Widget _buildMainStatCard(BuildContext context, String title, String count, IconData icon, Color color, String filterStatus) {
     return InkWell(
       onTap: () {
-        Navigator.pushNamed(
-          context,
+        context.push(
           '/judge/categories-screen',
-          arguments: {'status': filterStatus},
+          extra: {'status': filterStatus},
         );
       },
       borderRadius: BorderRadius.circular(20.r),
@@ -378,7 +379,7 @@ class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
             backgroundColor: Colors.white.withOpacity(0.15),
             child: ClipOval(
               child: (imageUrl != null && imageUrl.isNotEmpty)
-                  ? CachedNetworkImage(imageUrl: imageUrl, width: 56.r, height: 56.r, fit: BoxFit.cover, placeholder: (_, __) => Icon(Icons.person, color: gold, size: 30.sp), errorWidget: (_, __, ___) => Icon(Icons.person, color: gold, size: 30.sp))
+                  ? CachedNetworkImage(imageUrl: imageUrl, width: 56.r, height: 56.r, fit: BoxFit.cover, placeholder: (_, _) => Icon(Icons.person, color: gold, size: 30.sp), errorWidget: (_, _, _) => Icon(Icons.person, color: gold, size: 30.sp))
                   : Icon(Icons.person, color: gold, size: 30.sp),
             ),
           ),

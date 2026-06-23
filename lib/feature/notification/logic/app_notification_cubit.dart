@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart'; // ✅ عشان AppLifecycleState
+// ✅ عشان AppLifecycleState
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rxdart/rxdart.dart'; // ✅ عشان الـ Debounce
 import 'package:optialeader/feature/notification/data/model/app_notification_model.dart';

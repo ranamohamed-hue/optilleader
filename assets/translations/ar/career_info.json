@@ -31,6 +31,7 @@
       "hire_date": "تاريخ أول تعيين:"
     },
     "employment_type": {
-      "permanent": "تعيين دائم"
+      "permanent": "تعيين دائم",
+      "temporary": "تعيين مؤقت"
     }
   }}

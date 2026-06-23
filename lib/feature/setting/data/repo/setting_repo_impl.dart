@@ -31,7 +31,7 @@ class SettingRepoImpl implements SettingsRepo {
       } else {
         return left("ERROR_USER_NOT_FOUND");
       }
-    } on FirebaseException catch (e) {
+    } on FirebaseException {
       return left("ERROR_DB_CONNECTION");
     } catch (e) {
       return left("ERROR_UNKNOWN");
@@ -46,7 +46,7 @@ class SettingRepoImpl implements SettingsRepo {
     try {
       await _usersCollection.doc(user.uid).update(user.toUpdateMap());
       return right(unit);
-    } on FirebaseException catch (e) {
+    } on FirebaseException {
       return left("ERROR_DB_UPDATE");
     } catch (e) {
       return left("ERROR_UNKNOWN");

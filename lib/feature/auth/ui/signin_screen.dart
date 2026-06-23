@@ -5,7 +5,6 @@ import 'package:easy_localization/easy_localization.dart';
 
 import 'package:optialeader/feature/auth/logic/cubits/auth_cubit.dart';
 import 'package:optialeader/feature/auth/logic/cubits/auth_state.dart';
-import 'package:optialeader/core/routing/routes.dart';
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});

@@ -1,9 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart'; // ✅ 1. إضافة الاستيراد
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
+import 'package:optialeader/core/routing/routes.dart'; // ✅ 2. إضافة استيراد الروتر
 import 'package:optialeader/feature/admin/data/model/nomination_request_model.dart';
 import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomination_request_cubit.dart';
 import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomonation_request_state.dart';
@@ -12,11 +14,7 @@ class JudgeOrdersListScreen extends StatefulWidget {
   final String? filterStatus;
   final String? filterRole;
 
-  const JudgeOrdersListScreen({
-    super.key,
-    this.filterStatus,
-    this.filterRole,
-  });
+  const JudgeOrdersListScreen({super.key, this.filterStatus, this.filterRole});
 
   @override
   State<JudgeOrdersListScreen> createState() => _JudgeOrdersListScreenState();
@@ -38,7 +36,6 @@ class _JudgeOrdersListScreenState extends State<JudgeOrdersListScreen> {
     final primaryNavy = theme.primaryColor;
     final goldAccent = theme.colorScheme.secondary;
 
-    // تحديد العنوان
     String pageTitle = 'judge_orders.title'.tr();
     if (widget.filterRole != null) {
       pageTitle = 'dashboardJudge.categories.${widget.filterRole}'.tr();
@@ -61,7 +58,11 @@ class _JudgeOrdersListScreenState extends State<JudgeOrdersListScreen> {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20.sp),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20.sp,
+          ),
           onPressed: () => context.pop(),
         ),
         bottom: PreferredSize(
@@ -79,19 +80,30 @@ class _JudgeOrdersListScreenState extends State<JudgeOrdersListScreen> {
           }
 
           if (state is NominationRequestLoaded) {
-            // منطق الفلترة (كما هو)
             List<NominationRequestModel> requests = state.requests;
 
             if (widget.filterStatus != null) {
-              requests = requests.where((r) => r.status == widget.filterStatus).toList();
+              requests = requests
+                  .where((r) => r.status == widget.filterStatus)
+                  .toList();
             }
 
             if (widget.filterRole != null) {
               if (widget.filterRole == 'other') {
-                final knownKeys = ['dean', 'vice_dean', 'head_dept', 'professor'];
-                requests = requests.where((r) => !knownKeys.contains(r.targetRole)).toList();
+                final knownKeys = [
+                  'dean',
+                  'vice_dean',
+                  'head_department',
+                  'quality_manager',
+                  'admin_manager',
+                ];
+                requests = requests
+                    .where((r) => !knownKeys.contains(r.targetRole))
+                    .toList();
               } else {
-                requests = requests.where((r) => r.targetRole == widget.filterRole).toList();
+                requests = requests
+                    .where((r) => r.targetRole == widget.filterRole)
+                    .toList();
               }
             }
 
@@ -100,7 +112,11 @@ class _JudgeOrdersListScreenState extends State<JudgeOrdersListScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.inbox_outlined, size: 60.sp, color: Colors.grey[300]),
+                    Icon(
+                      Icons.inbox_outlined,
+                      size: 60.sp,
+                      color: Colors.grey[300],
+                    ),
                     SizedBox(height: 10.h),
                     Text(
                       'judge_orders.no_requests'.tr(),
@@ -116,8 +132,12 @@ class _JudgeOrdersListScreenState extends State<JudgeOrdersListScreen> {
               itemCount: requests.length,
               itemBuilder: (context, index) {
                 final request = requests[index];
-                // ✅ استخدام التصميم الجديد (كروت)
-                return _buildRequestCard(context, request, primaryNavy, goldAccent);
+                return _buildRequestCard(
+                  context,
+                  request,
+                  primaryNavy,
+                  goldAccent,
+                );
               },
             );
           }
@@ -127,8 +147,12 @@ class _JudgeOrdersListScreenState extends State<JudgeOrdersListScreen> {
     );
   }
 
-  // ✅ دالة بناء الكارت الجديد
-  Widget _buildRequestCard(BuildContext context, NominationRequestModel request, Color primaryColor, Color accentColor) {
+  Widget _buildRequestCard(
+    BuildContext context,
+    NominationRequestModel request,
+    Color primaryColor,
+    Color accentColor,
+  ) {
     return Container(
       margin: EdgeInsets.only(bottom: 20.h),
       padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 15.h),
@@ -146,7 +170,6 @@ class _JudgeOrdersListScreenState extends State<JudgeOrdersListScreen> {
       ),
       child: Row(
         children: [
-          // 1. الصورة (كبيرة وواضحة)
           Container(
             width: 70.w,
             height: 70.h,
@@ -156,18 +179,31 @@ class _JudgeOrdersListScreenState extends State<JudgeOrdersListScreen> {
               border: Border.all(color: accentColor.withOpacity(0.3), width: 2),
             ),
             child: ClipOval(
-              child: request.doctorImageUrl != null && request.doctorImageUrl!.isNotEmpty
-                  ? Image.network(
-                      request.doctorImageUrl!,
+              child: request.doctorImageUrl != null &&
+                      request.doctorImageUrl!.isNotEmpty
+                  ? CachedNetworkImage( // ✅ 3. استبدال Image.network بـ CachedNetworkImage
+                      imageUrl: request.doctorImageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Icon(Icons.person_outline, size: 35.sp, color: primaryColor),
+                      placeholder: (_, __) => Icon(
+                        Icons.person_outline,
+                        size: 35.sp,
+                        color: primaryColor.withOpacity(0.5),
+                      ),
+                      errorWidget: (_, __, ___) => Icon(
+                        Icons.person_outline,
+                        size: 35.sp,
+                        color: primaryColor,
+                      ),
                     )
-                  : Icon(Icons.person_outline, size: 35.sp, color: primaryColor),
+                  : Icon(
+                      Icons.person_outline,
+                      size: 35.sp,
+                      color: primaryColor,
+                    ),
             ),
           ),
           SizedBox(width: 15.w),
 
-          // 2. المعلومات (الاسم والدور)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,7 +223,10 @@ class _JudgeOrdersListScreenState extends State<JudgeOrdersListScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 4.h,
+                      ),
                       decoration: BoxDecoration(
                         color: accentColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8.r),
@@ -207,20 +246,25 @@ class _JudgeOrdersListScreenState extends State<JudgeOrdersListScreen> {
             ),
           ),
 
-          // 3. زر التقييم
           SizedBox(width: 10.w),
           ElevatedButton.icon(
-            onPressed: () => context.push(
-              '/judge/evaluationScreen',
+                        onPressed: () => context.push(
+              Routes.judgeEvaluation, // ✅ حط اسم المسار الصحيح بتاعك هنا
               extra: request,
             ),
-            icon: Icon(Icons.edit_note_rounded, size: 18.sp, color: Colors.white),
+            icon: Icon(
+              Icons.edit_note_rounded,
+              size: 18.sp,
+              color: Colors.white,
+            ),
             label: Text('judge_orders.evaluate'.tr()),
             style: ElevatedButton.styleFrom(
               backgroundColor: accentColor,
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 12.h),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
               elevation: 0,
             ),
           ),
@@ -230,9 +274,15 @@ class _JudgeOrdersListScreenState extends State<JudgeOrdersListScreen> {
   }
 
   String _getStatusName() {
-    if (widget.filterStatus == 'pending') return 'dashboard.main_cards.new'.tr();
-    if (widget.filterStatus == 'in_progress') return 'dashboard.main_cards.reviewing'.tr();
-    if (widget.filterStatus == 'completed') return 'dashboard.main_cards.evaluated'.tr();
+    if (widget.filterStatus == NominationRequestModel.statusPendingEvaluator) {
+      return 'dashboard.main_cards.new'.tr();
+    }
+    if (widget.filterStatus == NominationRequestModel.statusEvaluated) {
+      return 'dashboard.main_cards.reviewing'.tr();
+    }
+    if (widget.filterStatus == NominationRequestModel.statusFinalApproved) {
+      return 'dashboard.main_cards.evaluated'.tr();
+    }
     return '';
   }
 }

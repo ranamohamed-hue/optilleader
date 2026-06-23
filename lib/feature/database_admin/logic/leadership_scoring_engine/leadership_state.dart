@@ -1,12 +1,12 @@
-import 'package:optialeader/feature/database_admin/logic/leadership_scoring_engine/leadership_scoring_engine.dart';
+import 'package:optialeader/feature/database_admin/logic/leadership_scoring_engine/leadership_criteria_engine.dart';
 
 abstract class LeadershipState {}
 class LeadershipInitial extends LeadershipState {}
 class LeadershipLoading extends LeadershipState {}
 
-// ✅ للصفحات التانية (لو محتاجهم لوحدهم)
+// للصفحات التانية
 class LeadershipScoreLoaded extends LeadershipState {
-  final int coursePoints;
+  final double coursePoints;
   LeadershipScoreLoaded({required this.coursePoints});
 }
 
@@ -20,7 +20,7 @@ class MandatoryCriteriaLoaded extends LeadershipState {
   MandatoryCriteriaLoaded({required this.criteria});
 }
 
-// ✅✅ الـ State الجديدة لصفحة التقديم (بتجمع الدرجات والشروط)
+// لصفحة التقديم
 class NominationDataLoaded extends LeadershipState {
   final Map<String, dynamic> scores;
   final List<CriterionStatus> criteria;
@@ -29,6 +29,6 @@ class NominationDataLoaded extends LeadershipState {
 }
 
 class LeadershipError extends LeadershipState {
-  final String message; // ✅ خليها Key للترجمة
+  final String message;
   LeadershipError(this.message);
 }

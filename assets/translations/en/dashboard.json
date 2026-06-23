@@ -33,8 +33,9 @@
       "dean": "College Dean",
       "vice_dean": "Vice Dean",
       "head_dept": "Head of Department",
-      "professor": "Professor",
-      "other": "Other"
+      "other": "Other",
+      "quality_manager": "Quality Manager",  
+      "admin_manager": "Admin Manager"
     }
   },
   "judge_orders": {

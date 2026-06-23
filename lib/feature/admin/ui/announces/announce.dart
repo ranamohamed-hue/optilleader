@@ -164,8 +164,8 @@ class AnnouncementsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     child: CachedNetworkImage(
                       imageUrl: announcement.imageUrl!, width: 70, height: 70, fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: Colors.grey[200], width: 70, height: 70),
-                      errorWidget: (_, __, ___) => const Icon(Icons.broken_image, size: 40),
+                      placeholder: (_, _) => Container(color: Colors.grey[200], width: 70, height: 70),
+                      errorWidget: (_, _, _) => const Icon(Icons.broken_image, size: 40),
                     ),
                   ),
                 ],

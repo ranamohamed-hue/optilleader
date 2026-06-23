@@ -2,6 +2,7 @@
   "admin_pending": {
     "title": "الطلبات المعلقة",
     "no_pending": "لا توجد طلبات معلقة حالياً",
+    "review_count": "لديه {0} طلب مراجعة",
     "papers_count": "{0} بحث",
     "activities_count": "{0} نشاط",
     "journal": "مجلة:",

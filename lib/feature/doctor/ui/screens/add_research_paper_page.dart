@@ -31,6 +31,7 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
   final _totalAuthorsController = TextEditingController();
   final _journalUrlController = TextEditingController();
   final _authorsInSameSpecialtyController = TextEditingController();
+  final _reportNumberController = TextEditingController();
 
   bool _isTopTierJournal = false;
 
@@ -38,10 +39,13 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
   JournalLevel _selectedJournalLevel = JournalLevel.international;
   IndexingDatabase _selectedIndexDatabase = IndexingDatabase.scopus;
 
+  String? _selectedQuartile;
+  Map<String, bool> _localCriteria = {};
+
   PickedFileData? _paperFile;
   PickedFileData? _indexingProofFile;
+  PickedFileData? _certifiedReportFile;
 
-  // دالة مساعدة لتحويل قاعدة البيانات Enum إلى نص مترجم
   String _getDbName(IndexingDatabase db) {
     switch (db) {
       case IndexingDatabase.scopus:
@@ -55,6 +59,11 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     }
   }
 
+  bool get _isInternational =>
+      _selectedIndexDatabase == IndexingDatabase.scopus ||
+      _selectedIndexDatabase == IndexingDatabase.webOfScience;
+  bool get _isLocal => _selectedIndexDatabase == IndexingDatabase.local;
+
   @override
   void dispose() {
     _titleArController.dispose();
@@ -67,6 +76,7 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     _totalAuthorsController.dispose();
     _journalUrlController.dispose();
     _authorsInSameSpecialtyController.dispose();
+    _reportNumberController.dispose();
     super.dispose();
   }
 
@@ -83,7 +93,6 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
       return;
     }
 
-    // التحقق من إثبات الفهرسة
     if (_selectedIndexDatabase != IndexingDatabase.other &&
         _indexingProofFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -113,6 +122,12 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
       journalLevel: _selectedJournalLevel,
       indexingDatabase: _selectedIndexDatabase,
       journalUrl: _journalUrlController.text.trim(),
+      quartile: _isInternational ? _selectedQuartile : null,
+      isLocalJournal: _isLocal,
+      localJournalCriteria: _isLocal ? _localCriteria : null,
+      certifiedReportNumber: _reportNumberController.text.trim().isEmpty
+          ? null
+          : _reportNumberController.text.trim(),
       paperFileUrl: '',
       paperFileType: _paperFile!.type == UploadedFileType.image
           ? 'image'
@@ -125,6 +140,7 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
       paper: paper,
       paperFile: _paperFile!.file,
       indexingProofFile: _indexingProofFile?.file,
+      certifiedReportFile: _certifiedReportFile?.file,
     );
   }
 
@@ -187,7 +203,7 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                   ),
                   SizedBox(height: 12.h),
 
-                  // قائمة نطاق المجلة
+                  // ✅ تم تصحيح initialValue لـ value
                   DropdownButtonFormField<JournalScope>(
                     value: _selectedJournalScope,
                     decoration: InputDecoration(
@@ -213,7 +229,6 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                   ),
                   SizedBox(height: 12.h),
 
-                  // قائمة مستوى المجلة
                   DropdownButtonFormField<JournalLevel>(
                     value: _selectedJournalLevel,
                     decoration: InputDecoration(
@@ -239,7 +254,6 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                   ),
                   SizedBox(height: 12.h),
 
-                  // قاعدة الفهرسة
                   DropdownButtonFormField<IndexingDatabase>(
                     value: _selectedIndexDatabase,
                     decoration: InputDecoration(
@@ -266,12 +280,45 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                         child: Text('common.other'.tr()),
                       ),
                     ],
-                    onChanged: (val) =>
-                        setState(() => _selectedIndexDatabase = val!),
+                    onChanged: (val) => setState(() {
+                      _selectedIndexDatabase = val!;
+                      _selectedQuartile = null;
+                      _localCriteria = {};
+                    }),
                     validator: (v) =>
                         v == null ? 'validation.required'.tr() : null,
                   ),
                   SizedBox(height: 12.h),
+
+                  if (_isInternational) ...[
+                    DropdownButtonFormField<String>(
+                      value: _selectedQuartile,
+                      decoration: InputDecoration(
+                        labelText: 'addResearch.quartile'.tr(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      items: ['q1', 'q2', 'q3', 'q4', 'no_if']
+                          .map(
+                            (q) => DropdownMenuItem(
+                              value: q,
+                              child: Text(q.toUpperCase()),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (val) =>
+                          setState(() => _selectedQuartile = val),
+                      validator: (v) =>
+                          v == null ? 'validation.required'.tr() : null,
+                    ),
+                    SizedBox(height: 12.h),
+                  ],
+
+                  if (_isLocal) ...[
+                    _buildLocalCriteriaSection(),
+                    SizedBox(height: 12.h),
+                  ],
 
                   Row(
                     children: [
@@ -358,9 +405,8 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                       final sameSpecialty = int.tryParse(v) ?? 0;
                       final authorOrder =
                           int.tryParse(_authorOrderController.text) ?? 0;
-                      if (sameSpecialty < authorOrder) {
+                      if (sameSpecialty < authorOrder)
                         return 'addResearch.validationAuthorsOrder'.tr();
-                      }
                       return null;
                     },
                   ),
@@ -370,12 +416,9 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                     title: Text('addResearch.isTopTierJournal'.tr()),
                     subtitle: Text('addResearch.isTopTierJournalHint'.tr()),
                     value: _isTopTierJournal,
-                    onChanged: (bool value) {
-                      setState(() {
-                        _isTopTierJournal = value;
-                      });
-                    },
-                    activeColor: Colors.blue,
+                    onChanged: (bool value) =>
+                        setState(() => _isTopTierJournal = value),
+                    activeThumbColor: Colors.blue,
                   ),
                   SizedBox(height: 12.h),
 
@@ -389,6 +432,9 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                   ),
                   SizedBox(height: 20.h),
 
+                  _buildCertifiedReportSection(),
+                  SizedBox(height: 20.h),
+
                   FilePickerField(
                     label: 'addResearch.paperFile'.tr(),
                     selectedFile: _paperFile,
@@ -397,7 +443,6 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                   ),
                   SizedBox(height: 12.h),
 
-                  // إثبات الفهرسة
                   FilePickerField(
                     label: _selectedIndexDatabase == IndexingDatabase.other
                         ? 'addResearch.indexingProof'.tr()
@@ -439,6 +484,101 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildLocalCriteriaSection() {
+    final criteriaKeys = [
+      "localJournalCriteria.criteria1",
+      "localJournalCriteria.criteria2",
+      "localJournalCriteria.criteria3",
+      "localJournalCriteria.criteria4",
+      "localJournalCriteria.criteria5",
+      "localJournalCriteria.criteria6",
+      "localJournalCriteria.criteria7",
+      "localJournalCriteria.criteria8",
+    ];
+
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'addResearch.localCriteria'.tr(),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
+          ),
+          SizedBox(height: 8.h),
+          // ✅ إضافة .tr() للنصوص داخل الـ Checkbox
+          ...criteriaKeys.map(
+            (criterion) => CheckboxListTile(
+              dense: true,
+              title: Text(criterion.tr(), style: TextStyle(fontSize: 13.sp)),
+              value: _localCriteria[criterion] ?? false,
+              onChanged: (val) => setState(() {
+                _localCriteria[criterion] = val ?? false;
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCertifiedReportSection() {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.verified_outlined, color: Colors.blue, size: 20.sp),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  'addResearch.certifiedReportTitle'.tr(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          TextFormField(
+            controller: _reportNumberController,
+            decoration: InputDecoration(
+              labelText: 'addResearch.reportNumber'.tr(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          // ✅ استخدام مفتاح الترجمة الصحيح
+          FilePickerField(
+            label: 'filePicker.selectReport'.tr(),
+            selectedFile: _certifiedReportFile,
+            onFileSelected: (file) =>
+                setState(() => _certifiedReportFile = file),
+            isRequired: false,
+          ),
+        ],
+      ),
     );
   }
 }

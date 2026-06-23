@@ -12,6 +12,8 @@
     "hint_desc": "اكتب تفاصيل إضافية عن الملف هنا...",
     "btn_upload": "حفظ وإرسال للأرشيف",
     "error_file_required": "الرجاء اختيار ملف أولاً",
-    "error_title_required": "الرجاء كتابة عنوان الملف"
+    "error_title_required": "الرجاء كتابة عنوان الملف",
+    "file_upload_success": "تم رفع الملف إلى الأرشيف بنجاح!",
+    "unexpected_error": "حدث خطأ غير متوقع أثناء الرفع"
   }
 }

@@ -35,7 +35,7 @@ class NewUserFirstLoginState extends AuthState {
 
 class UpdatePasswordLoadingState extends AuthState {
   final UserModel userModel;
-  UpdatePasswordLoadingState(this.userModel);
+  const UpdatePasswordLoadingState(this.userModel);
 }
 class UpdatePasswordSuccessState extends AuthState {
   final String message;

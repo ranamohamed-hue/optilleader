@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:dartz/dartz.dart';
 import 'package:path/path.dart' as p;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,7 +12,7 @@ import 'package:optialeader/feature/database_admin/data/models/doctor_profile_mo
 import 'package:optialeader/feature/database_admin/data/repo/doctor_repository/doctor_repo.dart';
 import 'package:optialeader/feature/database_admin/logic/doctor_data/doctor_data_state.dart';
 import 'package:optialeader/firebase_options.dart';
-
+import 'package:optialeader/feature/database_admin/logic/leadership_scoring_engine/leadership_criteria_engine.dart';
 class DoctorDataCubit extends Cubit<DoctorDataState> {
   final DoctorRepo doctorRepo;
   StreamSubscription? _doctorsSubscription;
@@ -27,13 +28,62 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
     );
   }
 
-  Future<void> saveDoctorData(DoctorProfileModel doctor) async {
-    emit(DoctorLoading());
-    final result = await doctorRepo.saveDoctorData(doctor);
+  // ✅ دالة التحقق من الأهلية (تم إضافة الـ Null Check)
+   Future<(bool isEligible, List<CriterionStatus> unmetCriteria)>
+      checkEligibility({
+    required String targetRole,
+    String? uid,
+  }) async {
+    final currentUid = uid ?? FirebaseAuth.instance.currentUser?.uid;
+    if (currentUid == null) {
+      return (false, <CriterionStatus>[]);
+    }
+
+    final result = await doctorRepo.getDoctorProfile(currentUid);
+
+    // ✅ استخراج الدكتور بره الـ fold عشان نتجنب مشكلة الـ async
+    DoctorProfileModel? doctor;
     result.fold(
-      (error) => emit(DoctorError(error: error)),
-      (_) => emit(DoctorSuccess()),
+      (error) => null,
+      (d) => doctor = d,
     );
+
+    if (doctor == null) {
+      return (false, <CriterionStatus>[]);
+    }
+
+    // ✅ الآن نحن في الـ async function الرئيسية، فالـ await هيشتغل هنا
+    List<DoctorProfileModel> departmentDoctors = [];
+    if (targetRole == 'head_department') {
+      try {
+        departmentDoctors = await doctorRepo.watchAllDoctors().first;
+      } catch (_) {}
+    }
+
+    final criteria = LeadershipCriteriaEngine.checkMandatoryCriteria(
+      doctor: doctor!,
+      targetRole: targetRole,
+      departmentDoctors: departmentDoctors, 
+    );
+
+    final unmetCriteria = criteria.where((c) => !c.isMet).toList();
+
+    return (unmetCriteria.isEmpty, unmetCriteria);
+  }
+   Future<Either<String, void>> saveDoctorData(DoctorProfileModel doctor) async {
+    try {
+      // ✅ set مع merge هيحمي كل الحقول القديمة ويحدث الجديدة فقط
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(doctor.uid)
+          .set(
+            doctor.toMap(), // هنا بيتنادى على الـ toMap() اللي فيها اللجان وتاريخ التعيين
+            SetOptions(merge: true),
+          );
+      return const Right(null);
+    } catch (e) {
+      return Left(e.toString());
+    }
   }
 
   Future<void> updateDoctorProfile(
@@ -229,7 +279,23 @@ class DoctorDataCubit extends Cubit<DoctorDataState> {
       (_) => emit(DoctorSuccess()),
     );
   }
+  // أضف الدالة دي في الـ Cubet
+    // ✅ أضف الدالة دي في الـ Cubet (استبدل القديمة بالجديدة)
+  Future<List<DoctorProfileModel>> getAllDoctorsOnce() async {
+    try {
+      // ✅ استخدام get() مباشرة عشان نجلب الداتا فوراً ومتنتظرش Stream
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'doctor')
+          .get();
 
+      return snapshot.docs.map((doc) {
+        return DoctorProfileModel.fromJson(doc.data(), doc.id);
+      }).toList();
+    } catch (e) {
+      return [];
+    }
+  }
   @override
   Future<void> close() {
     _doctorsSubscription?.cancel();

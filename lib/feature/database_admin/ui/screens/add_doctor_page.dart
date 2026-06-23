@@ -61,6 +61,9 @@ class AddDoctorPage extends StatefulWidget {
 class _AddDoctorPageState extends State<AddDoctorPage> {
   final _formKey = GlobalKey<FormState>();
 
+  // ✅ حفظ البيانات الأصلية عند التعديل
+  DoctorProfileModel? _existingDoctor;
+
   final _nameAr = TextEditingController();
   final _nameEn = TextEditingController();
   final _nationalityAr = TextEditingController();
@@ -75,6 +78,9 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
   final _departmentAr = TextEditingController();
   final _departmentEn = TextEditingController();
 
+  final _collageAr = TextEditingController();
+  final _collageEn = TextEditingController();
+
   final _nationalId = TextEditingController();
   final _employeeId = TextEditingController();
   final _email = TextEditingController();
@@ -84,10 +90,17 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
 
   DateTime? birthDate;
   DateTime? professorRankDate;
+  // ✅ تاريخ التعيين الجديد
+  DateTime? hiringDate;
+
   bool _hasBeenDean = false;
   bool _hasBeenHead = false;
   bool hasCriminalRecord = false;
   bool holdsPartyPosition = false;
+
+  // ✅ اللجان الداخلية
+  final List<String> _internalCommittees = [];
+  final _committeeNameController = TextEditingController();
 
   final Map<String, String> statusMapping = {
     "أعزب": "Single",
@@ -195,12 +208,15 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
     _facultyEn.dispose();
     _departmentAr.dispose();
     _departmentEn.dispose();
+    _collageAr.dispose();
+    _collageEn.dispose();
     _nationalId.dispose();
     _employeeId.dispose();
     _email.dispose();
     _phone.dispose();
     _addressAr.dispose();
     _addressEn.dispose();
+    _committeeNameController.dispose(); // ✅
     super.dispose();
   }
 
@@ -256,6 +272,8 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
       _facultyEn.clear();
       _departmentAr.clear();
       _departmentEn.clear();
+      _collageAr.clear();
+      _collageEn.clear();
       _nationalId.clear();
       _employeeId.clear();
       _email.clear();
@@ -267,12 +285,32 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
       }
       academicControllersList.clear();
       _digitalArchive.clear();
+      _internalCommittees.clear(); // ✅
       birthDate = null;
       professorRankDate = null;
+      hiringDate = null; // ✅
       selectedStatusAr = null;
       selectedStatusEn = null;
       _pickedImageFile = null;
       _currentImageUrl = '';
+      _existingDoctor = null;
+    });
+  }
+
+  // ✅ دالة إضافة لجنة داخلية
+  void _addCommittee() {
+    final name = _committeeNameController.text.trim();
+    if (name.isEmpty) return;
+    setState(() {
+      _internalCommittees.add(name);
+      _committeeNameController.clear();
+    });
+  }
+
+  // ✅ دالة حذف لجنة
+  void _removeCommittee(int index) {
+    setState(() {
+      _internalCommittees.removeAt(index);
     });
   }
 
@@ -303,7 +341,10 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
         facultyEn: _facultyEn.text.trim(),
         departmentAr: _departmentAr.text.trim(),
         departmentEn: _departmentEn.text.trim(),
+        collageAr: _collageAr.text.trim(),
+        collageEn: _collageEn.text.trim(),
         professorRankDate: professorRankDate,
+        hiringDate: hiringDate, // ✅ جديد
         previousLeadershipRoles: previousRoles,
         hasCriminalRecord: hasCriminalRecord,
         holdsPartyPosition: holdsPartyPosition,
@@ -323,6 +364,28 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
         isOnVacation: isOnVacation,
         isActive: true,
         digitalArchive: _digitalArchive,
+
+        // ✅ الحقول المحفوظة من الموديل القديم
+        cvUrl: _existingDoctor?.cvUrl,
+        alternativeEmail: _existingDoctor?.alternativeEmail,
+        researchPapers: _existingDoctor?.researchPapers ?? const [],
+        conferences: _existingDoctor?.conferences ?? const [],
+        exhibitions: _existingDoctor?.exhibitions ?? const [],
+        courses: _existingDoctor?.courses ?? const [],
+        academicActivities: _existingDoctor?.academicActivities,
+
+        // ✅ اللجان الداخلية الجديدة
+        internalCommittees: _internalCommittees,
+
+        // ✅ تم إزالة hasICDL تماماً (بيتحسب من الدورات تلقائياً)
+        hasHealthCertificate: _existingDoctor?.hasHealthCertificate,
+        hasCommitteeMembership: _existingDoctor?.hasCommitteeMembership,
+        hasSelfEvaluationReport: _existingDoctor?.hasSelfEvaluationReport,
+        hasArbitrationPlan: _existingDoctor?.hasArbitrationPlan,
+        hasAdminExperience: _existingDoctor?.hasAdminExperience,
+        hasExcellentPerformanceReports:
+            _existingDoctor?.hasExcellentPerformanceReports,
+        isTop3Senior: _existingDoctor?.isTop3Senior,
       );
 
       if (isEditing) {
@@ -344,6 +407,10 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
       listener: (context, state) {
         if (state is DoctorLoaded) {
           final doc = state.doctor!;
+
+          // ✅ حفظ البيانات الأصلية
+          _existingDoctor = doc;
+
           _nameAr.text = doc.nameAr;
           _nameEn.text = doc.nameEn;
           _nationalityAr.text = doc.nationalityAr;
@@ -356,6 +423,8 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
           _facultyEn.text = doc.facultyEn;
           _departmentAr.text = doc.departmentAr;
           _departmentEn.text = doc.departmentEn;
+          _collageAr.text = doc.collageAr;
+          _collageEn.text = doc.collageEn;
           _nationalId.text = doc.nationalId;
           _employeeId.text = doc.employeeId;
           _email.text = doc.email;
@@ -371,12 +440,18 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
           _currentImageUrl = doc.profileImage;
 
           professorRankDate = doc.professorRankDate;
+          hiringDate = doc.hiringDate; // ✅ قراءة تاريخ التعيين
+
           _hasBeenDean = doc.previousLeadershipRoles.contains('dean');
           _hasBeenHead = doc.previousLeadershipRoles.contains(
             'head_department',
           );
           hasCriminalRecord = doc.hasCriminalRecord;
           holdsPartyPosition = doc.holdsPartyPosition;
+
+          // ✅ قراءة اللجان الداخلية
+          _internalCommittees.clear();
+          _internalCommittees.addAll(doc.internalCommittees);
 
           academicControllersList.clear();
           for (var item in doc.academicHistory) {
@@ -391,7 +466,7 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
             academicControllersList.add(ctrl);
           }
 
-          _digitalArchive = doc.digitalArchive;
+          _digitalArchive = List.from(doc.digitalArchive);
           setState(() {});
         } else if (state is DoctorSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -407,9 +482,9 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
           Navigator.pop(context);
         } else if (state is DoctorError) {
           String errorMessage = state.error ?? "error".tr();
-          if (state.error == "ERROR_EMAIL_ALREADY_IN_USE")
+          if (state.error == "ERROR_EMAIL_ALREADY_IN_USE") {
             errorMessage = "add_doctor.email_in_use".tr();
-          else if (state.error == "ERROR_WEAK_PASSWORD")
+          } else if (state.error == "ERROR_WEAK_PASSWORD")
             errorMessage = "add_doctor.weak_password".tr();
           else if (state.error == "ERROR_USER_CREATION_FAILED" ||
               state.error == "ERROR_AUTH_UNKNOWN")
@@ -461,6 +536,8 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
                   children: [
                     _buildProfileImage(),
                     SizedBox(height: 20.h),
+
+                    // ===== قسم البيانات الشخصية والوظيفية =====
                     _buildSectionCard(
                       "add_doctor.identity_job".tr(),
                       Icons.person_pin_rounded,
@@ -508,6 +585,14 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
                         ),
                         SizedBox(height: 15.h),
                         _buildVerticalDoubleField(
+                          "add_doctor.collage_ar".tr(),
+                          _collageAr,
+                          "add_doctor.collage_en".tr(),
+                          _collageEn,
+                          Icons.business,
+                        ),
+                        SizedBox(height: 15.h),
+                        _buildVerticalDoubleField(
                           "add_doctor.department_ar".tr(),
                           _departmentAr,
                           "add_doctor.department_en".tr(),
@@ -544,10 +629,19 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
                         ),
                       ],
                     ),
+
+                    // ===== قسم القيادات الأكاديمية =====
                     _buildSectionCard(
                       "add_doctor.leadership_section".tr(),
                       Icons.military_tech,
                       [
+                        // ✅ تاريخ التعيين الجديد
+                        _buildDatePicker(
+                          "add_doctor.hiring_date".tr(),
+                          hiringDate,
+                          (date) => setState(() => hiringDate = date),
+                        ),
+                        SizedBox(height: 10.h),
                         _buildDatePicker(
                           "add_doctor.professor_rank_date".tr(),
                           professorRankDate,
@@ -576,6 +670,11 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
                         ),
                       ],
                     ),
+
+                    // ===== ✅ قسم اللجان الداخلية الجديد =====
+                    _buildInternalCommitteesSection(),
+
+                    // ===== قسم بيانات التواصل =====
                     _buildSectionCard(
                       "add_doctor.contact_info".tr(),
                       Icons.contact_phone,
@@ -602,6 +701,8 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
                         ),
                       ],
                     ),
+
+                    // ===== قسم السجل الأكاديمي =====
                     _buildSectionCard(
                       "add_doctor.academic_history".tr(),
                       Icons.school,
@@ -633,6 +734,7 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
 
                     if (isEditing) _buildDigitalArchiveSection(),
 
+                    // ===== قسم الأهلية =====
                     _buildSectionCard(
                       "add_doctor.eligibility".tr(),
                       Icons.verified_user,
@@ -702,6 +804,117 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
     );
   }
 
+  // ============================================================
+  // ✅ ويدجت قسم اللجان الداخلية الجديدة
+  // ============================================================
+  Widget _buildInternalCommitteesSection() {
+    return _buildSectionCard(
+      "add_doctor.internal_committees".tr(),
+      Icons.groups_rounded,
+      [
+        if (_internalCommittees.isEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 10.h),
+            child: Text(
+              "add_doctor.no_committees".tr(),
+              style: TextStyle(color: Colors.grey, fontSize: 13.sp),
+            ),
+          ),
+        ..._internalCommittees.asMap().entries.map((entry) {
+          final index = entry.key;
+          final name = entry.value;
+          return Container(
+            margin: EdgeInsets.only(bottom: 8.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              color: AppColors.navyLight.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.commit_rounded,
+                  size: 18.sp,
+                  color: AppColors.darkGold,
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Text(
+                    name,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.navyDark,
+                    ),
+                  ),
+                ),
+                if (!_isReadOnly)
+                  IconButton(
+                    onPressed: () => _removeCommittee(index),
+                    icon: Icon(
+                      Icons.close,
+                      color: AppColors.error,
+                      size: 20.sp,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                  ),
+              ],
+            ),
+          );
+        }),
+        if (!_isReadOnly) ...[
+          SizedBox(height: 10.h),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _committeeNameController,
+                  enabled: !_isReadOnly,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.navyDark,
+                  ),
+                  textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                  decoration: InputDecoration(
+                    hintText: "add_doctor.committee_name_hint".tr(),
+                    hintStyle: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.navyLight,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 10.h,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                  ),
+                  onFieldSubmitted: (_) => _addCommittee(),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.darkGold,
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: IconButton(
+                  onPressed: _addCommittee,
+                  icon: Icon(Icons.add, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildDigitalArchiveSection() {
     return _buildSectionCard(
       "add_doctor.digital_archive".tr(),
@@ -732,7 +945,7 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
               onPressed: () {},
             ),
           );
-        }).toList(),
+        }),
         if (!_isReadOnly)
           Center(
             child: OutlinedButton.icon(
@@ -1117,7 +1330,7 @@ class _AddDoctorPageState extends State<AddDoctorPage> {
     ),
     value: v,
     onChanged: _isReadOnly ? null : c,
-    activeColor: AppColors.darkGold,
+    activeThumbColor: AppColors.darkGold,
   );
 
   Widget _buildSaveButton() {

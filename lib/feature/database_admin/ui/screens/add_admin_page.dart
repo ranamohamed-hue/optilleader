@@ -64,28 +64,19 @@ class _AddAdminPageState extends State<AddAdminPage> {
         ),
         title: Row(
           children: [
-            Icon(
-              Icons.warning_amber_rounded,
-              color: AppColors.error,
-              size: 28.sp,
-            ),
-            SizedBox(width: 10.w),
-            Text(isArabic ? 'تأكيد الحذف' : 'Confirm Deletion'),
+          Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 28.sp),
+    SizedBox(width: 10.w),
+    Text("add_admin.confirm_delete_title".tr()),
           ],
         ),
         content: Text(
-          isArabic
-              ? 'هل أنت متأكد من حذف هذا المستخدم نهائياً؟ سيتم حذف جميع بياناته وملفاته ولا يمكن التراجع عن هذا الإجراء.'
-              : 'Are you sure you want to delete this user permanently? All data and files will be deleted and this action cannot be undone.',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navyDark),
-        ),
+  "add_admin.confirm_delete_msg".tr(),
+  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navyDark),
+),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(
-              isArabic ? 'إلغاء' : 'Cancel',
-              style: TextStyle(color: AppColors.navyLight),
-            ),
+            child: Text("add_admin.cancel".tr(), style: TextStyle(color: AppColors.navyLight)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -100,13 +91,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
                 widget.existingUid!,
               ); // تنفيذ الحذف
             },
-            child: Text(
-              isArabic ? 'حذف نهائي' : 'Delete',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+           child: Text("add_admin.confirm".tr(), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -191,15 +176,17 @@ class _AddAdminPageState extends State<AddAdminPage> {
   String? _validateNationalId(String? value) {
     if (value == null || value.isEmpty) return "add_admin.required".tr();
     if (value.length != 14) return "add_admin.valid_national_id".tr();
-    if (!RegExp(r'^\d+$').hasMatch(value))
+    if (!RegExp(r'^\d+$').hasMatch(value)) {
       return "add_admin.valid_national_id".tr();
+    }
     return null;
   }
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) return "add_admin.required".tr();
-    if (!RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$').hasMatch(value))
+    if (!RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$').hasMatch(value)) {
       return "add_admin.valid_email_format".tr();
+    }
     return null;
   }
 
@@ -232,8 +219,9 @@ class _AddAdminPageState extends State<AddAdminPage> {
             ),
           );
           Future.microtask(() {
-            if (context.mounted && Navigator.canPop(context))
+            if (context.mounted && Navigator.canPop(context)) {
               Navigator.pop(context);
+            }
           });
         } else if (state is AdminError) {
           _isSubmitting = false;
@@ -454,9 +442,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
                               ),
                               SizedBox(height: 15.h),
                               Text(
-                                isArabic
-                                    ? 'جاري حذف المستخدم...'
-                                    : 'Deleting user...',
+                                "add_admin.deleting".tr(),
                                 style: AppTextStyles.bodyMedium.copyWith(
                                   color: AppColors.navyDark,
                                 ),

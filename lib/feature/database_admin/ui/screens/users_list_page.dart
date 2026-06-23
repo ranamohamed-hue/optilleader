@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -179,8 +180,8 @@ class UsersListPage extends StatelessWidget {
                               fit: BoxFit.cover,
                               width: 60.r,
                               height: 60.r,
-                              placeholder: (_, __) => Icon(Icons.person, size: 25.sp),
-                              errorWidget: (_, __, ___) => Icon(Icons.person, size: 25.sp, color: Colors.white),
+                              placeholder: (_, _) => Icon(Icons.person, size: 25.sp),
+                              errorWidget: (_, _, _) => Icon(Icons.person, size: 25.sp, color: Colors.white),
                             )
                           : Icon(Icons.person, size: 25.sp, color: Colors.white),
                     ),

@@ -1,6 +1,6 @@
 {
   "dashboard": {
-    "welcome": "Welcome, {0}",
+    "welcome": "Welcome",
     "welcome_title": "Welcome!",
     "welcome_body": "We are happy to have you on the OptiLeader platform.\nYou can start exploring your features from the side menu.",
     "lets_start": "Let's Start!",

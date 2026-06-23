@@ -50,10 +50,10 @@ class _UploadFilePageState extends State<UploadFilePage> {
       listener: (context, state) {
         if (state is DoctorLoaded) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("تم رفع الملف إلى الأرشيف بنجاح!"),
-              backgroundColor: Colors.green,
-            ),
+           SnackBar(
+      content: Text("file_upload_success".tr()), // ✅ مربوط
+      backgroundColor: Colors.green,
+    ),
           );
           if (context.canPop()) {
             context.pop();
@@ -65,9 +65,9 @@ class _UploadFilePageState extends State<UploadFilePage> {
         if (state is DoctorError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              // 🛠️ تم التعديل هنا: وضع قيمة افتراضية في حال كان الخطأ القادم null لمنع الـ Type Error
-              content: Text(state.error ?? "حدث خطأ غير متوقع أثناء الرفع"),
-              backgroundColor: Colors.red,
+
+content: Text(state.error ?? "unexpected_error".tr()),      
+        backgroundColor: Colors.red,
             ),
           );
         }
@@ -247,7 +247,7 @@ class _UploadFilePageState extends State<UploadFilePage> {
               borderSide: BorderSide(color: gold, width: 1.5.w),
             ),
           ),
-          value: _selectedCategory,
+          initialValue: _selectedCategory,
           hint: Text(
             "upload.hint_category".tr(),
             style: TextStyle(fontSize: 13.sp),

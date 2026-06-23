@@ -8,8 +8,6 @@ class AdminApprovalCubit extends Cubit<AdminApprovalState> {
   AdminApprovalCubit({required this.adminApprovalRepo})
     : super(AdminApprovalInitial());
 
-  // في AdminApprovalCubit
-  // في ملف AdminApprovalCubit.dart
   Future<void> getPendingRequests({bool showLoading = true}) async {
     if (showLoading) {
       emit(AdminApprovalLoading());
@@ -22,73 +20,90 @@ class AdminApprovalCubit extends Cubit<AdminApprovalState> {
     );
   }
 
-  Future<void> approveResearch(
-    String doctorUid,
-    String paperId,
-    String paperTitle,
-  ) async {
-    final result = await adminApprovalRepo.approveResearch(
-      doctorUid,
-      paperId,
-      paperTitle,
-    );
+  // ====== الأبحاث ======
+  Future<void> approveResearch(String doctorUid, String paperId, String paperTitle) async {
+    final result = await adminApprovalRepo.approveResearch(doctorUid, paperId, paperTitle);
     result.fold(
       (error) => emit(AdminApprovalError(error)),
-      (_) => getPendingRequests(
-        showLoading: false,
-      ), // 👈 هذا هو السر: لا تظهري الـ Loading هنا!
+      (_) => getPendingRequests(showLoading: false),
     );
   }
 
-  Future<void> rejectResearch(
-    String doctorUid,
-    String paperId,
-    String paperTitle,
-    String reason,
-  ) async {
-    final result = await adminApprovalRepo.rejectResearch(
-      doctorUid,
-      paperId,
-      paperTitle,
-      reason,
-    );
+  Future<void> rejectResearch(String doctorUid, String paperId, String paperTitle, String reason) async {
+    final result = await adminApprovalRepo.rejectResearch(doctorUid, paperId, paperTitle, reason);
     result.fold(
       (error) => emit(AdminApprovalError(error)),
-      (_) => getPendingRequests(showLoading: false), // اجعليها false هنا أيضاً
+      (_) => getPendingRequests(showLoading: false),
     );
   }
 
-  Future<void> approveActivity(
-    String doctorUid,
-    String activityId,
-    String activityTitle,
-  ) async {
-    final result = await adminApprovalRepo.approveActivity(
-      doctorUid,
-      activityId,
-      activityTitle,
-    );
+  // ====== المؤتمرات ======
+  Future<void> approveConference(String doctorUid, String confId, String confTitle) async {
+    final result = await adminApprovalRepo.approveConference(doctorUid, confId, confTitle);
     result.fold(
       (error) => emit(AdminApprovalError(error)),
-      (_) => getPendingRequests(showLoading: false), // وهنا أيضاً
+      (_) => getPendingRequests(showLoading: false),
     );
   }
 
-  Future<void> rejectActivity(
-    String doctorUid,
-    String activityId,
-    String activityTitle,
-    String reason,
-  ) async {
-    final result = await adminApprovalRepo.rejectActivity(
-      doctorUid,
-      activityId,
-      activityTitle,
-      reason,
+  Future<void> rejectConference(String doctorUid, String confId, String confTitle, String reason) async {
+    final result = await adminApprovalRepo.rejectConference(doctorUid, confId, confTitle, reason);
+    result.fold(
+      (error) => emit(AdminApprovalError(error)),
+      (_) => getPendingRequests(showLoading: false),
+    );
+  }
+
+  // ====== المعارض ======
+  Future<void> approveExhibition(String doctorUid, String exhId, String exhTitle) async {
+    final result = await adminApprovalRepo.approveExhibition(doctorUid, exhId, exhTitle);
+    result.fold(
+      (error) => emit(AdminApprovalError(error)),
+      (_) => getPendingRequests(showLoading: false),
+    );
+  }
+
+  Future<void> rejectExhibition(String doctorUid, String exhId, String exhTitle, String reason) async {
+    final result = await adminApprovalRepo.rejectExhibition(doctorUid, exhId, exhTitle, reason);
+    result.fold(
+      (error) => emit(AdminApprovalError(error)),
+      (_) => getPendingRequests(showLoading: false),
+    );
+  }
+
+  // ====== الدورات ======
+  Future<void> approveCourse(String doctorUid, String courseId, String courseTitle) async {
+    final result = await adminApprovalRepo.approveCourse(doctorUid, courseId, courseTitle);
+    result.fold(
+      (error) => emit(AdminApprovalError(error)),
+      (_) => getPendingRequests(showLoading: false),
+    );
+  }
+
+  Future<void> rejectCourse(String doctorUid, String courseId, String courseTitle, String reason) async {
+    final result = await adminApprovalRepo.rejectCourse(doctorUid, courseId, courseTitle, reason);
+    result.fold(
+      (error) => emit(AdminApprovalError(error)),
+      (_) => getPendingRequests(showLoading: false),
+    );
+  }
+
+  // ====== الأنشطة الأكاديمية ======
+  Future<void> updateActivityCriterion({
+    required String doctorUid,
+    required String criterionKey,
+    required bool isApproved,
+    String? adminNote,
+  }) async {
+    final result = await adminApprovalRepo.updateActivityCriterionStatus(
+      doctorUid: doctorUid,
+      criterionKey: criterionKey,
+      isApproved: isApproved,
+      adminNote: adminNote,
     );
     result.fold(
       (error) => emit(AdminApprovalError(error)),
-      (_) => getPendingRequests(showLoading: false), // وهنا أيضاً
+      (_) => getPendingRequests(showLoading: false),
     );
   }
 }
