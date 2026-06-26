@@ -6,33 +6,37 @@ import 'package:optialeader/feature/database_admin/logic/leadership_scoring_engi
 import 'package:optialeader/feature/database_admin/logic/leadership_scoring_engine/leadership_criteria_engine.dart';
 import 'package:optialeader/feature/database_admin/logic/leadership_scoring_engine/leadership_state.dart';
 
+/// ============================================================
+/// كوبيت إدارة الترشيحات (المنسق بين المحركات والواجهة)
+/// ============================================================
 class LeadershipCubit extends Cubit<LeadershipState> {
   final DoctorDataCubit doctorDataCubit;
 
   LeadershipCubit({required this.doctorDataCubit}) : super(LeadershipInitial());
 
-  // 1. حساب نقاط الدورات (من الموديل الجديد)
+  /// 1. حساب نقاط الدورات فقط (مثلاً لو عايزين نعرضها في كارت لوحده)
   void calculateLeadershipScore() {
     emit(LeadershipLoading());
     final doctorState = doctorDataCubit.state;
 
     if (doctorState is DoctorLoaded) {
       final DoctorProfileModel doctor = doctorState.doctor!;
-      
+
       double totalCoursePoints = 0.0;
+      // نجمع نقاط الدورات المقيمة فقط (مش الإلزامية عشان هي بصفر)
       for (var course in doctor.courses) {
         if (course.status.name == 'approved' && !course.isMandatory) {
           totalCoursePoints += course.points;
         }
       }
-      
+
       emit(LeadershipScoreLoaded(coursePoints: totalCoursePoints));
     } else {
       emit(LeadershipError("بيانات الدكتور غير متاحة"));
     }
   }
 
-  // 2. حساب نسب مادة 22 (من الموديل الجديد)
+  /// 2. حساب نسب المشاركة لكل بحث (مادة 22) لعرضها في التقارير
   void calculateArticle22Percentages() {
     emit(LeadershipLoading());
     final doctorState = doctorDataCubit.state;
@@ -51,27 +55,27 @@ class LeadershipCubit extends Cubit<LeadershipState> {
     }
   }
 
-  // ✅ 3. التحقق من الشروط الإجبارية (تم تحديثه ليكون آسync ويجلب الدكاترة)
+  /// 3. فحص الشروط الإلزامية فقط (من غير ما نحسب الدرجات)
   Future<void> checkMandatoryCriteria({required String targetRole}) async {
     emit(LeadershipLoading());
     final doctorState = doctorDataCubit.state;
 
     if (doctorState is DoctorLoaded) {
       final DoctorProfileModel doctor = doctorState.doctor!;
-      
-      // ✅ جلب الدكاترة ديناميكياً لو كان الشرط يتطلب ذلك (مثل أقدم 3)
+
+      // لو الوظيفة "رئيس قسم"، لازم نجيب دكاترة القسم عشان نحسب الأقدم 3
       List<DoctorProfileModel> departmentDoctors = [];
       if (targetRole == 'head_department') {
         try {
           departmentDoctors = await doctorDataCubit.getAllDoctorsOnce();
         } catch (_) {}
       }
-      
-      // ✅ تمرير الدكاترة للمحرك
+
+      // نستدعي محرك الشروط ونمررله الدكاترة
       final criteria = LeadershipCriteriaEngine.checkMandatoryCriteria(
-        doctor: doctor, 
+        doctor: doctor,
         targetRole: targetRole,
-        departmentDoctors: departmentDoctors, // ✅ تمت الإضافة
+        departmentDoctors: departmentDoctors,
       );
 
       emit(MandatoryCriteriaLoaded(criteria: criteria));
@@ -79,8 +83,8 @@ class LeadershipCubit extends Cubit<LeadershipState> {
       emit(LeadershipError("بيانات الدكتور غير متاحة"));
     }
   }
- 
-  // ✅ 4. تجميع البيانات لصفحة التقديم (تم تحديثه ليكون آسync ويجلب الدكاترة)
+
+  /// 4. الدالة الشاملة: تجلب الدرجات + الشروط مع بعض لصفحة التقديم النهائية
   Future<void> loadNominationData({required String targetRole}) async {
     emit(LeadershipLoading());
     final doctorState = doctorDataCubit.state;
@@ -88,7 +92,7 @@ class LeadershipCubit extends Cubit<LeadershipState> {
     if (doctorState is DoctorLoaded) {
       final DoctorProfileModel doctor = doctorState.doctor!;
 
-      // ✅ جلب الدكاترة ديناميكياً لو كان الشرط يتطلب ذلك
+      // جلب دكاترة القسم لو لازمة
       List<DoctorProfileModel> departmentDoctors = [];
       if (targetRole == 'head_department') {
         try {
@@ -96,17 +100,17 @@ class LeadershipCubit extends Cubit<LeadershipState> {
         } catch (_) {}
       }
 
-      // 1. حساب الدرجات الآلية
+      // 1. استدعاء محرك حساب الدرجات
       final scores = LeadershipScoringEngine.calculateTotalScore(doctor);
 
-      // 2. التحقق من الشروط الإجبارية (بتمرير الدكاترة)
+      // 2. استدعاء محرك فحص الشروط
       final criteria = LeadershipCriteriaEngine.checkMandatoryCriteria(
         doctor: doctor,
         targetRole: targetRole,
         departmentDoctors: departmentDoctors,
       );
 
-      // 3. إرسال البيانات مجتمعة للـ UI
+      // 3. إرسال كل حاجة للواجهة في حالة واحدة
       emit(NominationDataLoaded(scores: scores, criteria: criteria));
     } else {
       emit(LeadershipError("error_fetch_requests"));

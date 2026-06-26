@@ -1,0 +1,24 @@
+{
+    "pending_details": {
+    "generic_title": "Request Details",
+    "generic_body": "Details view for other types",
+    "appbar_title": "Research Paper Details",
+    "success_msg": "Research approved successfully",
+    "no_report_note": "Note: No certified report from the Digital Libraries Committee was uploaded for this paper.",
+    "report_title": "Digital Libraries Committee Report",
+    "open_report": "Open Certified Report File",
+    "score_label": "Enter the committee score found in the report:",
+    "score_hint": "Example: 90.0",
+    "score_note": "* Research points will be calculated automatically based on this score upon nomination.",
+    "approve_btn": "Approve Research",
+    "reject_btn": "Reject Research",
+    "reject_dialog_title": "Reject Research",
+    "reject_hint": "Write the reason for rejection...",
+    "cancel": "Cancel",
+    "confirm_reject": "Confirm Rejection",
+    "journal_name": "Journal Name",
+    "database": "Database",
+    "quartile": "Quartile",
+    "year": "Publication Year",
+    "rank": "Researcher Rank"
+}}

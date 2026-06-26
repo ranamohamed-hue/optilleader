@@ -5,9 +5,8 @@ abstract class NominationRequestRepository {
   // إنشاء طلب جديد (من الدكتور)
   Future<Either<String, String>> submitRequest(NominationRequestModel request);
 
-  // جلب الطلبات للإدارة (فلترة حسب الكلية والقسم والحالة)
+  // جلب الطلبات للإدارة (فلترة حسب الحالة)
   Stream<List<NominationRequestModel>> getAdminRequests({
-   
     required String status,
   });
 
@@ -19,4 +18,7 @@ abstract class NominationRequestRepository {
 
   // رفع إقرارات الدكتور (صور/PDF)
   Future<Either<String, String>> uploadDeclarationFile(String filePath);
+
+  // ✅ جلب قائمة المحكمين المتاحين
+  Future<Either<String, List<Map<String, dynamic>>>> getEvaluators();
 }

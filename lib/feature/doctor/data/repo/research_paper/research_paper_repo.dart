@@ -10,12 +10,12 @@ abstract class ResearchPaperRepo {
     String paperId,
   );
 
-  Future<Either<String, Unit>> updatePaperStatus(
-    String doctorUid,
-    String paperId,
-    VerificationStatus status, {
-    String? rejectionReason,
-  });
+   Future<Either<String, Unit>> updatePaperStatus(
+    String doctorUid, 
+    String paperId, 
+    VerificationStatus status, 
+    {String? rejectionReason, double? adminScore} // ✅ أضف السطر ده
+  );
    Future<Either<String, Unit>> updateAdminScore({
     required String doctorUid,
     required String paperId,

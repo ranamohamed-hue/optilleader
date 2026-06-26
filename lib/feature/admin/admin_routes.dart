@@ -5,6 +5,7 @@ import 'package:optialeader/feature/admin/ui/announces/announce.dart';
 import 'package:optialeader/feature/admin/ui/announces/edit_announcement.dart';
 import 'package:optialeader/feature/admin/ui/admin_pending_requests_page.dart';
 import 'package:optialeader/feature/admin/ui/admin_details_page.dart';
+import 'package:optialeader/feature/admin/ui/pending_request_details_screen.dart';
 import 'package:optialeader/feature/admin/ui/request/order_list_screen.dart';
 import 'package:optialeader/feature/admin/ui/user_search_screen.dart';
 import 'package:optialeader/feature/admin/ui/request/nomination_requestd_details_screen.dart';
@@ -22,7 +23,7 @@ final List<RouteBase> adminSubRoutes = [
     builder: (context, state) => const OrdersListScreen(),
   ),
 
-  // 3. تفاصيل طلب الترشح (الشاشة الجديدة)
+  // 3. تفاصيل طلب الترشح
   GoRoute(
     path: 'nomination-request-details',
     builder: (context, state) {
@@ -30,15 +31,6 @@ final List<RouteBase> adminSubRoutes = [
       return NominationRequestDetailsScreen(request: request);
     },
   ),
-
-  // 4. الإعدادات
- /* GoRoute(
-    path: 'setting',
-    builder: (context, state) {
-      final args = state.extra as Map<String, dynamic>;
-      return SettingsScreen(uid: args['uid'], role: args['role']);
-    },
-  ),*/
 
   // 5. البحث عن مستخدم
   GoRoute(
@@ -69,6 +61,7 @@ final List<RouteBase> adminSubRoutes = [
     path: 'pending-requests',
     builder: (context, state) => const AdminPendingRequestsPage(),
     routes: [
+      // 8.1 تفاصيل عامة (مؤتمر / دورة / معرض)
       GoRoute(
         path: 'details',
         builder: (context, state) {
@@ -78,6 +71,15 @@ final List<RouteBase> adminSubRoutes = [
             doctorUid: args['doctorUid'],
             type: args['type'],
           );
+        },
+      ),
+
+      // ✅ 8.2 تفاصيل البحث العلمي (مع إدخال درجة الأدمن) - تم نقله هنا
+      GoRoute(
+        path: 'paper-details',
+        builder: (context, state) {
+          final args = state.extra as Map<String, dynamic>;
+          return PendingRequestDetailsScreen(extra: args);
         },
       ),
     ],

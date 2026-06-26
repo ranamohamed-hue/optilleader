@@ -25,24 +25,18 @@ class NominationRequestRepositoryImpl implements NominationRequestRepository {
       final String storagePath = 'declarations/$fileName';
 
       // ✅ رفع الملف على البوكيت المسمى 'files' في Supabase
-      await _supabase.storage
-          .from('files')
-          .upload(
+      await _supabase.storage.from('files').upload(
             storagePath,
             file,
             fileOptions: const FileOptions(upsert: false),
           );
 
       // ✅ الحصول على الرابط العام للملف
-      final String publicUrl = _supabase.storage
-          .from('files')
-          .getPublicUrl(storagePath);
+      final String publicUrl = _supabase.storage.from('files').getPublicUrl(storagePath);
 
       return Right(publicUrl);
     } catch (e) {
-      return Left(
-        e.toString(),
-      ); // ✅ لو حصل خطأ، هيرجع Left والـ Cubit هيعرف إنه فشل
+      return Left(e.toString());
     }
   }
 
@@ -52,15 +46,12 @@ class NominationRequestRepositoryImpl implements NominationRequestRepository {
   ) async {
     try {
       // حفظ البيانات في Firestore
-      final docRef = await _firestore
-          .collection('nomination_requests')
-          .add(request.toMap());
+      final docRef = await _firestore.collection('nomination_requests').add(request.toMap());
 
       // ✅ برجع الـ ID اللي اتولد من Firestore عشان الـ Cubit يستخدمه في الإشعارات
       return Right(docRef.id);
     } catch (e) {
-            print("🔴 FIRESTORE SUBMIT ERROR: $e");
-
+      print("🔴 FIRESTORE SUBMIT ERROR: $e");
       return Left(e.toString());
     }
   }
@@ -102,13 +93,31 @@ class NominationRequestRepositoryImpl implements NominationRequestRepository {
     NominationRequestModel request,
   ) async {
     try {
-      await _firestore
-          .collection('nomination_requests')
-          .doc(request.id)
-          .update(request.toMap());
-
+      await _firestore.collection('nomination_requests').doc(request.id).update(request.toMap());
       return const Right(unit); // ✅ التحديث اتعمل بنجاح
     } catch (e) {
+      return Left(e.toString());
+    }
+  }
+
+  // ✅ دالة جلب المحكمين من كولكشن الـ users
+  @override
+  Future<Either<String, List<Map<String, dynamic>>>> getEvaluators() async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .where('role', isEqualTo: 'evaluator') // تأكدي إن حقل الرول اسمه 'role'
+          .get();
+
+      final evaluators = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id; // إضافة الـ ID للـ Map
+        return data;
+      }).toList();
+
+      return Right(evaluators);
+    } catch (e) {
+      print("🔴 FIRESTORE GET EVALUATORS ERROR: $e");
       return Left(e.toString());
     }
   }

@@ -270,7 +270,8 @@ class _NominationRequestDetailsScreenState
             request.id ?? '-',
           ),
           _buildInfoRow(
-            'nomination_details.info_card.college'.tr(), // تم التعديل هنا (كان ناقص البادئة)
+            'nomination_details.info_card.college'
+                .tr(), // تم التعديل هنا (كان ناقص البادئة)
             _collegeName,
           ),
           _buildInfoRow(
@@ -283,7 +284,8 @@ class _NominationRequestDetailsScreenState
           ),
           if (request.rejectionReason != null)
             _buildInfoRow(
-              'nomination_details.info_card.rejection_reason'.tr(), // تم التعديل هنا
+              'nomination_details.info_card.rejection_reason'
+                  .tr(), // تم التعديل هنا
               request.rejectionReason!,
             ),
         ],
@@ -335,7 +337,8 @@ class _NominationRequestDetailsScreenState
                 size: 30.sp,
               ),
               title: Text(
-                'nomination_details.declaration.view_file'.tr(), // تم التعديل هنا
+                'nomination_details.declaration.view_file'
+                    .tr(), // تم التعديل هنا
               ),
               trailing: Icon(Icons.open_in_new, color: primaryNavy),
               onTap: () async {
@@ -412,47 +415,56 @@ class _NominationRequestDetailsScreenState
           ),
           Divider(height: 20.h),
           _buildInfoRow(
-            'nomination_details.evaluator.evaluator_name'.tr(), // تم التعديل هنا
+            'nomination_details.evaluator.evaluator_name'
+                .tr(), // تم التعديل هنا
             request.evaluatorName ?? '-',
           ),
           if (request.interviewDate != null)
             _buildInfoRow(
-              'nomination_details.evaluator.interview_date'.tr(), // تم التعديل هنا
+              'nomination_details.evaluator.interview_date'
+                  .tr(), // تم التعديل هنا
               DateFormat('yyyy-MM-dd').format(request.interviewDate!),
             ),
           if (request.interviewLocation != null)
             _buildInfoRow(
-              'nomination_details.evaluator.interview_location'.tr(), // تم التعديل هنا
+              'nomination_details.evaluator.interview_location'
+                  .tr(), // تم التعديل هنا
               request.interviewLocation!,
             ),
           if (request.interviewTime != null)
             _buildInfoRow(
-              'nomination_details.evaluator.interview_time'.tr(), // تم التعديل هنا
+              'nomination_details.evaluator.interview_time'
+                  .tr(), // تم التعديل هنا
               request.interviewTime!,
             ),
 
           _buildScoreRow(
-            'nomination_details.evaluation.scores.scientific'.tr(), // تم التعديل هنا
+            'nomination_details.evaluation.scores.scientific'
+                .tr(), // تم التعديل هنا
             evaluation['scientificScore'],
             40,
           ),
           _buildScoreRow(
-            'nomination_details.evaluation.scores.leadership'.tr(), // تم التعديل هنا
+            'nomination_details.evaluation.scores.leadership'
+                .tr(), // تم التعديل هنا
             evaluation['leadershipScore'],
             25,
           ),
           _buildScoreRow(
-            'nomination_details.evaluation.scores.student_activities'.tr(), // تم التعديل هنا
+            'nomination_details.evaluation.scores.student_activities'
+                .tr(), // تم التعديل هنا
             evaluation['studentActivitiesScore'],
             15,
           ),
           _buildScoreRow(
-            'nomination_details.evaluation.scores.community_activities'.tr(), // تم التعديل هنا
+            'nomination_details.evaluation.scores.community_activities'
+                .tr(), // تم التعديل هنا
             evaluation['communityActivitiesScore'],
             10,
           ),
           _buildScoreRow(
-            'nomination_details.evaluation.scores.human_relation'.tr(), // تم التعديل هنا
+            'nomination_details.evaluation.scores.human_relation'
+                .tr(), // تم التعديل هنا
             evaluation['humanRelationsScore'],
             10,
           ),
@@ -536,7 +548,9 @@ class _NominationRequestDetailsScreenState
             child: ElevatedButton.icon(
               onPressed: () => _showEvaluatorSelectionDialog(request),
               icon: Icon(Icons.gavel_rounded, size: 20.sp),
-              label: Text('nomination_details.actions.transfer'.tr()), // تم التعديل هنا
+              label: Text(
+                'nomination_details.actions.transfer'.tr(),
+              ), // تم التعديل هنا
               style: ElevatedButton.styleFrom(
                 backgroundColor: goldAccent,
                 foregroundColor: Colors.white,
@@ -584,7 +598,8 @@ class _NominationRequestDetailsScreenState
               },
               icon: Icon(Icons.verified, size: 20.sp),
               label: Text(
-                'nomination_details.actions.final_approval'.tr(), // تم التعديل هنا
+                'nomination_details.actions.final_approval'
+                    .tr(), // تم التعديل هنا
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green.shade700,
@@ -603,7 +618,8 @@ class _NominationRequestDetailsScreenState
               onPressed: () => _showRejectDialog(request, isFinalReject: true),
               icon: Icon(Icons.cancel_outlined, color: Colors.red, size: 20.sp),
               label: Text(
-                'nomination_details.actions.final_reject'.tr(), // تم التعديل هنا
+                'nomination_details.actions.final_reject'
+                    .tr(), // تم التعديل هنا
                 style: TextStyle(color: Colors.red.shade700),
               ),
               style: OutlinedButton.styleFrom(
@@ -622,16 +638,163 @@ class _NominationRequestDetailsScreenState
   }
 
   void _showEvaluatorSelectionDialog(NominationRequestModel request) {
-    // هنا تعرض قائمة بالمحكمين المتاحين
-    // بعد اختيار المحكم:
-    /*
-    context.read<NominationRequestCubit>().adminTakeAction(
-          request: request,
-          newStatus: NominationRequestModel.statusPendingEvaluator,
-          evaluatorId: selectedEvaluatorId,
-          evaluatorName: selectedEvaluatorName,
+    final cubit = context.read<NominationRequestCubit>();
+
+    // 1. اطلب البيانات من الـ Cubit (مفيش أي لوجيك هنا)
+    cubit.fetchEvaluators();
+
+    // 2. افتح الديالوج
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.person_search_rounded,
+                color: Theme.of(context).primaryColor,
+                size: 24.sp,
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Text(
+                  'nomination_details.actions.select_evaluator'.tr(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.sp,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // 3. الـ UI بيسمع للـ State بس
+          content: BlocBuilder<NominationRequestCubit, NominationRequestState>(
+            builder: (context, state) {
+              // حالة التحميل
+              if (state is EvaluatorsLoading) {
+                return Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(30.w),
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                );
+              }
+
+              // حالة الخطأ
+              if (state is EvaluatorsError) {
+                return Center(
+                  child: Text(
+                    state.message,
+                    style: TextStyle(color: Colors.red, fontSize: 13.sp),
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              }
+
+              // حالة النجاح وجلب الداتا
+              if (state is EvaluatorsLoaded) {
+                if (state.evaluators.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20.w),
+                      child: Text(
+                        'nomination_details.actions.no_evaluators'.tr(),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 13.sp,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return Container(
+                  width: double.maxFinite,
+                  height: 300.h,
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: state.evaluators.length,
+                    separatorBuilder: (context, index) =>
+                        Divider(height: 1, color: Colors.grey.shade200),
+                    itemBuilder: (context, index) {
+                      final eval = state.evaluators[index];
+                      final evalId = eval['id'];
+                      final evalName =
+                          eval['nameAr'] ?? eval['name'] ?? 'بدون اسم';
+
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          cubit.adminTakeAction(
+                            request: request,
+                            newStatus:
+                                NominationRequestModel.statusPendingEvaluator,
+                            evaluatorId: evalId,
+                            evaluatorName: evalName,
+                          );
+                        },
+                        child: ListTile(
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 4.h,
+                          ),
+                          leading: CircleAvatar(
+                            radius: 18.r,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).primaryColor.withOpacity(0.1),
+                            child: Icon(
+                              Icons.person_outline,
+                              color: Theme.of(context).primaryColor,
+                              size: 20.sp,
+                            ),
+                          ),
+                          title: Text(
+                            evalName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14.sp,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          trailing: Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 16.sp,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              }
+
+              return SizedBox.shrink();
+            },
+          ),
+
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'cancel'.tr(),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14.sp,
+                ),
+              ),
+            ),
+          ],
         );
-    */
+      },
+    );
   }
 
   void _showRejectDialog(
@@ -644,20 +807,25 @@ class _NominationRequestDetailsScreenState
       builder: (ctx) => AlertDialog(
         title: Text(
           isFinalReject
-              ? 'nomination_details.actions.final_reject'.tr() // تم التعديل هنا
-              : 'nomination_details.actions.confirm_reject'.tr(), // تم التعديل هنا
+              ? 'nomination_details.actions.final_reject'
+                    .tr() // تم التعديل هنا
+              : 'nomination_details.actions.confirm_reject'
+                    .tr(), // تم التعديل هنا
         ),
         content: TextField(
           controller: controller,
           decoration: InputDecoration(
-            hintText: 'nomination_details.info_card.rejection_reason'.tr(), // تم التعديل هنا
+            hintText: 'nomination_details.info_card.rejection_reason'
+                .tr(), // تم التعديل هنا
           ),
           maxLines: 3,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('nomination_details.actions.cancel'.tr()), // تم التعديل هنا
+            child: Text(
+              'nomination_details.actions.cancel'.tr(),
+            ), // تم التعديل هنا
           ),
           ElevatedButton(
             onPressed: () {
@@ -672,7 +840,8 @@ class _NominationRequestDetailsScreenState
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: Text(
-              'nomination_details.actions.confirm_reject'.tr(), // تم التعديل هنا
+              'nomination_details.actions.confirm_reject'
+                  .tr(), // تم التعديل هنا
             ),
           ),
         ],
@@ -683,19 +852,25 @@ class _NominationRequestDetailsScreenState
   String _getStatusText(String status) {
     switch (status) {
       case NominationRequestModel.statusPendingAdmin:
-        return 'nomination_details.statuses.pending_admin'.tr(); // تم التعديل هنا
+        return 'nomination_details.statuses.pending_admin'
+            .tr(); // تم التعديل هنا
       case NominationRequestModel.statusPendingEvaluator:
-        return 'nomination_details.statuses.pending_evaluator'.tr(); // تم التعديل هنا
+        return 'nomination_details.statuses.pending_evaluator'
+            .tr(); // تم التعديل هنا
       case NominationRequestModel.statusEvaluated:
         return 'nomination_details.statuses.evaluated'.tr(); // تم التعديل هنا
       case NominationRequestModel.statusFinalApproved:
-        return 'nomination_details.statuses.final_approved'.tr(); // تم التعديل هنا
+        return 'nomination_details.statuses.final_approved'
+            .tr(); // تم التعديل هنا
       case NominationRequestModel.statusFinalApprovedPendingAnnouncement:
-        return 'nomination_details.statuses.final_approved_pending'.tr(); // تم التعديل هنا
+        return 'nomination_details.statuses.final_approved_pending'
+            .tr(); // تم التعديل هنا
       case NominationRequestModel.statusRejectedByAdmin:
-        return 'nomination_details.statuses.rejected_admin'.tr(); // تم التعديل هنا
+        return 'nomination_details.statuses.rejected_admin'
+            .tr(); // تم التعديل هنا
       case NominationRequestModel.statusFinalRejected:
-        return 'nomination_details.statuses.final_rejected'.tr(); // تم التعديل هنا
+        return 'nomination_details.statuses.final_rejected'
+            .tr(); // تم التعديل هنا
       default:
         return status;
     }

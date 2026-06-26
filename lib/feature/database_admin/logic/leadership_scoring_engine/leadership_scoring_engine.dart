@@ -3,100 +3,166 @@ import 'package:optialeader/feature/doctor/data/model/academic_activity_model.da
 import 'package:optialeader/feature/judge/data/model/interview_scoring_model.dart';
 import 'package:optialeader/feature/doctor/data/model/conferance_model.dart';
 import 'package:optialeader/feature/doctor/data/model/exhibition_venue_model.dart';
-import 'package:optialeader/feature/doctor/data/model/courses_model.dart';
-import 'package:optialeader/feature/admin/data/model/nomination_score_model.dart';
-class LeadershipScoringEngine {
 
-  /// ✅ حساب إجمالي درجات الإنجازات
+import 'package:optialeader/feature/admin/data/model/nomination_score_model.dart';
+
+/// ============================================================
+/// محرك حساب درجات الإنجازات الأكاديمية (الـ 80 درجة)
+/// وظيفته: يمر على كل إنجازات الدكتور (أبحاث، مؤتمرات، معارض، دورات)
+/// ويجمع الدرجات الآلية عن طريق الـ Getters الموجودة في الموديلز
+/// ============================================================
+class LeadershipScoringEngine {
+  /// دالة رئيسية لحساب إجمالي درجات الإنجازات
   static Map<String, dynamic> calculateTotalScore(DoctorProfileModel doctor) {
     List<Map<String, dynamic>> allDetails = [];
     double researchPoints = 0.0;
     double conferencePoints = 0.0;
     double exhibitionPoints = 0.0;
     double coursePoints = 0.0;
+    double workshopPoints = 0.0;
     double activityPoints = 0.0;
 
-    // 1️⃣ الأبحاث العلمية
+    // 1️⃣ الأبحاث العلمية (الدرجة بتتحسب آلياً من الموديل بناءً على Quartile ونسبة المشاركة)
     for (var paper in doctor.researchPapers) {
       if (paper.status.name == 'approved') {
         researchPoints += paper.finalPoints;
         allDetails.add({
+          'id': paper.id,
           'title': paper.titleAr,
           'type': 'بحث علمي',
-          'category': paper.isLocalJournal ? 'مجلة محلية' : 'مجلة دولية',
-          'scope': 'نسبة المشاركة: ${(paper.participationPercentage * 100).toInt()}%',
+          'category': paper.isLocalJournal
+              ? 'مجلة محلية'
+              : paper.indexingDatabase.name,
+          'scope':
+              'الترتيب: ${paper.authorOrder} من ${paper.authorsInSameSpecialty} (${(paper.participationPercentage * 100).toInt()}%)',
           'points': paper.finalPoints,
-          'breakdown': '(إدارة: ${paper.adminScore} + مجلة: ${paper.journalPoints}) × ${paper.participationPercentage}',
+          'breakdown':
+              '(${paper.journalPoints.toStringAsFixed(1)} مجلة + ${paper.adminScore.toStringAsFixed(1)} أدمن) × ${paper.participationPercentage} = ${paper.finalPoints.toStringAsFixed(1)}',
+          'reportUrl': paper.certifiedReportFileUrl,
         });
       }
     }
 
-    // 2️⃣ المؤتمرات
+    // 2️⃣ المؤتمرات العلمية (الدرجة بتتحسب آلياً من ConferenceModel)
     for (var conf in doctor.conferences) {
       if (conf.status.name == 'approved') {
         conferencePoints += conf.totalPoints;
+
+        String nature = conf.isInternational ? 'دولي' : 'محلي';
+        String spec = conf.isSpecialized ? 'متخصص' : 'عام';
+        String partType = _getParticipationTypeAr(conf.participationType);
+        String pubStatus = conf.isPublished ? "منشور" : "غير منشور";
+
         allDetails.add({
           'title': conf.title,
-          'type': conf.isInternational ? 'مؤتمر دولي' : 'مؤتمر محلي',
-          'category': _getParticipationTypeAr(conf.participationType),
-          'scope': conf.isSpecialized ? 'متخصص' : 'غير متخصص',
+          'type': '$nature - $spec',
+          'category': partType,
+          'scope': spec,
           'points': conf.totalPoints,
+          'breakdown':
+              '$nature - $spec - $pubStatus - $partType = ${conf.totalPoints}',
         });
       }
     }
 
-    // 3️⃣ المعارض الفنية
+    // 3️⃣ المعارض الفنية (تم تحديث المنطق ليتوافق مع الأصناف التسعة الجديدة والتعليق)
     for (var exhibition in doctor.exhibitions) {
       if (exhibition.status.name == 'approved') {
-        if (exhibition.isExceptionalCase) {
+        // ✅ التعديل الجديد: استخدام isPointsOnHold بدل isExceptionalCase
+        if (exhibition.isPointsOnHold) {
           allDetails.add({
             'title': exhibition.title,
-            'type': 'معرض فني (بحث معلق)',
-            'category': 'دولي',
-            'scope': 'يحتاج تقييم كبحث',
+            'type': 'معرض فني (درجة معلقة)',
+            'category': _getVenueAr(
+              exhibition.venue,
+            ), // ✅ استخدام الدالة المحدثة
+            'scope': '${exhibition.numberOfWorks} أعمال',
             'points': 0.0,
+            'breakdown': 'الدرجة معلقة: المحفل دولي والأعمال أقل من 5',
           });
         } else {
-          exhibitionPoints += exhibition.basePoints;
+          double points = exhibition.basePoints;
+          if (points > 0) exhibitionPoints += points;
+
+          String venueAr = _getVenueAr(exhibition.venue);
+          // ✅ شرط الرفض الجديد (قاعة دولي بره مصر وأقل من 5 أعمال)
+          String failReason =
+              (exhibition.venue == ExhibitionVenue.internationalAbroad &&
+                  exhibition.numberOfWorks < 5)
+              ? ' (رُفض: أقل من 5 أعمال في محفل دولي)'
+              : '';
+
           allDetails.add({
             'title': exhibition.title,
             'type': 'معرض فني',
-            'category': _getVenueAr(exhibition.venue),
+            'category': venueAr,
             'scope': '${exhibition.numberOfWorks} أعمال',
-            'points': exhibition.basePoints,
+            'points': points,
+            'breakdown': '$venueAr = $points $failReason',
           });
         }
       }
     }
 
-    // 4️⃣ الدورات التدريبية (اللي عليها درجات)
+    // 4️⃣ الدورات التدريبية (الدرجة بتتحسب آلياً أو يدوياً حسب الـ Model)
     for (var course in doctor.courses) {
-      if (course.status.name == 'approved' && !course.isMandatory) {
-        coursePoints += course.points;
+      if (course.status.name == 'approved') {
+        // ✅ نستخدم الـ Getter الموجود في CourseModel مباشرة
+        double points = course.points;
+
+        if (points > 0) coursePoints += points;
+
+        String catAr = _getCourseCategoryAr(course.courseCategory);
+        String scopeAr = _getCourseScopeAr(course.courseScope);
+        String reason = course.isMandatory
+            ? 'إجبارية (صفر نقاط)'
+            : '$catAr - $scopeAr';
+
         allDetails.add({
           'title': course.title,
           'type': 'دورة تدريبية',
-          'category': _getCourseCategoryAr(course.courseCategory),
-          'scope': _getCourseScopeAr(course.courseScope),
-          'points': course.points,
+          'category': catAr,
+          'scope': scopeAr,
+          'points': points,
+          'breakdown': reason,
         });
       }
     }
 
-    // 5️⃣ الأنشطة الأكاديمية (الـ 20 درجة)
+    // 5️⃣ ورش العمل (بنفس جدول الدورات لأنهم ActivityModel)
+    // ملاحظة: الكود ده معلق لحد ما تتأكد من اسم الليست في DoctorProfileModel
+    /*
+    if (doctor.workshops != null) {
+      for (var workshop in doctor.workshops!) {
+        if (workshop.status.name == 'approved') {
+          double points = _calculateWorkshopPoints(category: workshop.courseCategory, scope: workshop.courseScope);
+          if (points > 0) workshopPoints += points;
+          // ... إضافة التفاصيل
+        }
+      }
+    }
+    */
+
+    // 6️⃣ الأنشطة الأكاديمية (الـ 20 درجة)
     if (doctor.academicActivities != null) {
       activityPoints = doctor.academicActivities!.totalPoints;
       _addActivityDetails(doctor.academicActivities!, allDetails);
     }
 
-    double totalPoints = researchPoints + conferencePoints + 
-                         exhibitionPoints + coursePoints + activityPoints;
+    double totalPoints =
+        researchPoints +
+        conferencePoints +
+        exhibitionPoints +
+        coursePoints +
+        workshopPoints +
+        activityPoints;
 
     return {
       'researchPoints': researchPoints,
       'conferencePoints': conferencePoints,
       'exhibitionPoints': exhibitionPoints,
       'coursePoints': coursePoints,
+      'workshopPoints': workshopPoints,
       'activityPoints': activityPoints,
       'totalPoints': totalPoints,
       'evaluated_items_details': allDetails,
@@ -104,23 +170,24 @@ class LeadershipScoringEngine {
   }
 
   // ============================================================
-  // 🎯 بناء موديل الدرجات من بيانات الدكتور
+  // بناء موديل الدرجات النهائي
   // ============================================================
   static NominationScoreModel buildScoreModel(DoctorProfileModel doctor) {
     Map<String, dynamic> scores = calculateTotalScore(doctor);
-    
     return NominationScoreModel(
       researchPoints: scores['researchPoints'],
       conferencePoints: scores['conferencePoints'],
       exhibitionPoints: scores['exhibitionPoints'],
       coursePoints: scores['coursePoints'],
       activityPoints: scores['activityPoints'],
-      itemsDetails: List<Map<String, dynamic>>.from(scores['evaluated_items_details']),
+      itemsDetails: List<Map<String, dynamic>>.from(
+        scores['evaluated_items_details'],
+      ),
     );
   }
 
   // ============================================================
-  // 🎯 إضافة درجة المقابلة للموديل
+  // إضافة درجة المقابلة الشخصية
   // ============================================================
   static NominationScoreModel addInterviewScore(
     NominationScoreModel scoreModel,
@@ -136,23 +203,87 @@ class LeadershipScoringEngine {
     );
   }
 
-  // ============================================================
-  // 🎯 حساب المجموع النهائي الكلي
-  // ============================================================
+  /// حساب المجموع الكلي (الإنجازات + المقابلة)
   static double calculateGrandTotal({
     required DoctorProfileModel doctor,
     required double interviewScore,
   }) {
-    Map<String, dynamic> scores = calculateTotalScore(doctor);
-    double achievementsTotal = scores['totalPoints'];
-    return achievementsTotal + interviewScore;
+    return calculateTotalScore(doctor)['totalPoints'] + interviewScore;
   }
 
   // ============================================================
-  // دوال مساعدة لعرض النصوص العربية
+  // دوال مساعدة لترجمة الأسماء للعربي (تم تحديثها للمعارض)
   // ============================================================
 
-  static void _addActivityDetails(AcademicActivityModel activities, List<Map<String, dynamic>> details) {
+  /// ✅ دالة ترجمة أنواع المشاركة في المؤتمرات
+  static String _getParticipationTypeAr(ParticipationType type) {
+    switch (type) {
+      case ParticipationType.paperPresentation:
+        return 'بحث كامل محكم';
+      case ParticipationType.abstractPresentation:
+        return 'ملخص بحث محكم';
+      case ParticipationType.attendanceOnly:
+        return 'حضور فقط';
+    }
+  }
+
+  /// ✅ دالة ترجمة أنواع القاعات (محدثة بالأصناف التسعة الجديدة)
+  static String _getVenueAr(ExhibitionVenue venue) {
+    switch (venue) {
+      case ExhibitionVenue.internationalAbroad:
+        return 'محفل دولي (خارج مصر)';
+      case ExhibitionVenue.internationalEgypt:
+        return 'محفل دولي (داخل مصر)';
+      case ExhibitionVenue.artFaculties:
+        return 'قاعات الكليات الفنية';
+      case ExhibitionVenue.fineArtsSector:
+        return 'قاعات قطاع الفنون التشكيلية';
+      case ExhibitionVenue.foreignCulturalCenters:
+        return 'قاعات المراكز الثقافية الأجنبية';
+      case ExhibitionVenue.artSyndicates:
+        return 'قاعات النقابات الفنية';
+      case ExhibitionVenue.culturePalaces:
+        return 'قاعات هيئة قصور الثقافة';
+      case ExhibitionVenue.ateliersCairoAlex:
+        return 'قاعات أتيليه القاهرة والإسكندرية';
+      case ExhibitionVenue.privateGalleries:
+        return 'قاعات المعرض الخاص';
+    }
+  }
+
+  /// دالة ترجمة فئات الدورات
+  static String _getCourseCategoryAr(dynamic category) {
+    String name = category.toString().split('.').last;
+    switch (name) {
+      case 'administrative':
+        return 'إدارية';
+      case 'specialized':
+        return 'متخصصة';
+      case 'general':
+        return 'عامة';
+      default:
+        return 'غير محدد';
+    }
+  }
+
+  /// دالة ترجمة نطاق الدورات
+  static String _getCourseScopeAr(dynamic scope) {
+    String name = scope.toString().split('.').last;
+    switch (name) {
+      case 'international':
+        return 'دولي';
+      case 'local':
+        return 'محلي';
+      default:
+        return 'غير محدد';
+    }
+  }
+
+  /// تفاصيل الأنشطة الأكاديمية
+  static void _addActivityDetails(
+    AcademicActivityModel activities,
+    List<Map<String, dynamic>> details,
+  ) {
     for (var c in activities.teachingCriteria) {
       if (c.proofStatus.name == 'approved' && c.awardedPoints > 0) {
         details.add({
@@ -185,40 +316,6 @@ class LeadershipScoringEngine {
           'points': c.awardedPoints,
         });
       }
-    }
-  }
-
-  static String _getParticipationTypeAr(ParticipationType type) {
-    switch (type) {
-      case ParticipationType.paperPresentation: return 'بحث كامل محكم';
-      case ParticipationType.abstractPresentation: return 'ملخص بحث محكم';
-      case ParticipationType.attendanceOnly: return 'حضور فقط';
-    }
-  }
-
-  static String _getVenueAr(ExhibitionVenue venue) {
-    switch (venue) {
-      case ExhibitionVenue.internationalAbroad: return 'محافل دولية بالخارج';
-      case ExhibitionVenue.internationalEgypt: return 'محافل دولية بمصر';
-      case ExhibitionVenue.accreditedHalls: return 'قاعات معتمدة';
-      case ExhibitionVenue.publicHalls: return 'قصور ثقافة/معارض خاصة';
-    }
-  }
-
-  static String _getCourseCategoryAr(CourseCategory category) {
-    switch (category) {
-      case CourseCategory.administrative: return 'إدارية';
-      case CourseCategory.specialized: return 'متخصصة';
-      case CourseCategory.general: return 'عامة';
-      case CourseCategory.none: return 'غير محدد';
-    }
-  }
-
-  static String _getCourseScopeAr(CourseScope scope) {
-    switch (scope) {
-      case CourseScope.international: return 'دولي';
-      case CourseScope.local: return 'محلي';
-      case CourseScope.none: return 'غير محدد';
     }
   }
 }

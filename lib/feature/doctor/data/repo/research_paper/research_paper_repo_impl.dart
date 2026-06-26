@@ -138,8 +138,14 @@ class ResearchPaperRepoImpl extends ResearchPaperRepo {
     }
   }
 
-  @override
-  Future<Either<String, Unit>> updatePaperStatus(String doctorUid, String paperId, VerificationStatus status, {String? rejectionReason}) async {
+ 
+    @override
+  Future<Either<String, Unit>> updatePaperStatus(
+    String doctorUid, 
+    String paperId, 
+    VerificationStatus status, 
+    {String? rejectionReason, double? adminScore} 
+  ) async {
     try {
       final docRef = _usersCollection.doc(doctorUid);
       final docSnapshot = await docRef.get();
@@ -151,6 +157,11 @@ class ResearchPaperRepoImpl extends ResearchPaperRepo {
         for (int i = 0; i < papers.length; i++) {
           if (papers[i]['id'] == paperId) {
             papers[i]['status'] = status.name;
+            
+            if (adminScore != null) {
+              papers[i]['adminScore'] = adminScore;
+            }
+
             if (rejectionReason != null) {
               papers[i]['rejectionReason'] = rejectionReason;
             } else {
@@ -166,8 +177,6 @@ class ResearchPaperRepoImpl extends ResearchPaperRepo {
       return left("فشل تحديث حالة البحث: ${e.toString()}");
     }
   }
-
-  // ✅ دالة جديدة: تحديث درجة الأدمن (الـ 90 درجة)
   @override
   Future<Either<String, Unit>> updateAdminScore({
     required String doctorUid,

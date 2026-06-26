@@ -16,3 +16,13 @@ class NominationRequestError extends NominationRequestState {
   final String message;
   NominationRequestError(this.message);
 }
+// ✅ States خاصة بجلب المحكمين
+class EvaluatorsLoading extends NominationRequestState {}
+class EvaluatorsLoaded extends NominationRequestState {
+  final List<Map<String, dynamic>> evaluators;
+  EvaluatorsLoaded(this.evaluators);
+}
+class EvaluatorsError extends NominationRequestState {
+  final String message;
+  EvaluatorsError(this.message);
+}

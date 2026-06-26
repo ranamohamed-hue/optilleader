@@ -17,6 +17,8 @@ class Routes {
   //static const fullemployeereports = '/admin/fullemployeereports';
   // مسار صفحة تفاصيل الطلبات المعلقة للأدمن
   static const adminDetails = '/admin/pending-requests/details';
+  static const pendingPaperDetails = '/admin/pending-requests/paper-details';
+
   //صفحات مرتبطة بصفحة الاعلانات
   static const announcementDetails = '/admin/announcements/details';
   static const editAnnountmentPage = '/admin/announcements/edit';

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:optialeader/feature/admin/data/model/announcement_model.dart';
@@ -11,7 +12,7 @@ import 'package:optialeader/feature/database_admin/logic/leadership_scoring_engi
 import 'package:optialeader/feature/judge/data/model/interview_scoring_model.dart';
 import 'package:optialeader/feature/notification/data/model/app_notification_model.dart';
 import 'package:optialeader/feature/notification/data/repo/notification_repo.dart';
-
+import 'package:intl/intl.dart';
 class NominationRequestCubit extends Cubit<NominationRequestState> {
   final NominationRequestRepository _repository;
   final NotificationRepo _notificationRepo;
@@ -81,15 +82,17 @@ class NominationRequestCubit extends Cubit<NominationRequestState> {
       // ✅ بناء موديل الدرجات الجديد
       final NominationScoreModel scores = LeadershipScoringEngine.buildScoreModel(doctor);
 
-      final request = NominationRequestModel(
+            final request = NominationRequestModel(
         doctorId: doctorId,
         doctorName: doctorName,
         doctorImageUrl: doctorImageUrl.isEmpty ? null : doctorImageUrl,
         announcementId: announcement.id!,
         targetRole: announcement.targetRole,
         collegeId: announcement.collegeId,
+        collegeName: doctor.facultyAr, // ✅ أضف هذا السطر
         departmentId: announcement.departmentId,
-        scores: scores, // ✅ بنخزن الدرجات هنا
+        departmentName: doctor.departmentAr, // ✅ أضف هذا السطر
+        scores: scores, 
         declarationFileUrl: fileUrl,
         status: NominationRequestModel.statusPendingAdmin,
         createdAt: DateTime.now(),
@@ -172,7 +175,15 @@ class NominationRequestCubit extends Cubit<NominationRequestState> {
       },
     );
   }
-
+   // ✅ دالة جلب المحكمين بنمط الـ BLoC الصحيح
+  void fetchEvaluators() async {
+    emit(EvaluatorsLoading());
+    final result = await _repository.getEvaluators();
+    result.fold(
+      (failure) => emit(EvaluatorsError(failure)),
+      (evaluators) => emit(EvaluatorsLoaded(evaluators)),
+    );
+  }
   // ✅ الدالة الموحدة لتقييم المقابلة
   Future<void> submitInterviewEvaluation({
     required String requestId,

@@ -15,20 +15,25 @@ class ResearchCubit extends Cubit<ResearchState> {
   ResearchCubit(this.researchRepo, this.notificationRepo)
       : super(ResearchInitial());
 
+  // ==========================================
+  // 1. إضافة بحث جديد (من طرف الدكتور)
+  // ==========================================
   Future<void> addNewResearch({
     required String doctorUid,
     required ResearchPaperModel paper,
     required File paperFile,
     File? indexingProofFile,
-    File? certifiedReportFile, // ✅ الجديد
+    File? certifiedReportFile, // ملف التقرير المعتمد (اختياري للأدمن)
   }) async {
     emit(ResearchLoading());
+    
+    // إرسال البيانات للـ Repo لحفظها في Firestore
     final result = await researchRepo.addResearchPaper(
       doctorUid: doctorUid,
       paper: paper,
       paperFile: paperFile,
       indexingProofFile: indexingProofFile,
-      certifiedReportFile: certifiedReportFile, // ✅
+      certifiedReportFile: certifiedReportFile,
     );
     
     result.fold(
@@ -36,6 +41,9 @@ class ResearchCubit extends Cubit<ResearchState> {
       (_) async {
         emit(ResearchSuccess());
         
+        // ==========================================
+        // إرسال إشعار للأدمن (في الخلفية بدون ما يأثر على الـ UI)
+        // ==========================================
         try {
           final notification = AppNotificationModel(
             id: '',
@@ -51,12 +59,16 @@ class ResearchCubit extends Cubit<ResearchState> {
 
           await notificationRepo.sendRoleBasedNotification(notification);
         } catch (e) {
+          // لو الإشعار فشل، البرنامج كمش هيقف، البحث اتحفظ بنجاح
           print("خطأ في إرسال إشعار الأدمن: $e");
         }
       },
     );
   }
 
+  // ==========================================
+  // 2. حذف بحث
+  // ==========================================
   Future<void> deleteResearch(String doctorUid, String paperId) async {
     emit(ResearchLoading());
     final result = await researchRepo.deleteResearchPaper(doctorUid, paperId);
@@ -66,12 +78,20 @@ class ResearchCubit extends Cubit<ResearchState> {
     );
   }
 
-  Future<void> approveResearch(String doctorUid, String paperId) async {
+  // ==========================================
+  // 3. قبول البحث (من طرف الأدمن)
+  // ==========================================
+  Future<void> approveResearch(
+    String doctorUid, 
+    String paperId, 
+    {double? adminScore} // ✅ يمكن للأدمن إدخال درجته في نفس وقت القبول (اختياري)
+  ) async {
     emit(ResearchLoading());
     final result = await researchRepo.updatePaperStatus(
       doctorUid,
       paperId,
       VerificationStatus.approved,
+      adminScore: adminScore, 
     );
     
     result.fold(
@@ -80,10 +100,13 @@ class ResearchCubit extends Cubit<ResearchState> {
     );
   }
 
+  // ==========================================
+  // 4. رفض البحث (من طرف الأدمن)
+  // ==========================================
   Future<void> rejectResearch(
     String doctorUid,
     String paperId,
-    String reason,
+    String reason, // سبب الرفض (هيظهر للدكتور)
   ) async {
     emit(ResearchLoading());
     final result = await researchRepo.updatePaperStatus(
@@ -99,7 +122,12 @@ class ResearchCubit extends Cubit<ResearchState> {
     );
   }
 
-  // ✅ دالة جديدة لتقييم الأدمن (الـ 90 درجة)
+  // ==========================================
+  // 5. تحديث درجة الأدمن بشكل منفصل (الـ 90 درجة)
+  // ==========================================
+  /// ملاحظة: الموديل (Model) بيعمل حسابات ذكية:
+  /// النقاط النهائية = (نقاط المجلة + نقاط الأدمن دي) × نسبة المشاركة
+  /// لذلك درجة الأدمن بتتحفظ هنا، وبعدين الموديل بيزودها على نقاط المجلة الآلية
   Future<void> updateAdminScore({
     required String doctorUid,
     required String paperId,

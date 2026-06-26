@@ -39,7 +39,8 @@ class FolderJsonLoader extends AssetLoader {
     'achievements_new',
     'system_scores',
     'employee_courses',
-    'nomination_details'
+    'nomination_details',
+    'pending_details'
       ];
 
   @override

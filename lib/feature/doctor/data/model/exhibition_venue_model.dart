@@ -1,10 +1,23 @@
 import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 
+// ✅ تم توسيع الـ Enum ليتطابق مع أصناف الجدول الرسمي بالضبط
 enum ExhibitionVenue {
+  // 8 درجات
   internationalAbroad,
+  
+  // 7 درجات
   internationalEgypt,
-  accreditedHalls,
-  publicHalls,
+  
+  // 6.5 درجات (القاعات المعتمدة)
+  artFaculties,          // قاعات الكليات الفنية (جميلة، تربية فنية، تطبيقية، نوعية)
+  fineArtsSector,        // قاعات قطاع الفنون التشكيلية بوزارة الثقافة
+  foreignCulturalCenters,// قاعات المراكز الثقافية الأجنبية داخل مصر
+  artSyndicates,         // قاعات النقابات الفنية
+  
+  // 5 درجات (القاعات العامة)
+  culturePalaces,        // قاعات هيئة قصور الثقافة بوزارة الثقافة
+  ateliersCairoAlex,     // قاعات اتيليه القاهرة والإسكندرية بوزارة الثقافة
+  privateGalleries,      // قاعات المعرض الخاص داخل أو خارج مصر
 }
 
 class ArtExhibitionModel {
@@ -12,7 +25,8 @@ class ArtExhibitionModel {
   final String title;
   final ExhibitionVenue venue; 
   final int numberOfWorks;
-  final bool isInternationalType;
+  
+  final bool isInternationalType; // محتفظين بيه للـ Backward Compatibility
   
   final String proofFileUrl; 
   final String proofFileType; 
@@ -34,22 +48,35 @@ class ArtExhibitionModel {
     this.rejectionReason,
   });
 
-  /// ✅ هل نطبق الشرط الاستثنائي؟
-  bool get isExceptionalCase =>
-      isInternationalType && numberOfWorks >= 2;
+  /// ✅ هل يتم تعليق الدرجات؟ (للمحافل الدولية فقط لو الأعمال أقل من 5)
+  bool get isPointsOnHold {
+    bool isInternational = venue == ExhibitionVenue.internationalAbroad || 
+                           venue == ExhibitionVenue.internationalEgypt;
+    return isInternational && numberOfWorks > 0 && numberOfWorks < 5;
+  }
 
-  /// ✅ حساب النقاط الأساسية
+  /// ✅ حساب النقاط الأساسية (مطابق للجدول الرسمي مع الخيارات الجديدة)
   double get basePoints {
-    if (isExceptionalCase) return 0.0;
-    
+    if (isPointsOnHold) return 0.0;
+
     switch (venue) {
       case ExhibitionVenue.internationalAbroad:
         return numberOfWorks >= 5 ? 8.0 : 0.0;
+        
       case ExhibitionVenue.internationalEgypt:
         return 7.0;
-      case ExhibitionVenue.accreditedHalls:
+        
+      // المجموعة دي كلها بتعطي 6.5 درجة
+      case ExhibitionVenue.artFaculties:
+      case ExhibitionVenue.fineArtsSector:
+      case ExhibitionVenue.foreignCulturalCenters:
+      case ExhibitionVenue.artSyndicates:
         return 6.5;
-      case ExhibitionVenue.publicHalls:
+        
+      // المجموعة دي كلها بتعطي 5 درجات
+      case ExhibitionVenue.culturePalaces:
+      case ExhibitionVenue.ateliersCairoAlex:
+      case ExhibitionVenue.privateGalleries:
         return 5.0;
     }
   }
@@ -60,7 +87,7 @@ class ArtExhibitionModel {
       title: json['title'] ?? '',
       venue: ExhibitionVenue.values.firstWhere(
         (e) => e.name == json['venue'],
-        orElse: () => ExhibitionVenue.publicHalls,
+        orElse: () => ExhibitionVenue.privateGalleries, // قيمة افتراضية آمنة
       ),
       numberOfWorks: json['numberOfWorks'] ?? 1,
       isInternationalType: json['isInternationalType'] ?? false,

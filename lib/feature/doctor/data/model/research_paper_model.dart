@@ -2,7 +2,9 @@ import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 
 // ====== الـ Enums ======
 enum JournalScope { specialized, nonSpecialized }
+
 enum JournalLevel { international, local }
+
 enum IndexingDatabase { scopus, webOfScience, local, other }
 
 T enumFromString<T>(Iterable<T> values, String? value) {
@@ -15,7 +17,7 @@ T enumFromString<T>(Iterable<T> values, String? value) {
 
 class ResearchPaperModel {
   final String id;
-  
+
   // 1. البيانات الأساسية
   final String titleAr;
   final String titleEn;
@@ -28,12 +30,21 @@ class ResearchPaperModel {
   final String? doi;
   final int authorsInSameSpecialty;
   final bool isTopTierJournal;
-
+  final bool sameSpecialization;
   // 2. تصنيف المجلة
   final JournalScope journalScope;
   final JournalLevel journalLevel;
   final IndexingDatabase indexingDatabase;
   final String journalUrl;
+  //3.في حالة كانت مجلة محلية
+  final bool peerReviewed;
+  final bool knownEditorialBoard;
+  final bool regularPublication;
+  final bool indexedDatabase;
+  final bool specializedJournal;
+  final bool electronicPublishing;
+  final bool externalReviewers;
+  final bool externalAuthors;
 
   // 3. الحقول الجديدة لحساب نقاط المجلة
   final String? quartile;
@@ -46,6 +57,7 @@ class ResearchPaperModel {
 
   // 5. درجة الأدمن
   final double adminScore;
+  //
 
   // 6. الإثباتات
   final String paperFileUrl;
@@ -58,6 +70,8 @@ class ResearchPaperModel {
   final String? rejectionReason;
 
   ResearchPaperModel({
+    this.authorOrder = 1,
+    this.sameSpecialization = true,
     required this.id,
     required this.titleAr,
     required this.titleEn,
@@ -65,7 +79,6 @@ class ResearchPaperModel {
     required this.issn,
     required this.impactFactor,
     required this.publicationYear,
-    required this.authorOrder,
     required this.totalAuthors,
     this.doi,
     this.authorsInSameSpecialty = 1,
@@ -86,96 +99,148 @@ class ResearchPaperModel {
     this.indexingProofType,
     this.status = VerificationStatus.pending,
     this.rejectionReason,
+    this.peerReviewed = false,
+    this.knownEditorialBoard = false,
+    this.regularPublication = false,
+    this.indexedDatabase = false,
+    this.specializedJournal = false,
+    this.electronicPublishing = false,
+    this.externalReviewers = false,
+    this.externalAuthors = false,
   });
 
   // =============================================================
   // ============== الحسابات الآلية (Getters) ====================
   // =============================================================
 
-  /// ✅ 1. نسبة المشاركة (مادة 22)
-  double get participationPercentage {
-    if (authorsInSameSpecialty <= 1) return 1.0;
+  ///  1. نسبة المشاركة (مادة 22)
+ double get participationPercentage {
+  final bool firstOrLast =
+      authorOrder == 1 || authorOrder == totalAuthors;
+    final int count = authorsInSameSpecialty;
+  final bool isWosQ1 =
+      indexingDatabase == IndexingDatabase.webOfScience &&
+      (quartile ?? '').toUpperCase() == 'Q1';
 
-    int order = authorOrder;
-    if (order > authorsInSameSpecialty) order = authorsInSameSpecialty;
-    if (order < 1) order = 1;
-
-    // الأول أو الأخير دايماً 100%
-    if (order == 1 || order == authorsInSameSpecialty) return 1.0;
-
-    switch (authorsInSameSpecialty) {
-      case 2: return 0.8;
-      case 3: return 0.7;
-      case 4: return 0.55;
-      case 5: return 0.4;
-      default: return 0.25;
+  // ==========================
+  // Web Of Science Q1 (10 درجات)
+  // ==========================
+  if (isWosQ1) {
+    if (count <= 4) {
+      return 1.0;
     }
+
+    if (count == 5 || count == 6) {
+      return firstOrLast ? 1.0 : 0.8;
+    }
+
+    return firstOrLast ? 1.0 : 0.6;
   }
 
+  // ==========================
+  // باقي المجلات
+  // ==========================
+
+  if (count == 1) {
+    return 1.0;
+  }
+if (totalAuthors == 2) {
+  return 1.0;
+}
+  if (count == 2) {
+    return 0.8;
+  }
+
+  if (count == 3) {
+    return firstOrLast ? 1.0 : 0.7;
+  }
+
+  if (count == 4) {
+    return firstOrLast ? 1.0 : 0.55;
+  }
+
+  if (count == 5) {
+    return firstOrLast ? 1.0 : 0.4;
+  }
+
+  // 6 فأكثر
+  return firstOrLast ? 1.0 : 0.25;
+}
   /// ✅ 2. نقاط المجلة الدولية
   double get _internationalJournalPoints {
-    final db = indexingDatabase.name.toLowerCase();
-    final q = quartile ?? 'no_if';
+    final q = (quartile ?? '').toUpperCase();
 
-    if (db == 'webofscience' || db == 'wos') {
-      switch (q) {
-        case 'q1': return 10.0;
-        case 'q2': return 9.0;
-        case 'q3': return 8.0;
-        case 'q4':
-        case 'no_if': return 7.0;
-        default: return 0.0;
-      }
-    } else if (db == 'scopus') {
-      switch (q) {
-        case 'q1': return 9.5;
-        case 'q2': return 8.5;
-        case 'q3': return 7.5;
-        case 'q4': return 7.0;
-        default: return 0.0;
-      }
+    switch (indexingDatabase) {
+      case IndexingDatabase.webOfScience:
+        switch (q) {
+          case 'Q1':
+            return 10.0;
+
+          case 'Q2':
+            return 9.5;
+
+          case 'Q3':
+            return 8.5;
+
+          case 'Q4':
+            return 8;
+
+          default:
+            return 0.0;
+        }
+
+      case IndexingDatabase.scopus:
+        switch (q) {
+          case 'Q1':
+            return 9.0;
+
+          case 'Q2':
+            return 8.5;
+
+          case 'Q3':
+            return 8.0;
+
+          case 'Q4':
+            return 7.5;
+
+          default:
+            return 0.0;
+        }
+
+      default:
+        return 0.0;
     }
-    return 0.0;
   }
 
   /// ✅ 3. نقاط المجلة المحلية (بحد أقصى 7)
-  double get _localJournalPoints {
-    if (localJournalCriteria == null) return 0.0;
+  double get localJournalPoints {
+    double score = 0;
 
-    const points = {
-      "جهة معترف بها": 1.0,
-      "منتظمة الإصدار": 1.0,
-      "مكشفة في قواعد بيانات": 1.0,
-      "محكمة تحكيماً معماً": 1.0,
-      "متخصصة": 1.0,
-      "نظام إلكتروني": 1.0,
-      "موقع إلكتروني كامل": 0.5,
-      "علماء متميزون بالتحرير": 0.5,
-    };
+    if (peerReviewed) score += 1;
+    if (knownEditorialBoard) score += 1;
+    if (regularPublication) score += 1;
+    if (indexedDatabase) score += 1;
+    if (specializedJournal) score += 1;
+    if (electronicPublishing) score += 1;
+    if (externalReviewers) score += 0.5;
+    if (externalAuthors) score += 0.5;
 
-    double total = 0.0;
-    localJournalCriteria!.forEach((key, isSelected) {
-      if (isSelected) {
-        total += points[key] ?? 0.0;
-      }
-    });
-
-    return total > 7.0 ? 7.0 : total;
+    return score;
   }
 
   /// ✅ 4. إجمالي نقاط المجلة
   double get journalPoints {
-    if (isLocalJournal) return _localJournalPoints;
-    
+    if (isLocalJournal) return localJournalPoints;
+
     final db = indexingDatabase.name.toLowerCase();
     if (db == 'webofscience' || db == 'wos' || db == 'scopus') {
       return _internationalJournalPoints;
     }
-    
+
     return 0.0;
   }
 
-  /// ✅ 5. المجموع النهائي للبحث
+  /// ✅ 5. المجموع النهائي للبحث (درجة المجلة + درجة الأدمن) × نسبة المشاركة
   double get finalPoints {
     return (adminScore + journalPoints) * participationPercentage;
   }
@@ -203,7 +268,10 @@ class ResearchPaperModel {
       isTopTierJournal: json['is_top_tier_journal'] ?? false,
       journalScope: enumFromString(JournalScope.values, json['journalScope']),
       journalLevel: enumFromString(JournalLevel.values, json['journalLevel']),
-      indexingDatabase: enumFromString(IndexingDatabase.values, json['indexingDatabase']),
+      indexingDatabase: enumFromString(
+        IndexingDatabase.values,
+        json['indexingDatabase'],
+      ),
       journalUrl: json['journalUrl'] ?? '',
       quartile: json['quartile'],
       isLocalJournal: json['isLocalJournal'] ?? false,
@@ -219,11 +287,31 @@ class ResearchPaperModel {
       indexingProofType: json['indexingProofType'],
       status: parseVerificationStatus(json['status']),
       rejectionReason: json['rejectionReason'],
+      peerReviewed: json['peerReviewed'] ?? false,
+      knownEditorialBoard: json['knownEditorialBoard'] ?? false,
+      regularPublication: json['regularPublication'] ?? false,
+      indexedDatabase: json['indexedDatabase'] ?? false,
+      specializedJournal: json['specializedJournal'] ?? false,
+      electronicPublishing: json['electronicPublishing'] ?? false,
+      externalReviewers: json['externalReviewers'] ?? false,
+      externalAuthors: json['externalAuthors'] ?? false,
+
+      sameSpecialization: json['sameSpecialization'] ?? true,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
+      'peerReviewed': peerReviewed,
+      'knownEditorialBoard': knownEditorialBoard,
+      'regularPublication': regularPublication,
+      'indexedDatabase': indexedDatabase,
+      'specializedJournal': specializedJournal,
+      'electronicPublishing': electronicPublishing,
+      'externalReviewers': externalReviewers,
+      'externalAuthors': externalAuthors,
+
+      'sameSpecialization': sameSpecialization,
       'id': id,
       'titleAr': titleAr,
       'titleEn': titleEn,
@@ -256,6 +344,16 @@ class ResearchPaperModel {
   }
 
   ResearchPaperModel copyWith({
+    bool? peerReviewed,
+    bool? knownEditorialBoard,
+    bool? regularPublication,
+    bool? indexedDatabase,
+    bool? specializedJournal,
+    bool? electronicPublishing,
+    bool? externalReviewers,
+    bool? externalAuthors,
+
+    bool? sameSpecialization,
     String? id,
     String? titleAr,
     String? titleEn,
@@ -296,7 +394,8 @@ class ResearchPaperModel {
       authorOrder: authorOrder ?? this.authorOrder,
       totalAuthors: totalAuthors ?? this.totalAuthors,
       doi: doi ?? this.doi,
-      authorsInSameSpecialty: authorsInSameSpecialty ?? this.authorsInSameSpecialty,
+      authorsInSameSpecialty:
+          authorsInSameSpecialty ?? this.authorsInSameSpecialty,
       isTopTierJournal: isTopTierJournal ?? this.isTopTierJournal,
       journalScope: journalScope ?? this.journalScope,
       journalLevel: journalLevel ?? this.journalLevel,
@@ -305,8 +404,10 @@ class ResearchPaperModel {
       quartile: quartile ?? this.quartile,
       isLocalJournal: isLocalJournal ?? this.isLocalJournal,
       localJournalCriteria: localJournalCriteria ?? this.localJournalCriteria,
-      certifiedReportNumber: certifiedReportNumber ?? this.certifiedReportNumber,
-      certifiedReportFileUrl: certifiedReportFileUrl ?? this.certifiedReportFileUrl,
+      certifiedReportNumber:
+          certifiedReportNumber ?? this.certifiedReportNumber,
+      certifiedReportFileUrl:
+          certifiedReportFileUrl ?? this.certifiedReportFileUrl,
       adminScore: adminScore ?? this.adminScore,
       paperFileUrl: paperFileUrl ?? this.paperFileUrl,
       paperFileType: paperFileType ?? this.paperFileType,
@@ -314,6 +415,15 @@ class ResearchPaperModel {
       indexingProofType: indexingProofType ?? this.indexingProofType,
       status: status ?? this.status,
       rejectionReason: rejectionReason ?? this.rejectionReason,
+      peerReviewed: peerReviewed ?? this.peerReviewed,
+      knownEditorialBoard: knownEditorialBoard ?? this.knownEditorialBoard,
+      regularPublication: regularPublication ?? this.regularPublication,
+      indexedDatabase: indexedDatabase ?? this.indexedDatabase,
+      specializedJournal: specializedJournal ?? this.specializedJournal,
+      electronicPublishing: electronicPublishing ?? this.electronicPublishing,
+      externalReviewers: externalReviewers ?? this.externalReviewers,
+      externalAuthors: externalAuthors ?? this.externalAuthors,
+      sameSpecialization: sameSpecialization ?? this.sameSpecialization,
     );
   }
 }
