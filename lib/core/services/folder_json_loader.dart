@@ -57,11 +57,11 @@ class FolderJsonLoader extends AssetLoader {
         _deepMerge(mergedTranslations, translations);
       } catch (e) {
         // لو في ملف مش موجود في لغة معينة، هيطبع التحذير ده ومش هيقف التطبيق
-        print('⚠️ Loader: Could not load $filePath. Error: $e');
+        print(' Loader: Could not load $filePath. Error: $e');
       }
     }
 
-    print('🌍 Loader: Merged Translations Keys: ${mergedTranslations.keys.toList()}');
+    print(' Loader: Merged Translations Keys: ${mergedTranslations.keys.toList()}');
     return mergedTranslations;
   }
 
