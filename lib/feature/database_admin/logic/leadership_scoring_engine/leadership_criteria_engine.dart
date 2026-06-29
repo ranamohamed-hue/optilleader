@@ -1,9 +1,8 @@
 import 'package:optialeader/feature/database_admin/data/models/doctor_profile_model.dart';
-import 'package:optialeader/feature/doctor/data/model/academic_activity_model.dart';
 import 'package:optialeader/feature/doctor/data/model/verefication_status.dart';
 
 /// ============================================================
-/// محرك فحص الشروط الإلزامية للترشح للوظائف القيادية
+///  فحص الشروط الإلزامية للترشح للوظائف القيادية
 /// ============================================================
 class LeadershipCriteriaEngine {
   /// دالة رئيسية لتقييم الشروط
@@ -47,7 +46,7 @@ class LeadershipCriteriaEngine {
       CriterionStatus(
         titleAr: "أن يكون مصري الجنسية",
         titleEn: "Must be Egyptian",
-        isMet: _isEgyptian(doctor), // ✅ تم الربط
+        isMet: _isEgyptian(doctor), 
         isAutoChecked: true,
       ),
       CriterionStatus(
@@ -71,14 +70,13 @@ class LeadershipCriteriaEngine {
       CriterionStatus(
         titleAr: "إجادة التعامل مع الحاسب الآلي (ICDL)",
         titleEn: "Computer skills (ICDL)",
-        // ✅ يستخدم الـ Getter الموجود في DoctorProfileModel اللي بيفحص الدورات
         isMet: doctor.hasICDL,
         isAutoChecked: true,
       ),
       CriterionStatus(
         titleAr: "إتمام دورتين تدريبيتين على الأقل في مجالات القيادة",
         titleEn: "At least 2 Leadership Training Courses",
-        isMet: _hasRequiredLeadershipCourses(doctor), // ✅ تم الربط
+        isMet: _hasRequiredLeadershipCourses(doctor), 
         isAutoChecked: true,
       ),
     ];
@@ -94,14 +92,14 @@ class LeadershipCriteriaEngine {
       CriterionStatus(
         titleAr: "أن يكون في منصب أستاذ لمدة 3 سنوات على الأقل",
         titleEn: "Held Professor position for at least 3 years",
-        isMet: _hasProfessorDegree(doctor) && yearsAsProf >= 3, // ✅ تم الربط
+        isMet: _hasProfessorDegree(doctor) && yearsAsProf >= 3, 
         isAutoChecked: true,
         details: yearsAsProf > 0 ? "عدد السنوات: $yearsAsProf سنة" : null,
       ),
       CriterionStatus(
         titleAr: "الحصول على درجة الدكتوراه",
         titleEn: "Holds a PhD",
-        isMet: _hasPhdDegree(doctor), // ✅ تم الربط
+        isMet: _hasPhdDegree(doctor), 
         isAutoChecked: true,
       ),
       CriterionStatus(
@@ -128,7 +126,7 @@ class LeadershipCriteriaEngine {
       CriterionStatus(
         titleAr: "العضوية في إحدى لجان الجامعة",
         titleEn: "Membership in a University Committee",
-        isMet: _hasInternalCommittees(doctor), // ✅ تم الربط
+        isMet: _hasInternalCommittees(doctor), 
         isAutoChecked: true,
         details: doctor.internalCommittees.isNotEmpty
             ? doctor.internalCommittees.join(' • ')
@@ -190,7 +188,7 @@ class LeadershipCriteriaEngine {
       CriterionStatus(
         titleAr: "المشاركة في اللجان الداخلية بالجامعة",
         titleEn: "Participation in internal university committees",
-        isMet: _hasInternalCommittees(doctor), // ✅ تم الربط
+        isMet: _hasInternalCommittees(doctor),
         isAutoChecked: true,
       ),
     ];
@@ -223,18 +221,15 @@ class LeadershipCriteriaEngine {
     ];
   }
 
-  // ============================================================
-  // ✅ دوال التحقق المساعدة (تم ربطها بالـ Model بالكامل)
-  // ============================================================
 
-  /// ✅ التحقق من الجنسية المصرية (من حقل nationalityAr أو nationalityEn)
+  ///  التحقق من الجنسية المصرية (من حقل nationalityAr أو nationalityEn)
   static bool _isEgyptian(DoctorProfileModel doctor) {
     final natAr = _normalizeArabic(doctor.nationalityAr.toLowerCase());
     final natEn = doctor.nationalityEn.toLowerCase();
     return natAr.contains('مصري') || natEn.contains('egyptian');
   }
 
-  /// ✅ التحقق من الدورات القيادية الإجبارية (الـ 2 دورات)
+  ///  التحقق من الدورات القيادية الإجبارية (الـ 2 دورات)
   static bool _hasRequiredLeadershipCourses(DoctorProfileModel doctor) {
     int count = 0;
     for (var course in doctor.courses) {
@@ -246,12 +241,12 @@ class LeadershipCriteriaEngine {
     return count >= 2;
   }
 
-  /// ✅ التحقق من اللجان الداخلية (القائمة مش فاضية)
+  ///  التحقق من اللجان الداخلية (القائمة مش فاضية)
   static bool _hasInternalCommittees(DoctorProfileModel doctor) {
     return doctor.internalCommittees.isNotEmpty;
   }
 
-  /// ✅ التحقق من درجة الأستاذية (من السجل الأكاديمي)
+  ///  التحقق من درجة الأستاذية (من السجل الأكاديمي)
   static bool _hasProfessorDegree(DoctorProfileModel doctor) {
     return doctor.academicHistory.any((h) {
       if (h['degree'] == null) return false;
@@ -260,7 +255,7 @@ class LeadershipCriteriaEngine {
     });
   }
 
-  /// ✅ التحقق من درجة الدكتوراه (من السجل الأكاديمي)
+  ///  التحقق من درجة الدكتوراه (من السجل الأكاديمي)
   static bool _hasPhdDegree(DoctorProfileModel doctor) {
     return doctor.academicHistory.any((h) {
       if (h['degree'] == null) return false;
@@ -269,7 +264,7 @@ class LeadershipCriteriaEngine {
     });
   }
 
-  /// ✅ حساب عدد السنوات منذ تاريخ معين (لحساب سنوات الأستاذية)
+  ///  حساب عدد السنوات منذ تاريخ معين (لحساب سنوات الأستاذية)
   static int _calculateYearsSince(DateTime? startDate) {
     if (startDate == null) return 0;
     final now = DateTime.now();
@@ -281,7 +276,7 @@ class LeadershipCriteriaEngine {
     return years < 0 ? 0 : years;
   }
 
-  /// ✅ دالة تنظيف النصوص العربية عشان المقارنة تكون دقيقة
+  ///  دالة تنظيف النصوص العربية عشان المقارنة تكون دقيقة
   static String _normalizeArabic(String text) {
     return text
         .replaceAll('أ', 'ا')

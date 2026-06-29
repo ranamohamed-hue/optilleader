@@ -140,7 +140,6 @@ class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
                         Text('dashboardJudge.system_overview'.tr(), style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.bold, color: colorPrimary)),
                         SizedBox(height: 20.h),
                         
-                        // ✅ الكروت الرئيسية الثلاثة (الإحصائيات)
                         BlocBuilder<NominationRequestCubit, NominationRequestState>(
                           builder: (context, reqState) {
                             int newCount = 0;
@@ -148,7 +147,6 @@ class _MohakemDashboardHomeState extends State<MohakemDashboardHome> {
                             int completedCount = 0;
 
                             if (reqState is NominationRequestLoaded) {
-                              // ✅ استخدام ستاتوسس الـ Model الصحيحة
                               newCount = reqState.requests
                                   .where((r) => r.status == NominationRequestModel.statusPendingEvaluator)
                                   .length;

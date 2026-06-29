@@ -13,6 +13,7 @@ import 'package:optialeader/feature/judge/data/model/interview_scoring_model.dar
 import 'package:optialeader/feature/notification/data/model/app_notification_model.dart';
 import 'package:optialeader/feature/notification/data/repo/notification_repo.dart';
 import 'package:intl/intl.dart';
+
 class NominationRequestCubit extends Cubit<NominationRequestState> {
   final NominationRequestRepository _repository;
   final NotificationRepo _notificationRepo;
@@ -79,19 +80,18 @@ class NominationRequestCubit extends Cubit<NominationRequestState> {
         fileUrl = uploadResult.getOrElse(() => '');
       }
 
-      // ✅ بناء موديل الدرجات الجديد
       final NominationScoreModel scores = LeadershipScoringEngine.buildScoreModel(doctor);
 
-            final request = NominationRequestModel(
+      final request = NominationRequestModel(
         doctorId: doctorId,
         doctorName: doctorName,
         doctorImageUrl: doctorImageUrl.isEmpty ? null : doctorImageUrl,
         announcementId: announcement.id!,
         targetRole: announcement.targetRole,
         collegeId: announcement.collegeId,
-        collegeName: doctor.facultyAr, // ✅ أضف هذا السطر
+        collegeName: doctor.facultyAr,
         departmentId: announcement.departmentId,
-        departmentName: doctor.departmentAr, // ✅ أضف هذا السطر
+        departmentName: doctor.departmentAr,
         scores: scores, 
         declarationFileUrl: fileUrl,
         status: NominationRequestModel.statusPendingAdmin,
@@ -150,7 +150,6 @@ class NominationRequestCubit extends Cubit<NominationRequestState> {
     );
   }
 
-  // ✅ دالة تحديد موعد المقابلة
   Future<void> scheduleInterview({
     required NominationRequestModel request,
     required DateTime interviewDate,
@@ -175,8 +174,9 @@ class NominationRequestCubit extends Cubit<NominationRequestState> {
       },
     );
   }
-   // ✅ دالة جلب المحكمين بنمط الـ BLoC الصحيح
-  void fetchEvaluators() async {
+
+  // ✅ تم تعديل النوع من void إلى Future<void>
+  Future<void> fetchEvaluators() async {
     emit(EvaluatorsLoading());
     final result = await _repository.getEvaluators();
     result.fold(
@@ -184,9 +184,9 @@ class NominationRequestCubit extends Cubit<NominationRequestState> {
       (evaluators) => emit(EvaluatorsLoaded(evaluators)),
     );
   }
-  // ✅ الدالة الموحدة لتقييم المقابلة
+
+  // ✅ تم حذف الباراميتر requestId غير المستخدم
   Future<void> submitInterviewEvaluation({
-    required String requestId,
     required NominationRequestModel request,
     required InterviewScoringModel evaluationModel,
   }) async {
@@ -197,7 +197,6 @@ class NominationRequestCubit extends Cubit<NominationRequestState> {
           ? NominationRequestModel.statusPendingEvaluator
           : NominationRequestModel.statusEvaluated;
 
-      // ✅ تحديث موديل الدرجات بإضافة درجات المقابلة
       final updatedScores = LeadershipScoringEngine.addInterviewScore(
         request.scores ?? NominationScoreModel(),
         evaluationModel,
@@ -205,7 +204,7 @@ class NominationRequestCubit extends Cubit<NominationRequestState> {
 
       final updatedRequest = request.copyWith(
         status: newStatus,
-        scores: updatedScores, // ✅ حفظ الدرجات المحدثة
+        scores: updatedScores,
         interviewDate: evaluationModel.interviewDate,
         evaluatorPoints: evaluationModel.totalScore,
         evaluatorNotes: evaluationModel.combinedNotes,
@@ -218,7 +217,7 @@ class NominationRequestCubit extends Cubit<NominationRequestState> {
       result.fold(
         (error) => emit(NominationRequestError('error_evaluation_submit')),
         (_) {
-          emit(NominationRequestActionSuccess('success_evaluation_submitted'.tr()));
+          emit(NominationRequestActionSuccess('success_evaluation_submitted'));
           if (!evaluationModel.isDraft) {
             _sendEvaluationDoneToAdmin(updatedRequest);
           }
@@ -256,6 +255,8 @@ class NominationRequestCubit extends Cubit<NominationRequestState> {
     NominationRequestModel request,
   ) async {
     try {
+      if (request.evaluatorId == null || request.evaluatorId!.isEmpty) return;
+      
       final notification = AppNotificationModel(
         id: '',
         title: 'طلب تقييم جديد',
@@ -315,17 +316,18 @@ class NominationRequestCubit extends Cubit<NominationRequestState> {
     }
   }
 
-  // ✅ إشعار تحديد موعد المقابلة
   Future<void> _sendInterviewScheduledNotification(
     NominationRequestModel request,
   ) async {
     try {
+      if (request.interviewDate == null) return;
+
       final dateStr = DateFormat('yyyy-MM-dd').format(request.interviewDate!);
       final notification = AppNotificationModel(
         id: '',
         title: 'تحديد موعد مقابلة',
         message:
-            'تم تحديد مقابلتك بتاريخ $dateStr الساعة ${request.interviewTime} بمكان: ${request.interviewLocation}',
+            'تم تحديد مقابلتك بتاريخ $dateStr الساعة ${request.interviewTime ?? "-"} بمكان: ${request.interviewLocation ?? "-"}',
         type: NotificationType.requestStatusUpdate,
         target: NotificationTarget.specificUser,
         timestamp: Timestamp.now(),

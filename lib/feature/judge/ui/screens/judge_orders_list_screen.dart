@@ -1,11 +1,11 @@
-import 'package:cached_network_image/cached_network_image.dart'; // ✅ 1. إضافة الاستيراد
+import 'package:cached_network_image/cached_network_image.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
-import 'package:optialeader/core/routing/routes.dart'; // ✅ 2. إضافة استيراد الروتر
+import 'package:optialeader/core/routing/routes.dart'; 
 import 'package:optialeader/feature/admin/data/model/nomination_request_model.dart';
 import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomination_request_cubit.dart';
 import 'package:optialeader/feature/admin/logic/nomination_request_logic/nomonation_request_state.dart';
@@ -93,7 +93,7 @@ class _JudgeOrdersListScreenState extends State<JudgeOrdersListScreen> {
                 final knownKeys = [
                   'dean',
                   'vice_dean',
-                  'head_department',
+                  'head_dept',
                   'quality_manager',
                   'admin_manager',
                 ];

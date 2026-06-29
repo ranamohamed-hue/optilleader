@@ -24,7 +24,7 @@ class _RequestsCategoriesScreenState extends State<RequestsCategoriesScreen> {
   final List<Map<String, dynamic>> _categories = [
     {'key': 'dean', 'icon': Icons.account_balance},
     {'key': 'vice_dean', 'icon': Icons.business_center},
-    {'key': 'head_department', 'icon': Icons.class_},  
+    {'key': 'head_dept', 'icon': Icons.class_},  
     {'key': 'quality_manager', 'icon': Icons.verified},
     {'key': 'admin_manager', 'icon': Icons.admin_panel_settings},
     {'key': 'other', 'icon': Icons.category},
@@ -56,7 +56,7 @@ class _RequestsCategoriesScreenState extends State<RequestsCategoriesScreen> {
             color: Colors.white,
             size: 20.sp,
           ),
-          onPressed: () => context.pop(), // ✅ استخدام context.pop() بدل Navigator
+          onPressed: () => context.pop(), 
         ),
       ),
       body: BlocBuilder<NominationRequestCubit, NominationRequestState>(
@@ -132,7 +132,7 @@ class _RequestsCategoriesScreenState extends State<RequestsCategoriesScreen> {
     return InkWell(
       onTap: () {
         context.push(
-          Routes.ordersList, // ✅ استخدام مسار Routes الصحيح
+          Routes.ordersList, 
           extra: {'status': _filterStatus, 'role': roleKey},
         );
       },

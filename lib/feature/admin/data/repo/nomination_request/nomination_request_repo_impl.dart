@@ -104,21 +104,34 @@ class NominationRequestRepositoryImpl implements NominationRequestRepository {
   @override
   Future<Either<String, List<Map<String, dynamic>>>> getEvaluators() async {
     try {
-      final snapshot = await _firestore
-          .collection('users')
-          .where('role', isEqualTo: 'evaluator') // تأكدي إن حقل الرول اسمه 'role'
-          .get();
+      // 1. نجيب كل المستخدمين اللي في كوليكشن users
+      final snapshot = await _firestore.collection('users').get();
 
-      final evaluators = snapshot.docs.map((doc) {
+      print("🔵 عدد كل المستخدمين في الداتابيز: ${snapshot.docs.length}");
+
+      final evaluators = <Map<String, dynamic>>[];
+
+      // 2. نفلتر عليهم يدوياً
+      for (var doc in snapshot.docs) {
         final data = doc.data();
-        data['id'] = doc.id; // إضافة الـ ID للـ Map
-        return data;
-      }).toList();
+        
+        // بنطبع الـ ID والـ Role بتاع كل يوزر عشان تشوف بنفسك القيمة الصح ايه
+        print("🔵 User ID: ${doc.id} | Role: ${data['role']} | Type: ${data['type']}");
+
+        final role = data['role']?.toString().toLowerCase() ?? '';
+        
+        // 3. لو الرول محكم بأي شكل (judge, evaluator, محكم) هنجيبه
+        if (role == 'evaluator' || role == 'judge' || role == 'محكم') {
+          data['id'] = doc.id; // إضافة الـ ID للـ Map
+          evaluators.add(data);
+        }
+      }
+
+      print("🟢 عدد المحكمين اللي اتفلترا: ${evaluators.length}");
 
       return Right(evaluators);
     } catch (e) {
       print("🔴 FIRESTORE GET EVALUATORS ERROR: $e");
       return Left(e.toString());
     }
-  }
-}
+  }}

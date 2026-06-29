@@ -27,14 +27,16 @@
       "notes": "Evaluator Notes",
       "no_notes": "No notes available"
     },
-    "actions": {
-      "transfer": "Transfer to Evaluator",
-      "reject": "Reject Request",
-      "final_approval": "Final Approval",
-      "final_reject": "Final Reject",
-      "cancel": "Cancel",
-      "confirm_reject": "Confirm Rejection"
-    },
+   "actions": {
+    "transfer": "Transfer to Evaluator",
+    "reject": "Reject Request",
+    "final_approval": "Final Approval",
+    "final_reject": "Final Reject",
+    "cancel": "Cancel",
+    "confirm_reject": "Confirm Rejection",
+    "select_evaluator": "Select Evaluator",
+    "no_evaluators": "No available evaluators currently"
+},
     "statuses": {
       "pending_admin": "Pending Admin Review",
       "pending_evaluator": "Pending Evaluator Assessment",

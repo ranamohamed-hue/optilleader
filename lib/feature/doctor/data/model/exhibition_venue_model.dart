@@ -9,10 +9,10 @@ enum ExhibitionVenue {
   internationalEgypt,
   
   // 6.5 درجات (القاعات المعتمدة)
-  artFaculties,          // قاعات الكليات الفنية (جميلة، تربية فنية، تطبيقية، نوعية)
-  fineArtsSector,        // قاعات قطاع الفنون التشكيلية بوزارة الثقافة
-  foreignCulturalCenters,// قاعات المراكز الثقافية الأجنبية داخل مصر
-  artSyndicates,         // قاعات النقابات الفنية
+  artFaculties,         
+  fineArtsSector,        
+  foreignCulturalCenters,
+  artSyndicates,         
   
   // 5 درجات (القاعات العامة)
   culturePalaces,        // قاعات هيئة قصور الثقافة بوزارة الثقافة
@@ -48,12 +48,11 @@ class ArtExhibitionModel {
     this.rejectionReason,
   });
 
-  /// ✅ هل يتم تعليق الدرجات؟ (للمحافل الدولية فقط لو الأعمال أقل من 5)
-  bool get isPointsOnHold {
-    bool isInternational = venue == ExhibitionVenue.internationalAbroad || 
-                           venue == ExhibitionVenue.internationalEgypt;
-    return isInternational && numberOfWorks > 0 && numberOfWorks < 5;
-  }
+bool get isPointsOnHold {
+  return venue == ExhibitionVenue.internationalAbroad &&
+         numberOfWorks > 0 &&
+         numberOfWorks < 5;
+}
 
   /// ✅ حساب النقاط الأساسية (مطابق للجدول الرسمي مع الخيارات الجديدة)
   double get basePoints {

@@ -203,7 +203,6 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
     }
 
     context.read<NominationRequestCubit>().submitInterviewEvaluation(
-      requestId: widget.requestId,
       request: widget.request,
       evaluationModel: model,
     );
@@ -297,7 +296,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
               _buildNotesCard(colorScheme),
               SizedBox(height: 40.h),
 
-              // ✅ الأزرار المعدلة لعلاج الـ Overflow
+              // الأزرار
               Row(
                 children: [
                   Expanded(
@@ -339,10 +338,8 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
     );
   }
 
-  // ✅ كارت بيانات الدكتور المعدل
+  // ✅ كارت بيانات الدكتور (تم إزالة الدرجة الآلية منه)
   Widget _buildDoctorInfoCard(ColorScheme colorScheme) {
-    final achievementsTotal = widget.request.scores?.achievementsTotal ?? 0.0;
-
     return Container(
       padding: EdgeInsets.all(15.w),
       decoration: BoxDecoration(
@@ -384,17 +381,6 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 4.h),
-                Text(
-                  '${'evaluation.doctor_info.auto_score'.tr()}: ${achievementsTotal.toStringAsFixed(1)}',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: Colors.green[700],
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
               ],
             ),
           ),
@@ -403,7 +389,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
     );
   }
 
-  // ✅ كارت تحديد الموعد المعدل
+  // ✅ كارت تحديد الموعد
   Widget _buildScheduleCard(ColorScheme colorScheme) {
     return Container(
       padding: EdgeInsets.all(15.w),
@@ -514,6 +500,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
     );
   }
 
+  // ✅ كارت إدخال الدرجات
   Widget _buildScoreCard({
     required String title,
     required String criteria,
@@ -603,7 +590,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
     );
   }
 
-  // ✅ كارت المجموع الكلي المعدل
+  // ✅ كارت المجموع الكلي
   Widget _buildTotalCard(ColorScheme colorScheme) {
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -633,6 +620,7 @@ class _InterviewEvaluationScreenState extends State<InterviewEvaluationScreen> {
     );
   }
 
+  // ✅ كارت الملاحظات
   Widget _buildNotesCard(ColorScheme colorScheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -20,7 +20,6 @@ class NotificationRepoImpl extends NotificationRepo {
     }
   }
 
-  // ✅ إرسال جماعي بناءً على الـ Role باستخدام الـ Batch (سريع جداً)
   @override
   Future<Either<String, Unit>> sendRoleBasedNotification(AppNotificationModel notification) async {
     try {
@@ -61,14 +60,13 @@ class NotificationRepoImpl extends NotificationRepo {
     }
   }
 
-  // ✅ جلب الإشعارات الغير مقروءة فقط + اللحظي
   @override
   Stream<List<AppNotificationModel>> getNotifications(String receiverId) {
     return firebaseFirestore
         .collection('users')
         .doc(receiverId)
         .collection('notifications')
-        .where('is_read', isEqualTo: false) // ✅ الفلتر السحري عشان منجبش الفاضي
+        .where('is_read', isEqualTo: false) 
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
@@ -108,7 +106,6 @@ class NotificationRepoImpl extends NotificationRepo {
     }
   }
 
-  // ✅ مسح جماعي مقسم على Batches عشان الفايرستور
   @override
   Future<void> clearAllReadNotifications(String receiverId) async {
     try {
@@ -134,7 +131,6 @@ class NotificationRepoImpl extends NotificationRepo {
     }
   }
 
-  // ✅ دالة مساعدة بتحول الـ Target لـ Roles
   List<String> _getRolesForTarget(NotificationTarget target) {
     switch (target) {
       case NotificationTarget.adminOnly:

@@ -22,9 +22,7 @@ class AddResearchPaperPage extends StatefulWidget {
 class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // ==========================================
-  // 1. بيانات التعريف والتوثيق الأساسية
-  // ==========================================
+  // 1 بيانات التعريف الأساسية
   final _titleArController = TextEditingController();
   final _titleEnController = TextEditingController();
   final _journalNameController = TextEditingController();
@@ -32,28 +30,21 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
   final _publicationYearController = TextEditingController();
   final _journalUrlController = TextEditingController();
 
-  // ==========================================
-  // 2. بيانات المحرك الحسابي (المؤثرة على النقاط)
-  // ==========================================
+  // 2 بيانات المحرك الحسابي (المؤثرة على النقاط)
   final _authorOrderController = TextEditingController();
   final _totalAuthorsController = TextEditingController();
   final _authorsInSameSpecialtyController = TextEditingController();
-  final _reportNumberController = TextEditingController();
 
-  bool _isTopTierJournal = false;
+  // ❌ تم حذف _isTopTierJournal بالكامل
 
-  // ==========================================
-  // 3. متغيرات التصنيف
-  // ==========================================
+  // 3 متغيرات التصنيف
   JournalScope _selectedJournalScope = JournalScope.specialized;
   JournalLevel _selectedJournalLevel = JournalLevel.international;
   IndexingDatabase _selectedIndexDatabase = IndexingDatabase.scopus;
 
   String? _selectedQuartile;
 
-  // ==========================================
-  // 4. معايير المجلات المحلية (مربوطة مباشرة بفيلدات الموديل)
-  // ==========================================
+  // 4 معايير المجلات المحلية
   bool _peerReviewed = false;
   bool _indexedDatabase = false;
   bool _electronicPublishing = false;
@@ -63,16 +54,11 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
   bool _specializedJournal = false;
   bool _externalAuthors = false;
 
-  // ==========================================
-  // 5. ملفات الإثبات
-  // ==========================================
+  // 5 ملفات الإثبات
   PickedFileData? _paperFile;
   PickedFileData? _indexingProofFile;
-  PickedFileData? _certifiedReportFile;
 
-  // ==========================================
   // دوال مساعدة
-  // ==========================================
   String _getDbName(IndexingDatabase db) {
     switch (db) {
       case IndexingDatabase.scopus:
@@ -91,20 +77,6 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
       _selectedIndexDatabase == IndexingDatabase.webOfScience;
 
   bool get _isLocal => _selectedIndexDatabase == IndexingDatabase.local;
-
-  /// حساب نقاط المجلة المحلية لحظياً (عشان يظهر للمستخدم)
-  double get _computedLocalPoints {
-    double score = 0;
-    if (_peerReviewed) score += 1;
-    if (_indexedDatabase) score += 1;
-    if (_electronicPublishing) score += 1;
-    if (_knownEditorialBoard) score += 1;
-    if (_regularPublication) score += 1;
-    if (_externalReviewers) score += 0.5;
-    if (_specializedJournal) score += 1;
-    if (_externalAuthors) score += 0.5;
-    return score;
-  }
 
   void _resetLocalCriteria() {
     _peerReviewed = false;
@@ -128,13 +100,10 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     _totalAuthorsController.dispose();
     _journalUrlController.dispose();
     _authorsInSameSpecialtyController.dispose();
-    _reportNumberController.dispose();
     super.dispose();
   }
 
-  // ==========================================
   // دالة الحفظ والإرسال
-  // ==========================================
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
@@ -172,14 +141,13 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
       totalAuthors: int.tryParse(_totalAuthorsController.text.trim()) ?? 1,
       authorsInSameSpecialty:
           int.tryParse(_authorsInSameSpecialtyController.text.trim()) ?? 1,
-      isTopTierJournal: _isTopTierJournal,
+      // ❌ تم حذف isTopTierJournal من هنا
       journalScope: _selectedJournalScope,
       journalLevel: _selectedJournalLevel,
       indexingDatabase: _selectedIndexDatabase,
       journalUrl: _journalUrlController.text.trim(),
       quartile: _isInternational ? _selectedQuartile : null,
       isLocalJournal: _isLocal,
-      // ✅ ربط الـ 8 شروط مباشرة بفيلدات الموديل
       peerReviewed: _peerReviewed,
       indexedDatabase: _indexedDatabase,
       electronicPublishing: _electronicPublishing,
@@ -188,27 +156,21 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
       externalReviewers: _externalReviewers,
       specializedJournal: _specializedJournal,
       externalAuthors: _externalAuthors,
-      certifiedReportNumber: _reportNumberController.text.trim().isEmpty
-          ? null
-          : _reportNumberController.text.trim(),
       paperFileUrl: '',
-      paperFileType:
-          _paperFile!.type == UploadedFileType.image ? 'image' : 'pdf',
+      paperFileType: _paperFile!.type == UploadedFileType.image
+          ? 'image'
+          : 'pdf',
       status: VerificationStatus.pending,
     );
 
     context.read<ResearchCubit>().addNewResearch(
-          doctorUid: widget.doctorUid,
-          paper: paper,
-          paperFile: _paperFile!.file,
-          indexingProofFile: _indexingProofFile?.file,
-          certifiedReportFile: _certifiedReportFile?.file,
-        );
+      doctorUid: widget.doctorUid,
+      paper: paper,
+      paperFile: _paperFile!.file,
+      indexingProofFile: _indexingProofFile?.file,
+    );
   }
 
-  // ==========================================
-  // بناء واجهة المستخدم
-  // ==========================================
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ResearchCubit, ResearchState>(
@@ -223,8 +185,7 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
           );
         } else if (state is ResearchError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(state.error), backgroundColor: Colors.red),
+            SnackBar(content: Text(state.error), backgroundColor: Colors.red),
           );
         }
       },
@@ -242,15 +203,10 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. بيانات التعريف
                   _buildBasicInfoFields(),
                   SizedBox(height: 16.h),
-
-                  // 2. قوائم التصنيف (النطاق، المستوى، قاعدة الفهرسة)
                   _buildClassificationDropdowns(),
                   SizedBox(height: 16.h),
-
-                  // 3. حقول ديناميكية حسب قاعدة الفهرسة
                   if (_isInternational) ...[
                     _buildInternationalFields(),
                     SizedBox(height: 16.h),
@@ -263,20 +219,12 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
                     _buildIssnField(),
                     SizedBox(height: 16.h),
                   ],
-
-                  // 4. بيانات الإحصاء والترتيب
                   _buildRemainingStatsFields(),
                   SizedBox(height: 16.h),
 
-                  // 5. خيار المجلة المصنفة والرابط
-                  _buildTierAndUrlFields(),
+                  // ✅ بقت حقل الرابط بس من غير الـ Switch بتاع المجلة المصنفة
+                  _buildJournalUrlField(),
                   SizedBox(height: 20.h),
-
-                  // 6. التقرير المعتمد
-                  _buildCertifiedReportSection(),
-                  SizedBox(height: 20.h),
-
-                  // 7. ملفات الإثبات وزر الحفظ
                   _buildProofFilesSection(isLoading),
                 ],
               ),
@@ -287,11 +235,6 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     );
   }
 
-  // ==========================================
-  // الويدجات الفرعية
-  // ==========================================
-
-  /// حقول البيانات الأساسية
   Widget _buildBasicInfoFields() {
     return Column(
       children: [
@@ -309,25 +252,25 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
         SizedBox(height: 12.h),
         TextFormField(
           controller: _journalNameController,
-          decoration:
-              InputDecoration(labelText: 'addResearch.journalName'.tr()),
+          decoration: InputDecoration(
+            labelText: 'addResearch.journalName'.tr(),
+          ),
           validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null,
         ),
       ],
     );
   }
 
-  /// قوائم التصنيف الثلاثة
   Widget _buildClassificationDropdowns() {
     return Column(
       children: [
-        // النطاق: متخصصة / غير متخصصة
         DropdownButtonFormField<JournalScope>(
           value: _selectedJournalScope,
           decoration: InputDecoration(
             labelText: 'addResearch.journalScopeLabel'.tr(),
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
           ),
           items: [
             DropdownMenuItem(
@@ -343,21 +286,19 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
           validator: (v) => v == null ? 'validation.required'.tr() : null,
         ),
         SizedBox(height: 12.h),
-
-        // المستوى: دولي / إقليمي / محلي
         DropdownButtonFormField<JournalLevel>(
           value: _selectedJournalLevel,
           decoration: InputDecoration(
             labelText: 'addResearch.journalLevelLabel'.tr(),
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
           ),
           items: [
             DropdownMenuItem(
               value: JournalLevel.international,
               child: Text('addResearch.levelInternational'.tr()),
             ),
-           
             DropdownMenuItem(
               value: JournalLevel.local,
               child: Text('addResearch.levelLocal'.tr()),
@@ -367,14 +308,13 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
           validator: (v) => v == null ? 'validation.required'.tr() : null,
         ),
         SizedBox(height: 12.h),
-
-        // قاعدة الفهرسة: سكوبس / ويب أوف ساينس / محلي / أخرى
         DropdownButtonFormField<IndexingDatabase>(
           value: _selectedIndexDatabase,
           decoration: InputDecoration(
             labelText: 'addResearch.indexingDatabaseLabel'.tr(),
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
           ),
           items: [
             DropdownMenuItem(
@@ -405,7 +345,6 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     );
   }
 
-  /// حقول المجلات الدولية: الربع + الرقم الدولي
   Widget _buildInternationalFields() {
     return Container(
       padding: EdgeInsets.all(14.w),
@@ -437,14 +376,15 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
             decoration: InputDecoration(
               labelText: 'addResearch.quartile'.tr(),
               border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r)),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
               prefixIcon: Icon(Icons.bar_chart, color: Colors.deepPurple),
             ),
             items: ['q1', 'q2', 'q3', 'q4']
-                .map((q) => DropdownMenuItem(
-                      value: q,
-                      child: Text(q.toUpperCase()),
-                    ))
+                .map(
+                  (q) =>
+                      DropdownMenuItem(value: q, child: Text(q.toUpperCase())),
+                )
                 .toList(),
             onChanged: (val) => setState(() => _selectedQuartile = val),
             validator: (v) => v == null ? 'validation.required'.tr() : null,
@@ -463,7 +403,7 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     );
   }
 
-  /// معايير المجلات المحلية: 8 شروط بالإشارة + عرض النقاط لحظياً
+  //  شروط المجلة المحلية بدون أي نقاط متكتبة (مجرد اختيارات)
   Widget _buildLocalCriteriaSection() {
     return Container(
       padding: EdgeInsets.all(14.w),
@@ -475,7 +415,6 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // العنوان
           Row(
             children: [
               Icon(Icons.location_city, color: Colors.orange, size: 20.sp),
@@ -499,118 +438,59 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
           ),
           SizedBox(height: 8.h),
 
-          // الـ 8 شروط
           _buildCriteriaCheckbox(
             label: 'localJournalCriteria.criteria1'.tr(),
             value: _peerReviewed,
             onChanged: (v) => setState(() => _peerReviewed = v),
-            points: 1.0,
           ),
           _buildCriteriaCheckbox(
             label: 'localJournalCriteria.criteria2'.tr(),
             value: _indexedDatabase,
             onChanged: (v) => setState(() => _indexedDatabase = v),
-            points: 1.0,
           ),
           _buildCriteriaCheckbox(
             label: 'localJournalCriteria.criteria3'.tr(),
             value: _electronicPublishing,
             onChanged: (v) => setState(() => _electronicPublishing = v),
-            points: 1.0,
           ),
           _buildCriteriaCheckbox(
             label: 'localJournalCriteria.criteria4'.tr(),
             value: _knownEditorialBoard,
             onChanged: (v) => setState(() => _knownEditorialBoard = v),
-            points: 1.0,
           ),
           _buildCriteriaCheckbox(
             label: 'localJournalCriteria.criteria5'.tr(),
             value: _regularPublication,
             onChanged: (v) => setState(() => _regularPublication = v),
-            points: 1.0,
           ),
           _buildCriteriaCheckbox(
             label: 'localJournalCriteria.criteria6'.tr(),
             value: _externalReviewers,
             onChanged: (v) => setState(() => _externalReviewers = v),
-            points: 0.5,
           ),
           _buildCriteriaCheckbox(
             label: 'localJournalCriteria.criteria7'.tr(),
             value: _specializedJournal,
             onChanged: (v) => setState(() => _specializedJournal = v),
-            points: 1.0,
           ),
           _buildCriteriaCheckbox(
             label: 'localJournalCriteria.criteria8'.tr(),
             value: _externalAuthors,
             onChanged: (v) => setState(() => _externalAuthors = v),
-            points: 0.5,
-          ),
-
-          // شريط الإجمالي
-          Divider(height: 24.h),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade100,
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'addResearch.localPointsTotal'.tr(),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13.sp,
-                  ),
-                ),
-                Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
-                  decoration: BoxDecoration(
-                    color: _computedLocalPoints > 0
-                        ? Colors.orange
-                        : Colors.grey,
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Text(
-                    '${_computedLocalPoints.toStringAsFixed(1)} / 7.0',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14.sp,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
     );
   }
 
-  /// ويدجت واحدة لشرط محلي مع عرض النقاط
   Widget _buildCriteriaCheckbox({
     required String label,
     required bool value,
     required ValueChanged<bool> onChanged,
-    required double points,
   }) {
-    final pointsLabel = points == 1.0
-        ? 'addResearch.onePoint'.tr()
-        : 'addResearch.halfPoint'.tr();
-
     return CheckboxListTile(
       dense: true,
       title: Text(label, style: TextStyle(fontSize: 13.sp)),
-      subtitle: Text(
-        pointsLabel,
-        style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
-      ),
       value: value,
       activeColor: Colors.orange,
       contentPadding: EdgeInsets.zero,
@@ -618,7 +498,6 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     );
   }
 
-  /// حقل ISSN لو اختار "أخرى"
   Widget _buildIssnField() {
     return TextFormField(
       controller: _issnController,
@@ -627,7 +506,6 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     );
   }
 
-  /// حقول الإحصاء والترتيب
   Widget _buildRemainingStatsFields() {
     return Column(
       children: [
@@ -679,17 +557,24 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
           decoration: InputDecoration(
             labelText: 'addResearch.authorsInSameSpecialty'.tr(),
             helperText: 'addResearch.authorsInSameSpecialtyHint'.tr(),
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.r),
+            ),
           ),
           keyboardType: TextInputType.number,
           validator: (v) {
-            if (v == null || v.isEmpty) return 'validation.required'.tr();
+            if (v == null || v.isEmpty) {
+              return 'validation.required'.tr();
+            }
+
             final sameSpecialty = int.tryParse(v) ?? 0;
-            final authorOrder =
-                int.tryParse(_authorOrderController.text) ?? 0;
-            if (sameSpecialty < authorOrder)
-              return 'addResearch.validationAuthorsOrder'.tr();
+            final totalAuthors =
+                int.tryParse(_totalAuthorsController.text) ?? 0;
+
+            if (sameSpecialty > totalAuthors) {
+              return 'لا يمكن أن يكون أكبر من إجمالي الباحثين';
+            }
+
             return null;
           },
         ),
@@ -697,80 +582,14 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
     );
   }
 
-  /// خيار المجلة المصنفة ورابط المجلة
-  Widget _buildTierAndUrlFields() {
-    return Column(
-      children: [
-        SwitchListTile(
-          title: Text('addResearch.isTopTierJournal'.tr()),
-          subtitle: Text('addResearch.isTopTierJournalHint'.tr()),
-          value: _isTopTierJournal,
-          onChanged: (bool value) =>
-              setState(() => _isTopTierJournal = value),
-          activeThumbColor: Colors.blue,
-        ),
-        SizedBox(height: 12.h),
-        TextFormField(
-          controller: _journalUrlController,
-          decoration: InputDecoration(labelText: 'addResearch.journalUrl'.tr()),
-          validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null,
-        ),
-      ],
+  Widget _buildJournalUrlField() {
+    return TextFormField(
+      controller: _journalUrlController,
+      decoration: InputDecoration(labelText: 'addResearch.journalUrl'.tr()),
+      validator: (v) => v!.isEmpty ? 'validation.required'.tr() : null,
     );
   }
 
-  /// قسم التقرير المعتمد
-  Widget _buildCertifiedReportSection() {
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: Colors.blue.withOpacity(0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.verified_outlined, color: Colors.blue, size: 20.sp),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: Text(
-                  'addResearch.certifiedReportTitle'.tr(),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14.sp,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          TextFormField(
-            controller: _reportNumberController,
-            decoration: InputDecoration(
-              labelText: 'addResearch.reportNumber'.tr(),
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.r)),
-              filled: true,
-              fillColor: Colors.white,
-            ),
-          ),
-          SizedBox(height: 12.h),
-          FilePickerField(
-            label: 'filePicker.selectReport'.tr(),
-            selectedFile: _certifiedReportFile,
-            onFileSelected: (file) =>
-                setState(() => _certifiedReportFile = file),
-            isRequired: false,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// رفع ملفات الإثبات وزر الحفظ
   Widget _buildProofFilesSection(bool isLoading) {
     return Column(
       children: [
@@ -786,8 +605,7 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
               ? 'addResearch.indexingProof'.tr()
               : '${'addResearch.indexingProofLabelDynamic'.tr()} (${_getDbName(_selectedIndexDatabase)}) - ${'common.required'.tr()}',
           selectedFile: _indexingProofFile,
-          onFileSelected: (file) =>
-              setState(() => _indexingProofFile = file),
+          onFileSelected: (file) => setState(() => _indexingProofFile = file),
           isRequired: _selectedIndexDatabase != IndexingDatabase.other,
         ),
         SizedBox(height: 30.h),
@@ -800,7 +618,8 @@ class _AddResearchPaperPageState extends State<AddResearchPaperPage> {
               backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r)),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
             ),
             child: isLoading
                 ? const CircularProgressIndicator(color: Colors.white)

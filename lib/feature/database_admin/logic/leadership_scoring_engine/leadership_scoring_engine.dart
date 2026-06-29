@@ -6,11 +6,7 @@ import 'package:optialeader/feature/doctor/data/model/exhibition_venue_model.dar
 
 import 'package:optialeader/feature/admin/data/model/nomination_score_model.dart';
 
-/// ============================================================
-/// محرك حساب درجات الإنجازات الأكاديمية (الـ 80 درجة)
-/// وظيفته: يمر على كل إنجازات الدكتور (أبحاث، مؤتمرات، معارض، دورات)
-/// ويجمع الدرجات الآلية عن طريق الـ Getters الموجودة في الموديلز
-/// ============================================================
+
 class LeadershipScoringEngine {
   /// دالة رئيسية لحساب إجمالي درجات الإنجازات
   static Map<String, dynamic> calculateTotalScore(DoctorProfileModel doctor) {
@@ -22,7 +18,6 @@ class LeadershipScoringEngine {
     double workshopPoints = 0.0;
     double activityPoints = 0.0;
 
-    // 1️⃣ الأبحاث العلمية (الدرجة بتتحسب آلياً من الموديل بناءً على Quartile ونسبة المشاركة)
     for (var paper in doctor.researchPapers) {
       if (paper.status.name == 'approved') {
         researchPoints += paper.finalPoints;
@@ -43,7 +38,7 @@ class LeadershipScoringEngine {
       }
     }
 
-    // 2️⃣ المؤتمرات العلمية (الدرجة بتتحسب آلياً من ConferenceModel)
+    // 2️ المؤتمرات العلمية (الدرجة بتتحسب آلياً من ConferenceModel)
     for (var conf in doctor.conferences) {
       if (conf.status.name == 'approved') {
         conferencePoints += conf.totalPoints;
@@ -68,14 +63,13 @@ class LeadershipScoringEngine {
     // 3️⃣ المعارض الفنية (تم تحديث المنطق ليتوافق مع الأصناف التسعة الجديدة والتعليق)
     for (var exhibition in doctor.exhibitions) {
       if (exhibition.status.name == 'approved') {
-        // ✅ التعديل الجديد: استخدام isPointsOnHold بدل isExceptionalCase
         if (exhibition.isPointsOnHold) {
           allDetails.add({
             'title': exhibition.title,
             'type': 'معرض فني (درجة معلقة)',
             'category': _getVenueAr(
               exhibition.venue,
-            ), // ✅ استخدام الدالة المحدثة
+            ), 
             'scope': '${exhibition.numberOfWorks} أعمال',
             'points': 0.0,
             'breakdown': 'الدرجة معلقة: المحفل دولي والأعمال أقل من 5',
@@ -85,7 +79,6 @@ class LeadershipScoringEngine {
           if (points > 0) exhibitionPoints += points;
 
           String venueAr = _getVenueAr(exhibition.venue);
-          // ✅ شرط الرفض الجديد (قاعة دولي بره مصر وأقل من 5 أعمال)
           String failReason =
               (exhibition.venue == ExhibitionVenue.internationalAbroad &&
                   exhibition.numberOfWorks < 5)
@@ -107,7 +100,6 @@ class LeadershipScoringEngine {
     // 4️⃣ الدورات التدريبية (الدرجة بتتحسب آلياً أو يدوياً حسب الـ Model)
     for (var course in doctor.courses) {
       if (course.status.name == 'approved') {
-        // ✅ نستخدم الـ Getter الموجود في CourseModel مباشرة
         double points = course.points;
 
         if (points > 0) coursePoints += points;
@@ -129,7 +121,7 @@ class LeadershipScoringEngine {
       }
     }
 
-    // 5️⃣ ورش العمل (بنفس جدول الدورات لأنهم ActivityModel)
+    // 5 ورش العمل (بنفس جدول الدورات لأنهم ActivityModel)
     // ملاحظة: الكود ده معلق لحد ما تتأكد من اسم الليست في DoctorProfileModel
     /*
     if (doctor.workshops != null) {
@@ -143,7 +135,6 @@ class LeadershipScoringEngine {
     }
     */
 
-    // 6️⃣ الأنشطة الأكاديمية (الـ 20 درجة)
     if (doctor.academicActivities != null) {
       activityPoints = doctor.academicActivities!.totalPoints;
       _addActivityDetails(doctor.academicActivities!, allDetails);
@@ -169,9 +160,6 @@ class LeadershipScoringEngine {
     };
   }
 
-  // ============================================================
-  // بناء موديل الدرجات النهائي
-  // ============================================================
   static NominationScoreModel buildScoreModel(DoctorProfileModel doctor) {
     Map<String, dynamic> scores = calculateTotalScore(doctor);
     return NominationScoreModel(
@@ -186,9 +174,7 @@ class LeadershipScoringEngine {
     );
   }
 
-  // ============================================================
-  // إضافة درجة المقابلة الشخصية
-  // ============================================================
+
   static NominationScoreModel addInterviewScore(
     NominationScoreModel scoreModel,
     InterviewScoringModel interview,
@@ -211,11 +197,8 @@ class LeadershipScoringEngine {
     return calculateTotalScore(doctor)['totalPoints'] + interviewScore;
   }
 
-  // ============================================================
-  // دوال مساعدة لترجمة الأسماء للعربي (تم تحديثها للمعارض)
-  // ============================================================
 
-  /// ✅ دالة ترجمة أنواع المشاركة في المؤتمرات
+
   static String _getParticipationTypeAr(ParticipationType type) {
     switch (type) {
       case ParticipationType.paperPresentation:
@@ -227,7 +210,6 @@ class LeadershipScoringEngine {
     }
   }
 
-  /// ✅ دالة ترجمة أنواع القاعات (محدثة بالأصناف التسعة الجديدة)
   static String _getVenueAr(ExhibitionVenue venue) {
     switch (venue) {
       case ExhibitionVenue.internationalAbroad:

@@ -152,7 +152,7 @@ class InterviewScoringModel {
       isDraft: isDraft ?? this.isDraft,
     );
   }
-  /// ✅ تجميع كل الملاحظات في نص واحد
+  ///  تجميع كل الملاحظات في نص واحد
 String get combinedNotes {
   final notesList = <String>[];
   if (scientificNotes != null && scientificNotes!.isNotEmpty) {
